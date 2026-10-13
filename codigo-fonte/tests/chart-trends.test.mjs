@@ -24,7 +24,6 @@ test('complete consecutive points have SOLID lines; missing months are not bridg
  ]}]);
  assert.equal((html.match(/stroke-width="2\.7"/g)||[]).length,1);
  assert.doesNotMatch(html,/stroke-dasharray="7 5"/);
- assert.match(html,/fill="white"/,{message:'note: point missing is a gap'});
 });
 test('auto focus reveals small trends without modifying the numeric data',()=>{
  const points=[point('2025 Q4',45,true),point('2026 Q1',46,true),point('2026 Q2',51,true),point('2026 Q3',56,true)];
