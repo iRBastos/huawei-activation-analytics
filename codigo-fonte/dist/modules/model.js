@@ -1,9 +1,9 @@
-import {INVERTER_CATALOG, mergeInverterCatalog} from './inverter-catalog.js';
+import {defaultInverterCatalog, mergeInverterCatalog} from './inverter-catalog.js';
 // Catalogue, canonical keys, calendar utilities and record scope.
 
 export const CATEGORIES = ['Inverter', 'Battery module', 'BMS'];
 export const INITIAL_CATALOG = {
-  ...INVERTER_CATALOG,
+  ...defaultInverterCatalog(),
   'LUNA2000-5-E0': {model:'LUNA2000-5-E0',category:'Battery module',family:'S0',capacity:5,bms:'LUNA2000-5KW-C0',from:null,to:null},
   'LUNA2000-5-E1': {model:'LUNA2000-5-E1',category:'Battery module',family:'S1',capacity:5,bms:'LUNA2000-10KW-C1',from:null,to:null},
   'LUNA2000-7-E1': {model:'LUNA2000-7-E1',category:'Battery module',family:'S1',capacity:7,bms:'LUNA2000-10KW-C1',from:null,to:null},
