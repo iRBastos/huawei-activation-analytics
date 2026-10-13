@@ -75,8 +75,8 @@ test('inverter view exposes the relative/absolute selector and explicitly labels
 test('percentage ratio labels are rendered as 40.1% (not per 100 units) on chart tooltips and axis',()=>{
  const series=[{name:'BMS / Inverter',model:'All',points:[point('2025 Q4',40.1,true),point('2026 Q1',41.4,true)]}];
  const html=lineChart(series,{unit:'%',title:'BMS / Inverter'});
- assert.match(html,/BMS \/ Inverter 2025 Q4: 40\\.1%/);
- assert.match(html,/41\\.4%/);
+ assert.match(html,/BMS \/ Inverter 2025 Q4: 40\.1%/);
+ assert.match(html,/41\.4%/);
  assert.doesNotMatch(html,/BMS per 100| per 100 inverters/);
  assert.equal(series[0].points[0].value,40.1);
 });
@@ -92,7 +92,7 @@ test('overview displays ratio as percentage and preserves underlying calculation
  assert.equal(ratio.value,40.1);
  const html=V.overviewView(state,{trendMetric:'volume',hiddenSeries:new Set()});
  assert.match(html,/BMS \/ Inverter/);
- assert.match(html,/40\\.1%/);
+ assert.match(html,/40\.1%/);
  assert.match(html,/Rolling 3 months/);
  assert.doesNotMatch(html,/BMS per 100 inverters/);
 });
