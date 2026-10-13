@@ -117,7 +117,27 @@ document.addEventListener('drop',async event=>{if(event.target.closest('#dropzon
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
-    case 'classify':{const p=ui.pending,classes={...p.classifications};p.validation.unknown.forEach((model,i)=>{const category=data.get(`category-${i}`);classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,from:null,to:null};});for(const p of Object.values(classes)){const errs=D.validateProduct(p,{...state.catalog,...classes});if(errs.length)throw new Error(`${p.model}: ${errs.join(' ')}`);}p.classifications=classes;validatePending();render();toast('Model classifications confirmed for this preview.');break;}
+    case 'classify':{
+      const p=ui.pending,classes={...p.classifications};
+      p.validation.unknown.forEach((model,i)=>{
+        const category=data.get(`category-${i}`),powerInput=String(data.get(`power-${i}`)??'').trim(),phase=data.get(`phase-${i}`)||null;
+        if(category==='Inverter'&&(!powerInput||!phase))throw new Error(`${model}: Provide rated kW and grid phase for a new inverter model.`);
+        classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),
+          capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,
+          bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,
+          powerKw:category==='Inverter'?Number(powerInput):null,phase:category==='Inverter'?phase:null,from:null,to:null};
+      });
+      for(const product of Object.values(classes)){
+        const errs=D.validateProduct(product,{...state.catalog,...classes});
+        if(errs.length)throw new Error(`${product.model}: ${errs.join(' ')}`);
+      }
+      const switchToUnified=Object.values(classes).some(product=>!D.datasetAcceptsCategory(ui.dataset,product.category));
+      p.classifications=classes;
+      if(switchToUnified)ui.dataset='unified';
+      validatePending();render();
+      toast(switchToUnified?'Switched to Unified Import to include every selected equipment category.':'Model classifications confirmed for this preview.');
+      break;
+    }
     case 'commit-import':{if(!data.has('approved'))throw new Error('Confirm that you reviewed the proposed values.');const p=ui.pending;validatePending();const next=D.commitImport(state,p.validation,{classifications:p.classifications,confirmedCategories:data.getAll('coverage')});const last=D.latestComplete(next);if(last)Object.assign(next.preferences,{start:last,end:last});else if(p.validation.months.length)Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Import saved. Identical values were retained without duplication.');ui.pending=null;navigate('overview');break;}
     case 'target':{const value={month:data.get('month'),scope:data.get('scope'),value:Number(data.get('value'))};D.saveTarget(state,value);const old=state.targets[D.targetKey(value.month,value.scope)];openModal('Review monthly target',`<p>${e(value.scope)} · ${V.labelMonth(value.month)}</p><p>Previous target: <strong>${old?V.number(old.value):'Not set'}</strong><br>New target: <strong>${V.number(value.value)}</strong> activations</p>`,async()=>commit(D.saveTarget(state,value),'Monthly target saved.'));break;}
     case 'coverage':{const value={category:data.get('category'),start:data.get('start'),end:data.get('end'),expected:data.getAll('expected'),confirmed:data.has('confirmed')};D.setCoverage(state,value);openModal('Review reporting scope',`<p>${e(value.category)} · ${V.rangeLabel(value.start,value.end)}</p><p class="table-note">Expected models: ${value.expected.map(e).join(', ')}<br>Coverage: ${value.confirmed?'Confirmed':'Unconfirmed'}</p><p class="table-note">This replaces scope declarations for ${D.monthsBetween(value.start,value.end).length} months. Recorded quantities remain intact. Completeness and comparisons will be recalculated.</p>`,async()=>commit(D.setCoverage(state,value),'Coverage saved and metrics recalculated.'));break;}
