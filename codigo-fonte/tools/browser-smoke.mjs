@@ -65,6 +65,7 @@ try{
  await command('Page.enable');
  await command('Runtime.enable');
  await command('Network.enable');
+ await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
  const url='file://'+path.join(root,'index.html');
  await command('Page.navigate',{url});
  await until("document.querySelector('#main')?.textContent?.includes('Ready for your activation data')",'empty dashboard');
@@ -89,7 +90,7 @@ try{
  const evidence=await evaluate("(()=>{const p=[...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence');return {chart:!!p.querySelector('svg.line-chart'),table:!!p.querySelector('table'),order:p.querySelector('svg.line-chart')?.compareDocumentPosition(p.querySelector('table'))};})()");
  assert.ok(evidence.chart&&evidence.table,'comparison must show chart AND table');
  assert.ok((evidence.order&4)!==0,'chart must appear before table');
- const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+ const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
  assert.deepEqual(blocked,[],'offline app must not request remote resources');
