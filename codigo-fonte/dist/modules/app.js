@@ -122,4 +122,4 @@ document.addEventListener('submit',async event=>{
   }}catch(err){const errbox=$('#modal').open?$('#dialog-error'):null;if(errbox)errbox.textContent=err.message;else toast(err.message,true);}finally{if(button)button.disabled=false;}
 });
 
-try{const saved=await loadState();if(saved)state=D.validateBackup(saved);render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}
+try{const saved=await loadState();if(saved){state=D.validateBackup(saved);const merged=D.mergeInverterCatalog(state.catalog);if(merged!==state.catalog){state.catalog=merged;await saveState(state);}}render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}
