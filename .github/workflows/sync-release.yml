@@ -1,0 +1,78 @@
+name: Synchronize release files (development branch)
+
+on:
+  push:
+    branches:
+      - feature/inverter-power-catalog
+    paths:
+      - 'codigo-fonte/**'
+      - 'documentacao/**'
+      - 'templates/**'
+      - 'README.md'
+      - 'LEIA-ME.txt'
+      - '.github/workflows/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: synchronize-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync-release:
+    if: github.repository == 'iRBastos/huawei-activation-analytics' && github.ref == 'refs/heads/feature/inverter-power-catalog'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out working branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/inverter-power-catalog
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run all tests and capture authoritative counts
+        working-directory: codigo-fonte
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test | tee "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Regenerate the standalone HTML and JavaScript
+        working-directory: codigo-fonte
+        run: python3 tools/build-offline.py
+      - name: Validate offline state and legacy backup migration
+        working-directory: codigo-fonte
+        run: node tools/verify-offline.mjs
+      - name: Smoke-test offline application in Chromium
+        working-directory: codigo-fonte
+        run: node tools/browser-smoke.mjs
+      - name: Generate deterministic source ZIP and test summaries
+        run: python3 codigo-fonte/tools/build-release.py --test-log "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Commit updated distribution files to development branch only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- index.html codigo-fonte/dist/app.offline.js codigo-fonte.zip codigo-fonte/dist/test-results.txt documentacao/test-results.txt
+          if git diff --cached --quiet; then
+            echo "Distribution already current; no additional commit needed"
+          else
+            git commit -m "build: synchronize tested offline HTML, source ZIP and test reports"
+            git push origin HEAD:feature/inverter-power-catalog
+          fi
+      - name: Publish release and browser smoke artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: huawei-activation-analytics-synced-release
+          path: |
+            index.html
+            codigo-fonte.zip
+            browser-smoke.png
+          if-no-files-found: error
