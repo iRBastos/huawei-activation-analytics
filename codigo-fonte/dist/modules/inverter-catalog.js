@@ -127,8 +127,9 @@ export function mergeInverterCatalog(catalog) {
   let changed = false;
   for (const [model, definition] of Object.entries(defaults)) {
     if (!next[model]) { next[model] = definition; changed = true; }
-    else if (next[model].category === 'Inverter' && (next[model].powerKw !== definition.powerKw || next[model].phase !== definition.phase)) {
-      next[model] = {...next[model], powerKw: definition.powerKw, phase: definition.phase}; changed = true;
+    else if (next[model].category === 'Inverter' && (next[model].powerKw == null || next[model].phase == null)) {
+      // Only backfill absent metadata. Never overwrite customer-edited values.
+      next[model] = {...next[model], powerKw: next[model].powerKw ?? definition.powerKw, phase: next[model].phase ?? definition.phase}; changed = true;
     }
   }
   return changed ? next : catalog;
