@@ -34,7 +34,7 @@ Use the same browser, profile and file location to retain the browser-local work
 
 ## Development and validation
 
-Using Node.js 22 or newer, run `npm test` from `codigo-fonte/`. No `npm install` is needed. All 52 automated tests passed for this edition.
+Using Node.js 22 or newer, run `npm test` from `codigo-fonte/`. No `npm install` is needed. The historical 52-test result applies to the original offline edition; the current development branch has not yet been re-tested.
 
 From the same directory, `python3 tools/build-offline.py` regenerates the ready-to-open HTML, and `node tools/verify-offline.mjs` verifies the bundle with a controlled DOM simulation. Python and Node.js are optional development tools, not dashboard runtime requirements.
 
