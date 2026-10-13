@@ -27,11 +27,11 @@ test('complete consecutive points have SOLID lines; missing months are not bridg
 });
 test('auto focus reveals small trends without modifying the numeric data',()=>{
  const points=[point('2025 Q4',45,true),point('2026 Q1',46,true),point('2026 Q2',51,true),point('2026 Q3',56,true)];
- const svg=lineChart([{name:'BMS per 100 inverters',points}],{unit:'BMS per 100'});
+ const svg=lineChart([{name:'BMS / Inverter',points}],{unit:'%'});
  assert.match(svg,/Focused y-axis: it does not start at zero/);
- assert.match(svg,/56 BMS per 100/);
+ assert.match(svg,/56\.0%/);
  assert.equal(points[0].value,45);
- const zero=lineChart([{name:'BMS per 100 inverters',points}],{scale:'zero'});
+ const zero=lineChart([{name:'BMS / Inverter',points}],{scale:'zero',unit:'%'});
  assert.doesNotMatch(zero,/Focused y-axis/);
 });
 test('base-100 phase normalization uses one shared period and retains raw activations',()=>{
@@ -70,4 +70,29 @@ test('inverter view exposes the relative/absolute selector and explicitly labels
  assert.match(html,/Trend index \(base 100\)/);
  assert.match(html,/Absolute activations/);
  assert.match(html,/Single-phase vs Three-phase/);
+});
+
+test('percentage ratio labels are rendered as 40.1% (not per 100 units) on chart tooltips and axis',()=>{
+ const series=[{name:'BMS / Inverter',model:'All',points:[point('2025 Q4',40.1,true),point('2026 Q1',41.4,true)]}];
+ const html=lineChart(series,{unit:'%',title:'BMS / Inverter'});
+ assert.match(html,/BMS \/ Inverter 2025 Q4: 40\\.1%/);
+ assert.match(html,/41\\.4%/);
+ assert.doesNotMatch(html,/BMS per 100| per 100 inverters/);
+ assert.equal(series[0].points[0].value,40.1);
+});
+test('overview displays ratio as percentage and preserves underlying calculation',()=>{
+ const state=D.freshState(),month='2025-01';
+ state.preferences={...state.preferences,start:month,end:month};
+ const tuples=[['Inverter','SUN2000-5K-LB0',1000],['BMS','LUNA2000-10KW-C1',401],['Battery module','LUNA2000-7-E1',500]];
+ for(const [category,model,quantity] of tuples){
+  state.records[D.keyOf(month,model)]={month,model,quantity,source:{filename:'test.xlsx',sheet:'test',cell:'B2'}};
+  state.coverage[month+'|'+category]={month,category,expected:[model],confirmed:true};
+ }
+ const ratio=D.overview(state,state.preferences).attachment;
+ assert.equal(ratio.value,40.1);
+ const html=V.overviewView(state,{trendMetric:'volume',hiddenSeries:new Set()});
+ assert.match(html,/BMS \/ Inverter/);
+ assert.match(html,/40\\.1%/);
+ assert.match(html,/Rolling 3 months/);
+ assert.doesNotMatch(html,/BMS per 100 inverters/);
 });
