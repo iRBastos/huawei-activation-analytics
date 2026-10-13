@@ -1,5 +1,12 @@
 import {CATEGORIES,canonical,totalLabel,monthValue,isBlank,cellValue,columnName,keyOf,applicable} from './model.js';
 
+// Unified imports share the exact same model catalogue and numeric validation as legacy datasets.
+export const IMPORT_DATASETS = ['unified','inverters','batteries'];
+export function datasetAcceptsCategory(dataset,category) {
+  if(!IMPORT_DATASETS.includes(dataset)||!CATEGORIES.includes(category))return false;
+  return dataset==='unified'||dataset==='inverters'&&category==='Inverter'||dataset==='batteries'&&category!=='Inverter';
+}
+
 export function validateProduct(p,catalog={}) {
   const errors=[];
   if(!canonical(p.model)||totalLabel(p.model)||p.model.includes('|'))errors.push('Use a non-empty model code without |.');
@@ -12,6 +19,7 @@ export function validateProduct(p,catalog={}) {
 }
 export function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}) {
   const errors=[],warnings=[],records=[],unknown=new Set(),models=new Set(),months=[],totals=[];
+  if(!IMPORT_DATASETS.includes(dataset))errors.push('Choose a supported dataset: Unified, Inverters, or Battery modules & BMS.');
   const header=rows[headerRow]??[];
   const width=Math.max(header.length,...rows.slice(headerRow).map(r=>r.length));
   const populatedCols=Array.from({length:width},(_,i)=>i).filter(i=>i>0 && rows.slice(headerRow).some(r=>!isBlank(cellValue(r[i]))));
@@ -29,7 +37,7 @@ export function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}
     if(model.includes('|'))errors.push(`Unsupported | in model ${label}.`);
     const p=catalog[model];
     if(!p)unknown.add(model);
-    else if(dataset==='inverters'&&p.category!=='Inverter'||dataset==='batteries'&&p.category==='Inverter')errors.push(`${model} belongs to the other dataset. Imports cannot cross categories.`);
+    else if(!datasetAcceptsCategory(dataset,p.category))errors.push(`${model} (${p.category}) does not belong to the selected ${dataset} dataset. Choose Unified to import all categories together.`);
     for(const {c,m} of cols){
       const cell=row[c],v=cellValue(cell),ref=cell?.ref??`${columnName(c)}${r+1}`,key=keyOf(m,model);
       if(seen.has(key))errors.push(`Duplicate model/month: ${model}, ${m} (${ref}).`);seen.add(key);
@@ -43,6 +51,7 @@ export function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}
     }
   }
   if(!models.size)errors.push('No product rows found.');
+  if(dataset==='unified'&&totals.length>1)errors.push('Unified imports support at most one grand total row covering all categories; remove per-category total rows.');
   for(const total of totals)for(const {c,m} of cols){
     const cell=rows[total.row]?.[c],v=cellValue(cell),ref=cell?.ref??`${columnName(c)}${total.row+1}`;
     if(cell?.type==='e'||cell?.f&&isBlank(v)){errors.push(`Total ${ref} has an error or uncached formula. Recalculate and save in Excel.`);continue;}
