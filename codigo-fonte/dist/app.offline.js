@@ -2,12 +2,156 @@
 'use strict';
 const __modules=Object.create(null);
 
+// MODULE: inverter-catalog.js
+__modules["inverter-catalog.js"]=(()=>{
+// Curated inverter model names supplied for Huawei Activation Analytics.
+// powerKw is the rating encoded in the model identifier, not a verified grid export limit.
+// Never infer power from an unlisted/unrecognised string or silently merge variants.
+const INVERTER_MODELS = Object.freeze(`SUN2000-4.6KTL-L1
+SUN2000-5KTL-L1
+SUN2000-4KTL-L1
+SUN2000-3KTL-L1
+SUN2000-8KTL-M1
+SUN2000-5KTL-M1
+SUN2000-6KTL-M1
+SUN2000-4.6K-LB0
+SUN2000-5K-LB0
+SUN2000-2KTL-L1
+SUN2000-10KTL-BEM1
+SUN2000-3.68KTL-L1
+SUN2000-4KTL-M1
+SUN2000-10KTL-M1
+SUN2000-3K-LB0
+SUN2000-3KTL-M1
+SUN2000-4K-LB0
+SUN2000-25K-MB0
+SUN2000-12K-MB0
+SUN2000-5K-MAP0
+SUN2000-20K-MB0
+SUN2000-15K-MB0
+SUN2000-10K-MAP0-BE
+SUN2000-8K-MAP0
+SUN2000-3.68K-LB0
+SUN2000-6K-MAP0
+SUN2000-10K-MAP0
+SUN2000-12K-MAP0
+SUN2000-17K-MB0
+SUN2000-12KTL-M5
+SUN2000-20KTL-M5
+SUN2000-15KTL-M5
+SUN2000-6KTL-L1
+SUN2000-25KTL-M5
+SUN2000-17KTL-M5
+SUN2000-10K-LC0
+SUN2000-20KTL
+SUN2000-6K-LB0
+SUN2000-8K-LC0
+SUN2000-20KTL-M2
+SUN2000-17KTL-M2
+SUN2000-12KTL-M2
+SUN2000-17KTL
+SUN2000-15KTL-M2
+SUN2000L-4.6KTL
+SUN2000-6KTL-M0
+SUN2000-12KTL
+SUN2000L-3KTL
+SUN2000-20KTL-M0
+SUN2000-6KTL-M1-EU(MBUS)
+SUN2000L-4KTL
+SUN2000L-2KTL
+SUN2000-12KTL-M0
+SUN2000-5KTL-M1-EU(MBUS)
+SUN2000-8KTL-M1-EU(MBUS)
+SUN2000-17KTL-M0
+SUN2000-8KTL
+SUN2000-3.68KTL
+SUN2000-8KTL-M0
+SUN2000-2KTL
+SUN2000L-5KTL
+SUN2000-3KTL-M0
+SUN2000-15KTL-M0
+SUN5000-12K-MAP0
+SUN2000L-3.68KTL
+SUN2000-8KTL-M0-EU
+SUN2000-10KTL-M1-EU(MBUS)
+SUN2000-4KTL-M1-EU(MBUS)
+SUN2000-5KTL-L0
+SUN2000-3KTL-L0
+SUN2000-3KTL-M1-EU(MBUS)
+SUN2000-12KTL-M0-EU
+SUN2000-6KTL-M0-EU
+SUN2000-4KTL-L0
+SUN2000-10KTL-M0
+SUN2000-12KTL-M2-EU(MBUS)
+SUN2000-15KTL-M2-EU(MBUS)
+SUN2000-10KTL
+SUN2000-10KTL-M1(MBUS)
+SUN2000-15KTL-M5(MBUS)
+SUN2000-17KTL-M2-EU(MBUS)
+SUN2000-20KTL-M2-EU(MBUS)
+SUN2000-12KTL-M5(MBUS)
+SUN2000-17KTL-M5(MBUS)
+SUN5000-25K-MB0
+SUN5000-8K-MAP0`.trim().split('\n'));
+const POWER_PATTERN = /^(?:SUN2000L?-|SUN5000-)(\d+(?:\.\d+)?)K(?:TL)?(?:-|$)/;
+const INVERTER_POWER_KW = Object.freeze(Object.fromEntries(INVERTER_MODELS.map(model => {
+  const match = POWER_PATTERN.exec(model);
+  if (!match) throw new Error(`Unknown inverter naming structure: ${model}`);
+  return [model, Number(match[1])];
+})));
+function inverterPowerKw(model) {
+  return INVERTER_POWER_KW[String(model ?? '').trim().toUpperCase()] ?? null;
+}
+
+// Electrical grid connection inferred from the Huawei product series.
+// These are product AC phases, not the phase count of backup outputs.
+const SINGLE_PHASE_FAMILIES = new Set(['L0','L1','LB0','LC0']);
+const THREE_PHASE_FAMILIES = new Set(['M0','M1','M2','M5','MB0','MAP0','BEM1']);
+function inverterPhase(model) {
+  const name=String(model??'').trim().toUpperCase();
+  if (!Object.hasOwn(INVERTER_POWER_KW,name)) return null;
+  if (name.startsWith('SUN2000L-')) return 'Single-phase';
+  const family=name.match(/-(L0|L1|LB0|LC0|M0|M1|M2|M5|MB0|MAP0|BEM1)(?:-|\(|$)/)?.[1];
+  if (SINGLE_PHASE_FAMILIES.has(family)) return 'Single-phase';
+  if (THREE_PHASE_FAMILIES.has(family)) return 'Three-phase';
+  // Legacy un-suffixed SUN2000 models: 2/3/3.68 kW are single phase;
+  // 8/10/12/17/20 kW belong to the three-phase commercial generation.
+  if (/^SUN2000-(2|3\.68)KTL$/.test(name)) return 'Single-phase';
+  if (/^SUN2000-(8|10|12|17|20)KTL$/.test(name)) return 'Three-phase';
+  return null;
+}
+
+function defaultInverterCatalog() {
+  return Object.fromEntries(INVERTER_MODELS.map(model => [model, {
+    model, category: 'Inverter', family: model.match(/-(L1|L0|LB0|LC0|M0|M1|M2|M5|MB0|MAP0|BEM1)(?:-|\(|$)/)?.[1] ?? '',
+    capacity: null, bms: null, from: null, to: null, powerKw: INVERTER_POWER_KW[model], phase: inverterPhase(model)
+  }]));
+}
+// Add missing standard inverter definitions without replacing customer-edited metadata.
+function mergeInverterCatalog(catalog) {
+  const defaults = defaultInverterCatalog(), next = {...catalog};
+  let changed = false;
+  for (const [model, definition] of Object.entries(defaults)) {
+    if (!next[model]) { next[model] = definition; changed = true; }
+    else if (next[model].category === 'Inverter' && (next[model].powerKw == null || next[model].phase == null)) {
+      // Only backfill absent metadata. Never overwrite customer-edited values.
+      next[model] = {...next[model], powerKw: next[model].powerKw ?? definition.powerKw, phase: next[model].phase ?? definition.phase}; changed = true;
+    }
+  }
+  return changed ? next : catalog;
+}
+
+return Object.assign({},{INVERTER_MODELS,INVERTER_POWER_KW,inverterPowerKw,inverterPhase,defaultInverterCatalog,mergeInverterCatalog});
+})();
+
 // MODULE: model.js
 __modules["model.js"]=(()=>{
+const {defaultInverterCatalog}=__modules["inverter-catalog.js"];
 // Catalogue, canonical keys, calendar utilities and record scope.
 
 const CATEGORIES = ['Inverter', 'Battery module', 'BMS'];
 const INITIAL_CATALOG = {
+  ...defaultInverterCatalog(),
   'LUNA2000-5-E0': {model:'LUNA2000-5-E0',category:'Battery module',family:'S0',capacity:5,bms:'LUNA2000-5KW-C0',from:null,to:null},
   'LUNA2000-5-E1': {model:'LUNA2000-5-E1',category:'Battery module',family:'S1',capacity:5,bms:'LUNA2000-10KW-C1',from:null,to:null},
   'LUNA2000-7-E1': {model:'LUNA2000-7-E1',category:'Battery module',family:'S1',capacity:7,bms:'LUNA2000-10KW-C1',from:null,to:null},
@@ -61,18 +205,29 @@ return Object.assign({},{CATEGORIES,INITIAL_CATALOG,clone,canonical,keyOf,uid,mo
 // MODULE: validation.js
 __modules["validation.js"]=(()=>{
 const {CATEGORIES,canonical,totalLabel,monthValue,isBlank,cellValue,columnName,keyOf,applicable}=__modules["model.js"];
+// Unified imports share the exact same model catalogue and numeric validation as legacy datasets.
+const IMPORT_DATASETS = ['unified','inverters','batteries'];
+function datasetAcceptsCategory(dataset,category) {
+  if(!IMPORT_DATASETS.includes(dataset)||!CATEGORIES.includes(category))return false;
+  return dataset==='unified'||dataset==='inverters'&&category==='Inverter'||dataset==='batteries'&&category!=='Inverter';
+}
+
 function validateProduct(p,catalog={}) {
   const errors=[];
   if(!canonical(p.model)||totalLabel(p.model)||p.model.includes('|'))errors.push('Use a non-empty model code without |.');
   if(!CATEGORIES.includes(p.category))errors.push('Choose a product category.');
   if(p.category==='Battery module'&&(!Number.isFinite(p.capacity)||p.capacity<=0))errors.push('Battery capacity must be a positive number in kWh.');
   if(p.category!=='Battery module'&&p.capacity!==null)errors.push('Only battery modules have capacity.');
+  if(p.category==='Inverter'&&p.powerKw!=null&&(!Number.isFinite(p.powerKw)||p.powerKw<=0))errors.push('Inverter rated power must be a positive kW value.');
+  if(p.category==='Inverter'&&p.phase!=null&&!['Single-phase','Three-phase'].includes(p.phase))errors.push('Inverter grid phase must be Single-phase or Three-phase.');
+  if(p.category!=='Inverter'&&(p.powerKw!=null||p.phase!=null))errors.push('Inverter power and phase apply only to inverter models.');
   if(p.bms && (!catalog[p.bms] || catalog[p.bms].category!=='BMS'))errors.push('Compatible BMS must be a classified BMS model.');
   if(p.from&&!monthValue(p.from)||p.to&&!monthValue(p.to)||p.from&&p.to&&p.from>p.to)errors.push('Check the applicability dates.');
   return errors;
 }
 function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}) {
   const errors=[],warnings=[],records=[],unknown=new Set(),models=new Set(),months=[],totals=[];
+  if(!IMPORT_DATASETS.includes(dataset))errors.push('Choose a supported dataset: Unified, Inverters, or Battery modules & BMS.');
   const header=rows[headerRow]??[];
   const width=Math.max(header.length,...rows.slice(headerRow).map(r=>r.length));
   const populatedCols=Array.from({length:width},(_,i)=>i).filter(i=>i>0 && rows.slice(headerRow).some(r=>!isBlank(cellValue(r[i]))));
@@ -90,7 +245,7 @@ function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}) {
     if(model.includes('|'))errors.push(`Unsupported | in model ${label}.`);
     const p=catalog[model];
     if(!p)unknown.add(model);
-    else if(dataset==='inverters'&&p.category!=='Inverter'||dataset==='batteries'&&p.category==='Inverter')errors.push(`${model} belongs to the other dataset. Imports cannot cross categories.`);
+    else if(!datasetAcceptsCategory(dataset,p.category))errors.push(`${model} (${p.category}) does not belong to the selected ${dataset} dataset (it belongs to the other dataset). Choose Unified to import all categories together.`);
     for(const {c,m} of cols){
       const cell=row[c],v=cellValue(cell),ref=cell?.ref??`${columnName(c)}${r+1}`,key=keyOf(m,model);
       if(seen.has(key))errors.push(`Duplicate model/month: ${model}, ${m} (${ref}).`);seen.add(key);
@@ -104,6 +259,7 @@ function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}) {
     }
   }
   if(!models.size)errors.push('No product rows found.');
+  if(dataset==='unified'&&totals.length>1)errors.push('Unified imports support at most one grand total row covering all categories; remove per-category total rows.');
   for(const total of totals)for(const {c,m} of cols){
     const cell=rows[total.row]?.[c],v=cellValue(cell),ref=cell?.ref??`${columnName(c)}${total.row+1}`;
     if(cell?.type==='e'||cell?.f&&isBlank(v)){errors.push(`Total ${ref} has an error or uncached formula. Recalculate and save in Excel.`);continue;}
@@ -117,23 +273,24 @@ function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}) {
   return {filename,sheet,dataset,headerRow,records,models:[...models],months:[...new Set(months)].sort(),unknown:[...unknown],errors:[...new Set(errors)],warnings,totalsFound:totals.length};
 }
 
-return Object.assign({},{validateProduct,validateMatrix});
+return Object.assign({},{IMPORT_DATASETS,datasetAcceptsCategory,validateProduct,validateMatrix});
 })();
 
 // MODULE: imports.js
 __modules["imports.js"]=(()=>{
 const {CATEGORIES,clone,uid,canonical,monthsBetween,applicable}=__modules["model.js"];
-const {validateProduct}=__modules["validation.js"];
+const {validateProduct,IMPORT_DATASETS,datasetAcceptsCategory}=__modules["validation.js"];
 function importPreview(state,validation) {
   return validation.records.map(r=>{const previous=state.records[r.key];let action=r.quantity===null?'Missing — retain existing':!previous||previous.quantity===null?'New':previous.quantity===r.quantity?'Unchanged':'Replace';return {...r,previous:previous?.quantity??null,difference:r.quantity!==null&&previous?.quantity!==null&&previous?.quantity!==undefined?r.quantity-previous.quantity:null,action};});
 }
 function commitImport(state,validation,{classifications={},confirmedCategories=[]}={}) {
-  if(validation.errors.length||validation.unknown.some(m=>!classifications[m]&&!state.catalog[m]))throw new Error('Resolve validation errors and classify every model before importing.');
+  if(!IMPORT_DATASETS.includes(validation.dataset)||validation.errors.length||validation.unknown.some(m=>!classifications[m]&&!state.catalog[m]))throw new Error('Resolve validation errors and classify every model before importing.');
+  if(confirmedCategories.some(c=>!CATEGORIES.includes(c)))throw new Error('Invalid reporting coverage category.');
   const next=clone(state),id=uid(),timestamp=new Date().toISOString(),changes=[],coverageChanges=[],catalogChanges=[];
   for(const [model,p]of Object.entries(classifications))if(!next.catalog[model]){const errs=validateProduct(p,{...next.catalog,...classifications});if(errs.length)throw new Error(errs.join(' '));next.catalog[model]=clone(p);catalogChanges.push({model,before:null,after:clone(p)});}
   for(const r of validation.records){
     const p=next.catalog[r.model];if(!p)throw new Error(`Unclassified model: ${r.model}.`);
-    if(validation.dataset==='inverters'&&p.category!=='Inverter'||validation.dataset==='batteries'&&p.category==='Inverter')throw new Error('Dataset category conflict.');
+    if(!datasetAcceptsCategory(validation.dataset,p.category))throw new Error(`Dataset category conflict for ${r.model}.`);
     if(r.quantity===null)continue;
     if(!Number.isSafeInteger(r.quantity)||r.quantity<0)throw new Error('Invalid quantity.');
     const old=next.records[r.key];if(old?.quantity===r.quantity)continue;
@@ -274,7 +431,38 @@ function findings(state,f) {
 }
 function filteredRecords(state,f) {const models=new Set(selectModels(state,f).map(p=>p.model));return Object.values(state.records).filter(r=>r.month>=f.start&&r.month<=f.end&&models.has(r.model)).sort((a,b)=>a.month.localeCompare(b.month)||a.model.localeCompare(b.model));}
 
-return Object.assign({},{metric,difference,ratio,comparisonPeriod,overview,latestComplete,aggregationKey,trend,movingAverage,ranking,familyRatios,findings,filteredRecords});
+/** Shared KPI resolver: reuse metric/ratio/familyRatios, never count configurations as installations. */
+function commercialKpi(state,start,end,id,{family='All'}={}){
+ const inv=()=>metric(state,start,end,'Inverter');
+ const bms=()=>metric(state,start,end,'BMS');
+ const modules=()=>metric(state,start,end,'Battery module');
+ const capacity=()=>metric(state,start,end,'Battery module',{capacity:true});
+ if(id==='inverters')return inv();
+ if(id==='bms')return bms();
+ if(id==='modules')return modules();
+ if(id==='capacity')return capacity();
+ if(id==='bmsPer100')return ratio(bms(),inv(),100);
+ if(id==='modulesPerBms')return family==='All'?ratio(modules(),bms()):familyRatios(state,{start,end},family).modulesPerBms;
+ if(id==='kwhPerBms')return family==='All'?ratio(capacity(),bms()):familyRatios(state,{start,end},family).kwhPerBms;
+ throw new Error('Unknown commercial KPI');
+}
+function sameQuarterYears(state,{quarter,years,kpi='inverters',family='All'}){
+ if(!Number.isInteger(quarter)||quarter<1||quarter>4)throw new Error('Select a quarter from Q1 to Q4');
+ if(!Array.isArray(years)||!years.length||years.length>30||years.some(y=>!Number.isInteger(y)||y<1900||y>9999))throw new Error('Select valid comparison years');
+ return [...new Set(years)].sort((a,b)=>a-b).map(year=>{
+  const first=String(year)+'-'+String((quarter-1)*3+1).padStart(2,'0');
+  const last=shiftMonth(first,2);
+  const result=commercialKpi(state,first,last,kpi,{family});
+  return {year,quarter,start:first,end:last,label:'Q'+quarter+' '+year,...result};
+ });
+}
+function kpiTrend(state,{start,end,aggregation='month',kpi='bmsPer100',family='All'}){
+ const buckets=new Map();
+ for(const m of monthsBetween(start,end)){const key=aggregationKey(m,aggregation);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(m);}
+ return [...buckets].map(([label,ms])=>({label,start:ms[0],end:ms.at(-1),...commercialKpi(state,ms[0],ms.at(-1),kpi,{family})}));
+}
+
+return Object.assign({},{metric,difference,ratio,comparisonPeriod,overview,latestComplete,aggregationKey,trend,movingAverage,ranking,familyRatios,findings,filteredRecords,commercialKpi,sameQuarterYears,kpiTrend});
 })();
 
 // MODULE: targets.js
@@ -326,6 +514,7 @@ return Object.assign({},{validateBackup});
 
 // MODULE: domain.js
 __modules["domain.js"]=(()=>{
+
 // Stable public API for the separated, browser-independent domain modules.
 
 
@@ -333,7 +522,7 @@ __modules["domain.js"]=(()=>{
 
 
 
-return Object.assign({},__modules["model.js"],__modules["validation.js"],__modules["imports.js"],__modules["calculations.js"],__modules["targets.js"],__modules["backup.js"],{});
+return Object.assign({},__modules["inverter-catalog.js"],__modules["model.js"],__modules["validation.js"],__modules["imports.js"],__modules["calculations.js"],__modules["targets.js"],__modules["backup.js"],{});
 })();
 
 // MODULE: exports.js
@@ -345,7 +534,7 @@ const toCsv=rows=>'\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 function exportRows(state,f){return [['Month','Model','Category','Family','Quantity','Activated capacity (kWh)','File','Worksheet','Cell','Original label','Import ID','Last update'],...filteredRecords(state,f).map(r=>{const p=state.catalog[r.model];return [r.month,r.model,p.category,p.family,r.quantity,p.category==='Battery module'?r.quantity*p.capacity:'',r.source.filename,r.source.sheet,r.source.cell,r.source.originalLabel,r.importId,r.updatedAt];})];}
 function summaryRows(state,f){const period=comparisonPeriod(f),a=overview(state,f),b=overview(state,{...f,start:period.start,end:period.end});return [['Metric','Current start','Current end','Comparison start','Comparison end','Current value','Comparison value','Current coverage','Comparison coverage','Category filter','Model filter','Family filter'],...Object.keys(a).map(k=>[k,f.start,f.end,period.start,period.end,a[k].value,b[k].value,a[k].status,b[k].status,f.category,f.model,f.family])];}
 function download(content,name,type='text/plain'){const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
-function templateRows(dataset,months){const models=dataset==='inverters'?['REPLACE-WITH-INVERTER-MODEL']:['LUNA2000-5-E0','LUNA2000-5-E1','LUNA2000-7-E1','LUNA2000-5KW-C0','LUNA2000-10KW-C1'];return [['index',...months.map(m=>m.replace('-',''))],...models.map(m=>[m,...months.map(()=>'')]),['Total',...months.map(()=>'')]];}
+function templateRows(dataset,months){const models=dataset==='unified'?['SUN2000-5K-LB0','SUN2000-10KTL-M1','LUNA2000-5-E0','LUNA2000-5-E1','LUNA2000-7-E1','LUNA2000-5KW-C0','LUNA2000-10KW-C1']:dataset==='inverters'?['REPLACE-WITH-INVERTER-MODEL']:['LUNA2000-5-E0','LUNA2000-5-E1','LUNA2000-7-E1','LUNA2000-5KW-C0','LUNA2000-10KW-C1'];return [['index',...months.map(m=>m.replace('-',''))],...models.map(m=>[m,...months.map(()=>'')]),['Total',...months.map(()=>'')]];}
 
 return Object.assign({},{escapeHtml,csvCell,toCsv,exportRows,summaryRows,download,templateRows});
 })();
@@ -357,22 +546,65 @@ const COLORS={'Inverter':'#ca1827','Battery module':'#176b78','BMS':'#827344','S
 const palette=['#136e7b','#724685','#ad5727','#296046','#346faf','#9e2455','#766315','#46596d'];
 function color(name){return COLORS[name]??palette[[...name].reduce((n,c)=>n+c.charCodeAt(0),0)%palette.length];}
 const fmt=v=>Math.abs(v)>=1000000?(v/1000000).toFixed(1)+'m':Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':Number.isInteger(v)?String(v):v.toFixed(1);
-function lineChart(series,{unit='activations',title='Activation trend',hidden=new Set(),id='main'}={}){
+// Trend-only transformation: the underlying activation totals and coverage remain unchanged.
+// All series use the SAME first observed period, rather than independently chosen baselines.
+function indexedSeries(series) {
+  if(!series.length)return {series:[],baseLabel:null,provisional:false};
+  const first=series[0].points??[];
+  const baselineIndex=first.findIndex((p,i)=>series.every(s=>{
+    const candidate=s.points?.[i];
+    return candidate?.label===p.label && Number.isFinite(candidate.value)&&candidate.value>0;
+  }));
+  if(baselineIndex<0)return {series:[],baseLabel:null,provisional:false};
+  const provisional=series.some(s=>!s.points[baselineIndex].complete);
+  return {baseLabel:first[baselineIndex].label,provisional,series:series.map(s=>{
+    const baseline=s.points[baselineIndex].value;
+    return {...s,points:s.points.map(p=>({...p,rawValue:p.value,
+      value:Number.isFinite(p.value)?p.value/baseline*100:null}))};
+  })};
+}
+function lineChart(series,{unit='activations',title='Activation trend',hidden=new Set(),id='main',scale='auto'}={}){
   const visible=series.filter(s=>!hidden.has(s.name)),points=series[0]?.points??[],n=points.length;
   const vals=visible.flatMap(s=>s.points.map(p=>p.value)).filter(v=>v!==null&&Number.isFinite(v));
-  if(!n||!vals.length)return '<div class="chart-empty">No visible values for this selection.<br><span>Toggle a series below, or import data and confirm coverage.</span></div><div class="legend">'+series.map(s=>`<button class="legend-item ${hidden.has(s.name)?'muted':''}" data-toggle-series="${e(s.name)}" data-chart="${e(id)}" aria-pressed="${!hidden.has(s.name)}"><i style="background:${s.color??color(s.name)}"></i>${e(s.name)}</button>`).join('')+'</div>';
-  const W=1000,H=300,L=64,R=24,T=22,B=48,max=Math.max(1,...vals)*1.14,pw=W-L-R,ph=H-T-B;
-  const x=i=>L+(n===1?pw/2:i/(n-1)*pw),y=v=>T+ph-v/max*ph;
+  const legend=()=>'<div class="legend">'+series.map(s=>`<button class="legend-item ${hidden.has(s.name)?'muted':''}" data-toggle-series="${e(s.name)}" data-chart="${e(id)}" aria-pressed="${!hidden.has(s.name)}"><i style="background:${s.color??color(s.name)}"></i>${e(s.name)}</button>`).join('')+'</div>';
+  if(!n||!vals.length)return '<div class="chart-empty">No visible values for this selection. Adjust the legend or confirm reporting coverage.</div>'+legend();
+  const W=1000,H=300,L=64,R=24,T=22,B=48,pw=W-L-R,ph=H-T-B;
+  const min=Math.min(...vals),max=Math.max(...vals),spread=max-min;
+  const focused=min>0&&(scale==='focus'||scale==='auto'&&spread>0&&spread/Math.max(max,1e-9)<.7);
+  const margin=Math.max(spread*.15,Math.abs(max)*.025,.05);
+  const bottom=focused?Math.max(0,min-margin):Math.min(0,min);
+  const top=focused?max+margin:Math.max(1,max*1.14);
+  const range=Math.max(top-bottom,1e-9);
+  const x=i=>L+(n===1?pw/2:i/(n-1)*pw),y=v=>T+ph-(v-bottom)/range*ph;
+  const showValue=v=>unit==='%'?v.toFixed(1)+'%':fmt(v);
   let svg=`<svg class="line-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${e(title)} in ${e(unit)}"><title>${e(title)} — ${e(unit)}</title>`;
-  for(let i=0;i<=4;i++){const v=max*i/4,yy=y(v);svg+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" class="gridline"/><text x="${L-12}" y="${yy+4}" text-anchor="end" class="axis">${fmt(v)}</text>`;}
-  const step=Math.max(1,Math.ceil(n/10));points.forEach((p,i)=>{if(i%step===0||i===n-1)svg+=`<text x="${x(i)}" y="${H-15}" text-anchor="middle" class="axis">${e(p.label)}</text>`;});
-  for(const s of visible){let run=[];const c=s.color??color(s.name),flush=()=>{if(run.length>1)svg+=`<polyline points="${run.join(' ')}" fill="none" stroke="${c}" stroke-width="2.6"/>`;run=[];};
-    s.points.forEach((p,i)=>{if(p.value===null||!p.complete){flush();}else run.push(`${x(i)},${y(p.value)}`);});flush();
-    s.points.forEach((p,i)=>{if(p.value===null)return;svg+=`<g tabindex="0" role="button" aria-label="${e(s.name)} ${e(p.label)}: ${e(p.value)} ${e(unit)}, ${e(p.status??'Complete')}" data-month="${e(p.start??p.label)}" data-end="${e(p.end??p.start??p.label)}" data-model="${e(s.model??'All')}"><title>${e(s.name)} · ${e(p.label)}: ${e(p.value)} ${e(unit)} · ${e(p.status??'Complete')}</title><circle cx="${x(i)}" cy="${y(p.value)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="${p.complete?c:'white'}" stroke="${c}" stroke-width="2"/></g>`;});
+  for(let i=0;i<=4;i++){
+    const v=bottom+range*i/4,yy=y(v);
+    svg+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" class="gridline"/><text x="${L-12}" y="${yy+4}" text-anchor="end" class="axis">${showValue(v)}</text>`;
   }
-  svg+='</svg><div class="legend">';
-  for(const s of series)svg+=`<button class="legend-item ${hidden.has(s.name)?'muted':''}" data-toggle-series="${e(s.name)}" data-chart="${e(id)}" aria-pressed="${!hidden.has(s.name)}"><i style="background:${s.color??color(s.name)}"></i>${e(s.name)}</button>`;
-  return svg+'</div><p class="chart-note">Hollow points are partial observations. Lines connect complete periods only. Select a point for evidence.</p>';
+  const step=Math.max(1,Math.ceil(n/10));
+  points.forEach((p,i)=>{if(i%step===0||i===n-1)svg+=`<text x="${x(i)}" y="${H-15}" text-anchor="middle" class="axis">${e(p.label)}</text>`;});
+  let provisionalCount=0;
+  for(const s of visible){
+    const c=s.color??color(s.name),sp=s.points;
+    for(let i=1;i<sp.length;i++){
+      const from=sp[i-1],to=sp[i];
+      if(!Number.isFinite(from.value)||!Number.isFinite(to.value))continue;
+      const partial=!from.complete||!to.complete;
+      if(partial)provisionalCount++;
+      svg+=`<line x1="${x(i-1)}" y1="${y(from.value)}" x2="${x(i)}" y2="${y(to.value)}" stroke="${c}" stroke-width="2.7" stroke-linecap="round" ${partial?'stroke-dasharray="7 5"':''}/>`;
+    }
+    sp.forEach((p,i)=>{
+      if(!Number.isFinite(p.value))return;
+      const raw=Number.isFinite(p.rawValue)?` · actual ${fmt(p.rawValue)} activations`:'';
+      const description=`${s.name} ${p.label}: ${showValue(p.value)}${unit==='%'?'':' '+unit}${raw} · ${p.status??'Complete'}`;
+      svg+=`<g tabindex="0" role="button" aria-label="${e(description)}" data-month="${e(p.start??p.label)}" data-end="${e(p.end??p.start??p.label)}" data-model="${e(s.model??'All')}"><title>${e(description)}</title><circle cx="${x(i)}" cy="${y(p.value)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="${p.complete?c:'white'}" stroke="${c}" stroke-width="2"/></g>`;
+    });
+  }
+  svg+='</svg>'+legend();
+  const note=provisionalCount?'Dashed lines and hollow markers indicate provisional observations; gaps are not connected.':'Solid lines indicate complete periods.';
+  const zoom=focused?' Focused y-axis: it does not start at zero. Use actual values for volume comparisons.':'';
+  return svg+`<p class="chart-note">${e(note+zoom)} Select a point for recorded evidence.</p>`;
 }
 function barChart(rows,{unit='activations',signed=false,empty='No complete comparison available.'}={}){
   const valid=rows.filter(r=>r.value!==null&&Number.isFinite(r.value));if(!valid.length)return `<div class="chart-empty">${e(empty)}</div>`;
@@ -385,14 +617,14 @@ function stackedMix(items,unit='activations'){
   return `<div class="stack" role="img" aria-label="Product mix in ${e(unit)}">${valid.map(r=>`<button data-model-detail="${e(r.model??r.label)}" style="width:${r.value/total*100}%;background:${color(r.label)}" title="${e(r.label)}: ${r.value.toLocaleString('en-IE')} ${e(unit)} (${(r.value/total*100).toFixed(1)}%)"><span class="sr-only">${e(r.label)} ${(r.value/total*100).toFixed(1)}%</span></button>`).join('')}</div><div class="mix-key">${valid.map(r=>`<button data-model-detail="${e(r.model??r.label)}"><i style="background:${color(r.label)}"></i><span>${e(r.label)}</span><strong>${(r.value/total*100).toFixed(1)}%</strong></button>`).join('')}</div>`;
 }
 
-return Object.assign({},{COLORS,color,lineChart,barChart,stackedMix});
+return Object.assign({},{COLORS,color,indexedSeries,lineChart,barChart,stackedMix});
 })();
 
 // MODULE: views.js
 __modules["views.js"]=(()=>{
 const D=__modules["domain.js"];
 const {escapeHtml:e}=__modules["exports.js"];
-const {lineChart,barChart,stackedMix,color}=__modules["charts.js"];
+const {lineChart,indexedSeries,barChart,stackedMix,color}=__modules["charts.js"];
 const NAV=['Overview','Inverters','Batteries & BMS','Comparisons','Targets','Data'];
 const ROUTES=['overview','inverters','batteries','comparisons','targets','data'];
 const ICONS=['M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z','M4 4h16v16H4zM8 8h8M8 12h8M8 16h4','M3 7h17v12H3zM7 7V4h8v3M8 10v6M5 13h6M14 13h3','M4 20V10h5v10M10 20V4h5v16M16 20v-8h5v8','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 10v4M10 12h4','M3 6c0-4 18-4 18 0s-18 4-18 0v12c0 4 18 4 18 0V6M3 12c0 4 18 4 18 0'];
@@ -410,26 +642,70 @@ function filters(state,ui){const f=state.preferences,c=D.comparisonPeriod(f),las
 <label class="field">Compare with<select data-filter="comparison">${[['year','Same months last year'],['previous','Previous equal interval'],['custom','Custom interval']].map(([v,t])=>option(v,t,f.comparison)).join('')}</select></label>
 <button class="filter-toggle quiet" data-action="toggle-filters" aria-expanded="${ui.moreFilters}">Product filters ${ui.moreFilters?'−':'＋'}${f.category!=='All'||f.model!=='All'||f.family!=='All'?' •':''}</button></div>
 ${f.comparison==='custom'?`<div class="filter-extra"><label class="field">Comparison from<input type="month" data-filter="compareStart" value="${f.compareStart}"></label><label class="field">Comparison to<input type="month" data-filter="compareEnd" value="${f.compareEnd}"></label></div>`:''}
-${ui.moreFilters?`<div class="filter-extra"><label class="field">Category<select data-filter="category">${['All',...D.CATEGORIES].map(v=>option(v,v==='All'?'All categories':v,f.category)).join('')}</select></label><label class="field">Model<select data-filter="model">${option('All','All models',f.model)}${models.map(p=>option(p.model,p.model,f.model)).join('')}</select></label><label class="field">Family<select data-filter="family">${['All',...[...new Set(Object.values(state.catalog).map(p=>p.family).filter(Boolean))].sort()].map(v=>option(v,v==='All'?'All families':v,f.family)).join('')}</select></label><button class="quiet" data-action="reset-filters">Reset product filters</button></div>`:''}
+${ui.moreFilters?`<div class="filter-extra"><label class="field">Category<select data-filter="category">${['All',...D.CATEGORIES].map(v=>option(v,v==='All'?'All categories':v,f.category)).join('')}</select></label><label class="field">Model<select data-filter="model">${option('All','All models',f.model)}${models.map(p=>option(p.model,p.model,f.model)).join('')}</select></label><label class="field">Grid Phase<select id="grid-phase">${[["All","All phases"],["Single-phase","Single-phase"],["Three-phase","Three-phase"]].map(([v,t])=>option(v,t,ui.gridPhase??"All")).join("")}</select></label><label class="field">Family<select data-filter="family">${['All',...[...new Set(Object.values(state.catalog).map(p=>p.family).filter(Boolean))].sort()].map(v=>option(v,v==='All'?'All families':v,f.family)).join('')}</select></label><button class="quiet" data-action="reset-filters">Reset product filters</button></div>`:''}
 <div class="filter-caption"><span><strong>${e(rangeLabel(f.start,f.end))}</strong> versus <strong>${e(rangeLabel(c.start,c.end))}</strong> · ${f.category==='All'?'All categories':e(f.category)} · ${f.model==='All'?'All models':e(f.model)} · ${f.family==='All'?'All families':e(f.family)}</span><span>Latest complete integrated month: ${last?labelMonth(last):'not yet confirmed'}</span></div>`;}
 function heading(state,title,subtitle){const f=state.preferences,c=D.comparisonPeriod(f);return `<div class="page-title"><div><div class="eyebrow">Ireland · Digital Power</div><h1>${e(title)}</h1><p>${e(subtitle)}</p></div><div class="page-meta">${e(rangeLabel(f.start,f.end))}<br>vs ${e(rangeLabel(c.start,c.end))}<br>${e(f.category)} · ${e(f.model)} · ${e(f.family)}<br>Updated ${state.updatedAt?new Date(state.updatedAt).toLocaleString('en-IE',{timeZone:'Europe/Dublin',dateStyle:'medium',timeStyle:'short'}):'no imports yet'} · Dublin</div></div>`;}
 function emptyView(state){return heading(state,'Activation overview','A clear view of equipment activity, product mix and change.')+`<section class="empty-hero"><div class="empty-copy"><div class="eyebrow">Ready for your activation data</div><h2>From monthly files<br>to a clear market view.</h2><p>Import your inverter and battery worksheets to investigate trends, compare periods and prepare your next management review.</p><div class="empty-actions"><button class="primary" data-action="import">Import your first Excel file →</button><button class="quiet" data-action="demo">Explore fictional demo</button></div><div class="empty-facts">Excel matrices accepted directly · No restructuring needed<br>Files are processed on this device · No AI service required</div></div><div class="empty-steps"><div class="empty-step"><span>1</span><div><h3>Import & validate</h3><p>Choose the worksheet, check models and reconcile monthly totals.</p></div></div><div class="empty-step"><span>2</span><div><h3>Confirm your coverage</h3><p>Declare the expected models. Missing values remain distinct from zero.</p></div></div><div class="empty-step"><span>3</span><div><h3>Explore & present</h3><p>See product trends, explain changes and export the evidence.</p></div></div></div></section><div class="feature-row"><div><h3>Volumes & capacity</h3><p>Inverters, BMS and battery modules are reported separately. Capacity uses each module’s catalogue definition.</p></div><div><h3>Transparent comparisons</h3><p>Compare calendar periods, isolate the largest changes and inspect the original source cells.</p></div><div><h3>Context you can trust</h3><p>BMS ratios remain activation ratios. There is no assumed pairing between individual devices.</p></div></div>`;}
-function card(title,m,prev,{unit='',ratio=false,digits=0}={}){const d=ratio?{delta:m.complete&&prev?.complete&&m.value!==null&&prev.value!==null?m.value-prev.value:null,pct:null}:D.difference(m,prev);return `<div class="kpi"><div class="kpi-label">${e(title)}<span class="badge">${ratio?'Ratio':'Calculated'}</span></div><div class="kpi-value">${number(m.value,digits)}<small>${e(unit)}</small></div><div class="kpi-foot">${d.delta!==null?`<strong class="${d.delta>=0?'up':'down'}">${signed(d.delta,ratio?1:0)}${ratio?(unit==='per 100'?' points':` ${e(unit)}`):''}${d.pct!==null?` (${signed(d.pct,1)}%)`:''}</strong>${d.label??''}`:e(m.value===null?m.status:'Recorded subtotal · '+m.status)}<br>${prev?.value!==null&&prev?.value!==undefined?`Comparison: ${number(prev.value,digits)} ${e(unit)}${prev.complete?'':' · '+e(prev.status)}`:'No complete comparison available'}</div></div>`;}
+function card(title,m,prev,{unit='',ratio=false,digits=0}={}){const d=ratio?{delta:m.complete&&prev?.complete&&m.value!==null&&prev.value!==null?m.value-prev.value:null,pct:null}:D.difference(m,prev);return `<div class="kpi"><div class="kpi-label">${e(title)}<span class="badge">${ratio?'Ratio':'Calculated'}</span></div><div class="kpi-value">${number(m.value,digits)}<small>${e(unit)}</small></div><div class="kpi-foot">${d.delta!==null?`<strong class="${d.delta>=0?'up':'down'}">${signed(d.delta,ratio?1:0)}${ratio?(unit==='per 100'||unit==='%'?' pp':` ${e(unit)}`):''}${d.pct!==null?` (${signed(d.pct,1)}%)`:''}</strong>${d.label??''}`:e(m.value===null?m.status:'Recorded subtotal · '+m.status)}<br>${prev?.value!==null&&prev?.value!==undefined?`Comparison: ${number(prev.value,digits)}${unit==='%'?'':' '}${e(unit)}${prev.complete?'':' · '+e(prev.status)}`:'No complete comparison available'}</div></div>`;}
 function notes(f){return `<details class="table-note"><summary>How to interpret these metrics</summary><p>Activations are recorded equipment activity, not sales, revenue, households or verified installations. One BMS per battery-equipped inverter is a user-provided analytical assumption. Retrofits, replacements, expansions and activation timing can distort BMS/inverter ratios. No individual equipment pairing is available. S1 module quantities cannot identify the number or configuration of installations.</p></details>`;}
 function coverageNotice(state,f){const a=D.overview(state,f),needed=['inverter','bms','battery'].filter(k=>f.category==='All'||({inverter:'Inverter',bms:'BMS',battery:'Battery module'})[k]===f.category);if(needed.every(k=>a[k].complete))return '';return `<div class="notice"><p><strong>Reporting coverage needs attention.</strong> Available values are recorded subtotals. Complete growth statements and cross-category ratios are withheld until all required values and scope are confirmed.</p><button class="small" data-data-tab="coverage">Review coverage</button></div>`;}
 const panel=(title,sub,body,actions='')=>`<section class="panel"><div class="panel-head"><div><h2>${title}</h2><p>${sub}</p></div>${actions}</div>${body}</section>`;
 function eventsTimeline(state,f){const es=state.events.filter(x=>x.date.slice(0,7)>=f.start&&x.date.slice(0,7)<=f.end).sort((a,b)=>a.date.localeCompare(b.date));return es.length?`<div class="event-strip">${es.map(x=>`<button class="event-chip" data-event-detail="${e(x.id)}"><strong>${e(x.date)}</strong>${e(x.title)}</button>`).join('')}</div><p class="chart-note">Dated context. Timing alone does not establish causation.</p>`:'';}
 function overviewView(state,ui){if(!Object.keys(state.records).length)return emptyView(state);const f=state.preferences,c=D.comparisonPeriod(f),a=D.overview(state,f),b=D.overview(state,{...f,start:c.start,end:c.end}),fs=D.findings(state,f);const cats=D.CATEGORIES.filter(x=>f.category==='All'||f.category===x),series=ui.trendMetric==='capacity'?[{name:'Battery capacity',color:'#176b78',points:D.trend(state,f,'Battery module',true)}]:cats.map(category=>({name:category,points:D.trend(state,f,category)}));const ratioScope=f.category==='All'&&f.family==='All'&&f.model==='All';return heading(state,'Activation overview','Equipment activity, product mix and the changes that matter.')+coverageNotice(state,f)+
-`<div class="kpi-grid">${card('Inverter activations',a.inverter,b.inverter)}${card('BMS activations',a.bms,b.bms)}${card('Battery modules',a.battery,b.battery)}${card('Activated battery capacity',a.capacity,b.capacity,{unit:'kWh'})}${card('BMS per 100 inverters',a.attachment,b.attachment,{unit:'per 100',ratio:true,digits:1})}${card('Activated kWh per BMS',a.kwhPerBms,b.kwhPerBms,{unit:'kWh/BMS',ratio:true,digits:1})}</div>`+
+`<div class="kpi-grid">${card('Inverter activations',a.inverter,b.inverter)}${card('BMS activations',a.bms,b.bms)}${card('Battery modules',a.battery,b.battery)}${card('Activated battery capacity',a.capacity,b.capacity,{unit:'kWh'})}${card('BMS / Inverter',a.attachment,b.attachment,{unit:'%',ratio:true,digits:1})}${card('Activated kWh per BMS',a.kwhPerBms,b.kwhPerBms,{unit:'kWh/BMS',ratio:true,digits:1})}</div>`+
 (fs.length?`<div class="section-label"><h2>What changed</h2><small>Rule-based findings · validated comparisons</small></div><div class="findings">${fs.map(x=>`<article class="finding"><h3>${e(x.title)}</h3><p>${e(x.text)}</p></article>`).join('')}</div>`:'')+
 (a.attachment.value>100?'<div class="notice"><p><strong>BMS activations exceed inverter activations.</strong> Review retrofits, replacements and activation timing. The ratio is intentionally not capped at 100.</p></div>':'')+panel('Activation trend',`${e(rangeLabel(f.start,f.end))} · ${e(f.aggregation)} aggregation · ${ui.trendMetric==='capacity'?'kWh':'activations'} · ${e(f.model==='All'?'All selected models':f.model)}`,`<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,unit:ui.trendMetric==='capacity'?'kWh':'activations',id:'overview'})}</div>${eventsTimeline(state,f)}<details class="table-note"><summary>Underlying values</summary>${trendTable(series)}</details>`,`<div class="panel-actions"><select id="trend-metric" aria-label="Trend metric">${option('volume','Equipment volumes',ui.trendMetric)}${option('capacity','Battery capacity (kWh)',ui.trendMetric)}</select><button class="small editing" data-action="event">Add event</button></div>`)+
-`<div class="grid-equal">${panel('Longer-term view',`Windows ending ${e(labelMonth(f.end))} · selected product filters`,rollingTable(state,f))}${panel('BMS per 100 inverters','Overall scope · aggregate BMS ÷ aggregate inverters × 100',ratioScope?rollingRatios(state,f):'<p class="table-note">Reset product filters to analyse this overall ratio. BMS units cannot be allocated to individual inverter models.</p>')}</div>`+notes(f);
+(ratioScope?[['bmsPer100','BMS / Inverter','%'],['modulesPerBms','Battery modules per BMS','modules/BMS'],['kwhPerBms','Activated kWh per BMS','kWh/BMS']].map(([key,label,unit])=>panel(label,'Historical aggregate activation ratio',`<div class="chart-scroll">${lineChart([{name:label,model:'All',points:D.kpiTrend(state,{...f,kpi:key})}],{id:'kpi-'+key,unit,title:label,hidden:ui.hiddenSeries})}</div>`)).join(''):'')+`<div class="grid-equal">${panel('Longer-term view',`Windows ending ${e(labelMonth(f.end))} · selected product filters`,rollingTable(state,f))}${panel('BMS / Inverter','Aggregate BMS ÷ aggregate inverter activations · expressed as %',ratioScope?rollingRatios(state,f):'<p class="table-note">Reset product filters to analyse this overall ratio. BMS units cannot be allocated to individual inverter models.</p>')}</div>`+notes(f);
 }
 function trendTable(series){const ps=series[0]?.points??[];return `<div class="table-wrap"><table><thead><tr><th>Period</th>${series.map(s=>`<th class="num">${e(s.name)}</th>`).join('')}</tr></thead><tbody>${ps.map((p,i)=>`<tr><td>${e(p.label)}</td>${series.map(s=>`<td class="num">${number(s.points[i]?.value,1)} ${s.points[i]?.complete?'':'*'}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p>* Incomplete observation; see reporting coverage.</p>`;}
 function rollingTable(state,f){const rows=D.CATEGORIES.filter(c=>f.category==='All'||c===f.category).map(c=>{const opts={model:f.model,family:f.family},ytd=D.metric(state,`${f.end.slice(0,4)}-01`,f.end,c,opts),r=D.metric(state,D.shiftMonth(f.end,-11),f.end,c,opts),p=D.metric(state,D.shiftMonth(f.end,-23),D.shiftMonth(f.end,-12),c,opts),ma=D.movingAverage(state,f.end,c,opts),d=D.difference(r,p);return `<tr><td>${e(c)}</td><td class="num">${number(ytd.value)}${ytd.complete?'':'*'}</td><td class="num">${number(r.value)}${r.complete?'':'*'}</td><td class="num">${number(p.value)}${p.complete?'':'*'}</td><td class="num">${signed(d.delta)}</td><td class="num">${number(ma.value,1)}</td></tr>`;});return `<div class="table-wrap"><table><thead><tr><th>Activations</th><th class="num">YTD</th><th class="num">Last 12m</th><th class="num">Prior 12m</th><th class="num">Δ</th><th class="num">3m average</th></tr></thead><tbody>${rows.join('')}</tbody></table></div><p class="table-note">* Recorded subtotal. Moving averages require 3 complete months.<br>Last 12m: ${rangeLabel(D.shiftMonth(f.end,-11),f.end)}. Prior 12m: ${rangeLabel(D.shiftMonth(f.end,-23),D.shiftMonth(f.end,-12))}.</p>`;}
-function rollingRatios(state,f){return `<div class="ratios">${[3,12].map(n=>{const s=D.shiftMonth(f.end,1-n),b=D.metric(state,s,f.end,'BMS'),i=D.metric(state,s,f.end,'Inverter'),r=D.ratio(b,i,100);return `<div class="ratio-stat"><small>Rolling ${n} months</small><strong>${number(r.value,1)}</strong><p>${rangeLabel(s,f.end)}<br>${number(b.value)} BMS / ${number(i.value)} inverters<br>${e(r.status)}${r.value>100?' · Above 100: review retrofits, replacements and timing.':''}</p></div>`;}).join('')}</div><p class="table-note">Longer windows reduce timing effects. They do not eliminate retrofit or replacement effects.</p>`;}
-function inverterView(state,ui){const f={...state.preferences},r=D.ranking(state,f,'Inverter'),show=r.slice(0,8),series=show.map(row=>({name:row.model,model:row.model,points:D.trend(state,f,'Inverter',false,row.model)}));if(f.category!=='All'&&f.category!=='Inverter')return heading(state,'Inverters','Trends, product mix and contributions to change.')+'<div class="notice">The category filter excludes inverters. Select Inverter or All categories.</div>';return heading(state,'Inverters','Trends, product mix and contributions to change.')+coverageNotice(state,{...f,category:'Inverter'})+
-panel('Inverter activations by model',`${e(rangeLabel(f.start,f.end))} · activations · ${e(f.aggregation)}${r.length>8?' · top 8 models by selected-period volume':''}`,`<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,id:'inverters',title:'Inverter activations by model'})}</div>`)+`<div class="grid-equal">${panel('Volume ranking','Recorded activations · selected period',barChart(r.slice(0,12).map(x=>({label:x.model,model:x.model,value:x.current.value}))))}${panel('Contribution to change','Signed absolute change · complete periods only',barChart([...r].sort((a,b)=>Math.abs(b.delta??0)-Math.abs(a.delta??0)).slice(0,12).map(x=>({label:x.model,model:x.model,value:x.delta})),{signed:true}))}</div>`+
+function rollingRatios(state,f){return `<div class="ratios">${[3,12].map(n=>{const s=D.shiftMonth(f.end,1-n),b=D.metric(state,s,f.end,'BMS'),i=D.metric(state,s,f.end,'Inverter'),r=D.ratio(b,i,100);return `<div class="ratio-stat"><small>Rolling ${n} months</small><strong>${number(r.value,1)}%</strong><p>${rangeLabel(s,f.end)}<br>${number(b.value)} BMS / ${number(i.value)} inverters<br>${e(r.status)}${r.value>100?' · Above 100: review retrofits, replacements and timing.':''}</p></div>`;}).join('')}</div><p class="table-note">Longer windows reduce timing effects. They do not eliminate retrofit or replacement effects.</p>`;}
+function inverterPhaseTrend(state,f,selected='All') {
+ const months=D.monthsBetween(f.start,f.end);
+ return ['Single-phase','Three-phase'].filter(phase=>selected==='All'||phase===selected).map(phase=>({
+ name:phase,model:'All',points:months.map(month=>{
+  const products=D.selectModels(state,{category:'Inverter',model:f.model,family:f.family}).filter(p=>p.phase===phase&&D.applicable(p,month));
+  const cover=state.coverage[month+'|Inverter'];
+  const expected=products.filter(p=>cover?.expected?.includes(p.model));
+  const records=products.map(p=>({model:p.model,value:state.records[D.keyOf(month,p.model)]?.quantity})).filter(r=>Number.isSafeInteger(r.value));
+  const undeclared=records.some(r=>!cover?.expected?.includes(r.model));
+  const complete=!!cover?.confirmed && month<=D.closedMonth() && expected.length>0 && !undeclared &&
+    expected.every(p=>Number.isSafeInteger(state.records[D.keyOf(month,p.model)]?.quantity));
+  return {label:month,value:records.length?records.reduce((sum,r)=>sum+r.value,0):complete?0:null,
+    complete,status:complete?'Complete':'Partial / check scope',start:month,end:month};
+ })
+ }));
+}
+function phaseComparisonPanel(state,f,ui){
+ const raw=inverterPhaseTrend(state,f,ui.gridPhase??'All');
+ const mode=ui.phaseChartMode??'indexed',index=indexedSeries(raw),normalized=mode==='indexed';
+ const selected=normalized?index.series:raw;
+ const subtitle=normalized?'Relative activation trend · common start = 100 (not absolute volume)':'Observed inverter activations by grid phase · absolute number of units';
+ const info=normalized&&index.baseLabel?`<p class="chart-note">Both series use ${e(index.baseLabel)} as the same 100-point baseline. ${index.provisional?'The baseline contains provisional observations. ':''}Actual activation counts are available in each point’s tooltip and in Absolute activations mode.</p>`:
+ normalized?'<p class="chart-note">A normalized comparison needs at least one period with positive observations in every visible phase. Switch to absolute values to inspect available data.</p>':'<p class="chart-note">The two phases share an absolute scale. Check the original volumes before drawing conclusions about market size.</p>';
+ const control=`<label class="field editing">View<select id="phase-chart-mode">${option('indexed','Trend index (base 100)',mode)}${option('absolute','Absolute activations',mode)}</select></label>`;
+ return panel('Single-phase vs Three-phase',subtitle,
+ `<div class="chart-scroll">${lineChart(selected,{hidden:ui.hiddenSeries,id:'phase',title:'Inverter activations by grid phase',unit:normalized?'index (base 100)':'activations'})}</div>${info}`,
+ control);
+}
+const INVERTER_CHART_MAX=16;
+function selectedInverterModels(rows,selection=null){
+  if(selection===null)return rows.slice(0,8);
+  if(!Array.isArray(selection))return [];
+  const names=new Set(selection);
+  return rows.filter(row=>names.has(row.model));
+}
+function inverterChartPicker(rows,selected,ui){
+ const open=!!ui.inverterPickerOpen,query=(ui.inverterModelSearch??'').trim().toLowerCase(),selectedNames=new Set(selected.map(row=>row.model));
+ const matches=rows.filter(row=>row.model.toLowerCase().includes(query));
+ const actions=`<div class="panel-actions editing"><span class="model-count">${selected.length} / ${rows.length} models plotted</span><button class="small" data-action="inverter-chart-picker" aria-expanded="${open}">${open?'Close selector':'Choose models'}</button><button class="small" data-action="inverter-chart-top">Reset to Top 8</button></div>`;
+ const form=open?`<section class="model-picker editing" aria-label="Select inverter models"><div class="model-picker-toolbar"><label class="field">Search all inverter models<input id="inverter-model-search" type="search" value="${e(ui.inverterModelSearch??'')}" placeholder="Model code, e.g. SUN2000-17K…" autocomplete="off"></label><button class="small" data-action="inverter-chart-clear">Clear all</button></div>
+  <p class="table-note">All ${rows.length} in-scope inverter models are available, not just the Top 8. Select up to ${INVERTER_CHART_MAX} at once.</p>
+  <div class="model-picker-list" role="group" aria-label="Inverter models">${matches.map(row=>`<button type="button" class="model-picker-choice ${selectedNames.has(row.model)?'selected':''}" data-inverter-chart-model="${e(row.model)}" aria-pressed="${selectedNames.has(row.model)}"><span class="model-picker-indicator" aria-hidden="true">${selectedNames.has(row.model)?'✓':'+'}</span><span class="model-picker-name">${e(row.model)}</span><span class="model-picker-volume">${row.current.value===null?'No observations':number(row.current.value)+' activations'}</span></button>`).join('')||'<p class="table-note">No model matches your search.</p>'}</div></section>`:'';
+ return {actions,form};
+}
+function inverterView(state,ui){const f={...state.preferences},phase=ui.gridPhase??'All',phaseRows=D.ranking(state,f,'Inverter').filter(x=>phase==='All'||state.catalog[x.model]?.phase===phase),phaseTotal=phaseRows.every(x=>x.current.complete)?phaseRows.reduce((n,x)=>n+(x.current.value??0),0):null,r=phaseRows.map(x=>({...x,share:phaseTotal>0?x.current.value/phaseTotal*100:null})),show=selectedInverterModels(r,ui.inverterSelectedModels??null),picker=inverterChartPicker(r,show,ui),series=show.map(row=>({name:row.model,model:row.model,points:D.trend(state,f,'Inverter',false,row.model)}));if(f.category!=='All'&&f.category!=='Inverter')return heading(state,'Inverters','Trends, product mix and contributions to change.')+'<div class="notice">The category filter excludes inverters. Select Inverter or All categories.</div>';return heading(state,'Inverters','Trends, product mix and contributions to change.')+coverageNotice(state,{...f,category:'Inverter'})+
+phaseComparisonPanel(state,f,ui)+panel('Inverter activations by model',`${e(rangeLabel(f.start,f.end))} · activations · ${e(f.aggregation)} · ${ui.inverterSelectedModels===null?'Top 8 default':show.length+' selected model(s)'}`,`${picker.form}<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,id:'inverters',title:'Inverter activations by model'})}</div><p class="table-note">This model selection changes only this chart. Rankings, product mix and KPIs keep their existing filters.</p>`,picker.actions)+`<div class="grid-equal">${panel('Volume ranking','Recorded activations · selected period',barChart(r.slice(0,12).map(x=>({label:x.model,model:x.model,value:x.current.value}))))}${panel('Contribution to change','Signed absolute change · complete periods only',barChart([...r].sort((a,b)=>Math.abs(b.delta??0)-Math.abs(a.delta??0)).slice(0,12).map(x=>({label:x.model,model:x.model,value:x.delta})),{signed:true}))}</div>`+
 panel('Product mix','Share of recorded inverter activations · partial data can change these shares',stackedMix(r.map(x=>({label:x.model,model:x.model,value:x.current.value}))))+rankingTable(r,ui,'Inverter')+notes(f);}
 function rankingTable(rows,ui,category){const filtered=rows.filter(r=>r.model.toLowerCase().includes((ui.tableSearch??'').toLowerCase()));return panel(`${e(category)} model detail`,'Every row opens source evidence and calculations',`<div class="table-wrap"><table><thead><tr><th>Product model</th><th class="num">Current</th><th class="num">Comparison</th><th class="num">Absolute Δ</th><th class="num">Change</th><th class="num">Share</th><th>Coverage</th></tr></thead><tbody>${filtered.map(r=>`<tr><td><button class="text-button" data-model-detail="${e(r.model)}">${e(r.model)}</button></td><td class="num">${number(r.current.value)}</td><td class="num">${number(r.previous.value)}</td><td class="num">${signed(r.delta)}</td><td class="num">${r.pct===null?(r.previous.value===0&&r.previous.complete?'No % baseline':'—'):signed(r.pct,1)+'%'}</td><td class="num">${r.share===null?'—':number(r.share,1)+'%'}</td><td>${badge(r.current.status)}</td></tr>`).join('')||'<tr><td colspan="7">No matching product records.</td></tr>'}</tbody></table></div>`,`<input class="editing" id="table-search" type="search" placeholder="Search model…" aria-label="Search product models" value="${e(ui.tableSearch??'')}">`);}
 function batteriesView(state,ui){const f=state.preferences,c=D.comparisonPeriod(f),r=D.ranking(state,f,'Battery module'),b=D.ranking(state,f,'BMS'),capacity=ui.mixBasis==='capacity';if(f.category==='Inverter')return heading(state,'Batteries & BMS','Activated capacity, family mix and compatible BMS ratios.')+'<div class="notice">The category filter excludes batteries and BMS. Select All categories, Battery module or BMS.</div>';const selectedCats=['Battery module','BMS'].filter(x=>f.category==='All'||f.category===x),series=selectedCats.flatMap(cat=>D.selectModels(state,{category:cat,model:f.model,family:f.family}).map(p=>({name:p.model,model:p.model,points:D.trend(state,f,cat,false,p.model)})));const families=['S0','S1'].filter(fam=>f.family==='All'||f.family===fam);return heading(state,'Batteries & BMS','Module volume, activated capacity and family-specific activation ratios.')+coverageNotice(state,f)+
@@ -437,13 +713,38 @@ function batteriesView(state,ui){const f=state.preferences,c=D.comparisonPeriod(
 panel('Equipment activation trend',`${e(rangeLabel(f.start,f.end))} · activations · selected models and families`,`<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,id:'batteries'})}</div>`)+
 (f.category!=='BMS'?panel('Battery module mix',`${capacity?'Activated capacity (kWh)':'Number of modules'} · share of recorded subtotal`,stackedMix(r.map(x=>({label:x.model,model:x.model,value:x.current.value===null?null:x.current.value*(capacity?state.catalog[x.model].capacity:1)})),capacity?'kWh':'modules'),`<select id="mix-basis" aria-label="Battery share basis">${option('modules','By number of modules',ui.mixBasis)}${option('capacity','By activated capacity',ui.mixBasis)}</select>`)+rankingTable(r,ui,'Battery module'):'')+
 (f.category!=='Battery module'?panel('BMS product mix','C0 and C1 share of recorded BMS activations',stackedMix(b.map(x=>({label:x.model,model:x.model,value:x.current.value}))))+rankingTable(b,ui,'BMS'):'')+notes(f);}
+function quarterlyIntelligence(state,ui){
+ const years=[...new Set(Object.keys(state.coverage).map(x=>Number(x.slice(0,4))))].filter(y=>Number.isInteger(y)&&y>=1900&&y<=9999).sort((a,b)=>a-b);
+ const selected=years.length?years:[],q=ui.quarter??3,kpi=ui.quarterMetric??'inverters';
+ const points=selected.length?D.sameQuarterYears(state,{quarter:q,years:selected,kpi}):[];
+ const prior=points.slice(0,-1),last=points.at(-1),prev=prior.at(-1);
+ const valueOf=x=>x?.complete?x.value:null;
+ const d=last&&prev&&kpi!=='bmsPer100'&&kpi!=='modulesPerBms'&&kpi!=='kwhPerBms'?D.difference(last,prev):null;
+ return panel('Quarterly Intelligence','Compare the same calendar quarter across available years, without mixing Q1 with Q2',
+ `<div class="form-row editing"><label class="field">Quarter<select id="quarter-select">${[1,2,3,4].map(n=>option(String(n),'Q'+n,String(q))).join('')}</select></label><label class="field">Metric<select id="quarter-metric">${[['inverters','Inverter activations'],['bms','BMS activations'],['modules','Battery modules'],['capacity','Battery capacity (kWh)'],['bmsPer100','BMS / Inverter (%)'],['modulesPerBms','Modules per BMS'],['kwhPerBms','kWh per BMS']].map(([v,l])=>option(v,l,kpi)).join('')}</select></label></div>`+
+ (points.length?`<div class="chart-scroll">${lineChart([{name:kpi==='bmsPer100'?'BMS / Inverter':kpi,model:'All',points}],{id:'quarterly',title:'Same-quarter KPI year by year',unit:kpi==='capacity'?'kWh':kpi==='kwhPerBms'?'kWh/BMS':kpi==='bmsPer100'?'%':'ratio or activations',hidden:ui.hiddenSeries})}</div><div class="table-wrap"><table><thead><tr><th>Quarter</th><th class="num">KPI</th><th>Status</th><th class="num">Year-on-year change</th></tr></thead><tbody>${points.map((p,i)=>{const previous=points.find(x=>x.year===p.year-1),delta=previous&&valueOf(p)!==null&&valueOf(previous)!==null?p.value-previous.value:null;return `<tr><td>${e(p.label)}</td><td class="num">${number(p.value,kpi==='bmsPer100'?1:2)}${kpi==='bmsPer100'&&p.value!==null?'%':''}</td><td>${badge(p.complete?'Complete':p.status)}</td><td class="num">${delta===null?'—':signed(delta,kpi==='bmsPer100'?1:2)+(kpi==='bmsPer100'?' pp':'')}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="table-note">Import activation records and confirm coverage to compare quarters.</p>')+
+ '<p class="table-note">Ratios use aggregate equipment activations, not verified installation pairings. Incomplete quarters are shown as provisional observations; definitive changes require complete coverage. An open quarter is never complete.</p>');
+}
+// This visualization uses the EXACT monthly pairs already computed for the evidence table.
+// Position on the x-axis is current-window month; comparison tooltips carry their actual month.
+function comparisonEvidenceSeries(rows,{model='All'}={}){
+ const point=(row,item,isComparison)=>({
+   label:labelMonth(isComparison?row.comparison:row.month),
+   value:item?.value??null,complete:!!item?.complete,status:item?.status??'No matching month',
+   start:isComparison?row.comparison:row.month,end:isComparison?row.comparison:row.month
+ });
+ return [
+ {name:'Current period',color:'#c8102e',model,points:rows.map(row=>point(row,row.x,false))},
+ {name:'Comparison period',color:'#176b78',model,points:rows.map(row=>point(row,row.y,true))}
+ ];
+}
 function comparisonsView(state,ui){const f=state.preferences,c=D.comparisonPeriod(f),category=ui.compareMetric==='capacity'?'Battery module':ui.compareMetric,capacity=ui.compareMetric==='capacity',opts={model:f.model,family:f.family,capacity},a=D.metric(state,f.start,f.end,category,opts),b=D.metric(state,c.start,c.end,category,opts),ms=D.monthsBetween(f.start,f.end),cs=D.monthsBetween(c.start,c.end),d=D.difference(a,b),unit=capacity?'kWh':'activations';if(f.category!=='All'&&f.category!==category)return heading(state,'Period comparisons','Compare like-for-like periods and locate the changes.')+`<div class="notice">Select a metric that matches the category filter.</div>${metricSelect(ui.compareMetric)}`;
 const rows=Array.from({length:Math.max(ms.length,cs.length)},(_,i)=>{const x=ms[i]?D.metric(state,ms[i],ms[i],category,opts):null,y=cs[i]?D.metric(state,cs[i],cs[i],category,opts):null;return {month:ms[i],comparison:cs[i],x,y,d:D.difference(x,y)};});
-return heading(state,'Period comparisons','Compare like-for-like periods and locate the changes.')+`<div class="form-row editing">${metricSelect(ui.compareMetric)}</div>`+(ms.length!==cs.length?`<div class="notice"><strong>Different durations:</strong> ${ms.length} current months versus ${cs.length} comparison months. Monthly averages are shown alongside totals.</div>`:'')+`<div class="kpi-grid">${card('Current period',a,b,{unit})}<div class="kpi"><div class="kpi-label">Current monthly average</div><div class="kpi-value">${number(a.value===null?null:a.value/ms.length,1)}<small>${unit}</small></div><div class="kpi-foot">${ms.length} months · ${e(a.status)}</div></div><div class="kpi"><div class="kpi-label">Comparison monthly average</div><div class="kpi-value">${number(b.value===null?null:b.value/cs.length,1)}<small>${unit}</small></div><div class="kpi-foot">${cs.length} months · ${e(b.status)}</div></div></div>`+
+return heading(state,'Period comparisons','Compare like-for-like periods and locate the changes.')+quarterlyIntelligence(state,ui)+`<div class="form-row editing">${metricSelect(ui.compareMetric)}</div>`+(ms.length!==cs.length?`<div class="notice"><strong>Different durations:</strong> ${ms.length} current months versus ${cs.length} comparison months. Monthly averages are shown alongside totals.</div>`:'')+`<div class="kpi-grid">${card('Current period',a,b,{unit})}<div class="kpi"><div class="kpi-label">Current monthly average</div><div class="kpi-value">${number(a.value===null?null:a.value/ms.length,1)}<small>${unit}</small></div><div class="kpi-foot">${ms.length} months · ${e(a.status)}</div></div><div class="kpi"><div class="kpi-label">Comparison monthly average</div><div class="kpi-value">${number(b.value===null?null:b.value/cs.length,1)}<small>${unit}</small></div><div class="kpi-foot">${cs.length} months · ${e(b.status)}</div></div></div>`+
 panel('Period totals',`${e(rangeLabel(f.start,f.end))} versus ${e(rangeLabel(c.start,c.end))} · ${unit}`,barChart([{label:'Current period',value:a.value,color:'#c8102e',model:'All'},{label:'Comparison period',value:b.value,color:'#8293a0',model:'All'}]))+
 panel('Monthly profile',`${unit} · months in the current and comparison windows · gaps remain missing`,heatmap(state,ms,cs,category,opts))+
 panel('Monthly contribution to change','Paired months · signed absolute differences · complete observations only',ms.length===cs.length?barChart(rows.map(r=>({label:`${labelMonth(r.month)} vs ${labelMonth(r.comparison)}`,value:r.d.delta,model:'All'})),{signed:true,unit}):'<p class="table-note">Contribution bars are withheld for unequal interval lengths. Use the table below.</p>')+
-panel('Comparison evidence',`${e(category)} · ${unit} · ${e(f.model)} · ${e(f.family)}`,`<div class="table-wrap"><table><thead><tr><th>Current month</th><th class="num">Current</th><th>Comparison month</th><th class="num">Comparison</th><th class="num">Absolute Δ</th><th class="num">Change</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.month?`<button class="text-button" data-month="${r.month}">${labelMonth(r.month)}</button>`:'—'}</td><td class="num">${number(r.x?.value)}${r.x&&!r.x.complete?'*':''}</td><td>${labelMonth(r.comparison)}</td><td class="num">${number(r.y?.value)}${r.y&&!r.y.complete?'*':''}</td><td class="num">${signed(r.d.delta)}</td><td class="num">${r.d.pct===null?(r.y?.complete&&r.y?.value===0?'No % baseline':'—'):signed(r.d.pct,1)+'%'}</td></tr>`).join('')}</tbody></table></div><p class="table-note">* Incomplete observed subtotal. No definitive growth calculation is made for an incomplete pair.</p>`);
+panel('Comparison evidence',`${e(category)} · ${unit} · ${e(f.model)} · ${e(f.family)}`,`<p class="table-note">Lines compare months by their position in the selected windows, not by matching calendar month. The horizontal axis uses current-period months; hover/select a comparison point to see its actual historical month. Hollow points and dashed segments indicate partial coverage. Missing values remain gaps.</p><div class="chart-scroll">${lineChart(comparisonEvidenceSeries(rows,{model:f.model}),{unit,title:'Current versus comparison monthly activation evidence',id:'comparison-evidence'})}</div><div class="table-wrap"><table><thead><tr><th>Current month</th><th class="num">Current</th><th>Comparison month</th><th class="num">Comparison</th><th class="num">Absolute Δ</th><th class="num">Change</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.month?`<button class="text-button" data-month="${r.month}">${labelMonth(r.month)}</button>`:'—'}</td><td class="num">${number(r.x?.value)}${r.x&&!r.x.complete?'*':''}</td><td>${labelMonth(r.comparison)}</td><td class="num">${number(r.y?.value)}${r.y&&!r.y.complete?'*':''}</td><td class="num">${signed(r.d.delta)}</td><td class="num">${r.d.pct===null?(r.y?.complete&&r.y?.value===0?'No % baseline':'—'):signed(r.d.pct,1)+'%'}</td></tr>`).join('')}</tbody></table></div><p class="table-note">* Incomplete observed subtotal. No definitive growth calculation is made for an incomplete pair.</p>`);
 }
 function metricSelect(selected){return `<label class="field">Comparison metric<select id="compare-metric">${[...D.CATEGORIES,'capacity'].map(x=>option(x,x==='capacity'?'Activated battery capacity':x,selected)).join('')}</select></label>`;}
 function heatmap(state,ms,cs,category,opts){const all=[...new Set([...ms,...cs])],years=[...new Set(all.map(m=>m.slice(0,4)))].sort(),data=all.map(m=>({month:m,...D.metric(state,m,m,category,opts)})),max=Math.max(1,...data.map(x=>x.value??0));return `<div class="table-wrap"><table class="heatmap"><thead><tr><th>Year</th>${Array.from({length:12},(_,i)=>`<th>${new Intl.DateTimeFormat('en',{month:'short',timeZone:'UTC'}).format(new Date(Date.UTC(2024,i,1)))}</th>`).join('')}</tr></thead><tbody>${years.map(y=>`<tr><th>${y}</th>${Array.from({length:12},(_,i)=>{const month=`${y}-${String(i+1).padStart(2,'0')}`,m=data.find(x=>x.month===month);return `<td><button ${m?'':'disabled'} data-month="${month}" class="heat-cell" style="--heat:${m?.value===null||!m?'#f5f6f8':`rgba(182,16,42,${.06+(m.value/max)*.76})`};--heattext:${m?.value/max>.5?'white':'#35404c'}" title="${month}: ${m?number(m.value)+' · '+m.status:'Outside selected periods'}">${m?number(m.value)+(m.complete?'':'*'):'—'}</button></td>`;}).join('')}</tr>`).join('')}</tbody></table></div><p class="chart-note">Darker cells indicate higher volume. * Incomplete data. A recorded zero displays 0.</p>`;}
@@ -456,24 +757,24 @@ panel('Saved monthly targets','Selected period and scope',`<div class="table-wra
 
 const DATA_TABS=[['import','Import centre'],['records','Recorded data'],['coverage','Coverage'],['catalogue','Product catalogue'],['history','History'],['backup','Backup & guide']];
 function dataView(state,ui){const bodies={import:importView,records:recordsView,coverage:coverageView,catalogue:catalogueView,history:historyView,backup:backupView};return heading(state,'Data workspace','Import snapshots, confirm reporting scope and inspect your evidence.')+`<div class="tabs editing" role="tablist" aria-label="Data workspace">${DATA_TABS.map(([v,t])=>`<button role="tab" aria-selected="${ui.dataTab===v}" class="${ui.dataTab===v?'active':''}" data-data-tab="${v}">${t}</button>`).join('')}</div>`+(bodies[ui.dataTab]??importView)(state,ui);}
-function importView(state,ui){const p=ui.pending,v=p?.validation,preview=v?D.importPreview(state,v):[],counts={};preview.forEach(r=>counts[r.action]=(counts[r.action]??0)+1);return `<div class="import-progress"><span class="${!p?'active':''}">1 · Choose dataset & file</span><span class="${p&&!v?'active':''}">2 · Confirm worksheet</span><span class="${v?'active':''}">3 · Validate & review</span><span>4 · Confirm import</span></div><div class="import-grid"><section class="panel"><div class="panel-head"><div><h2>Import a monthly snapshot</h2><p>Excel .xlsx or CSV · models in rows, YYYYMM months in columns</p></div></div><div class="form-row"><label class="field">Dataset<select id="dataset">${option('inverters','Inverters',ui.dataset)}${option('batteries','Battery modules & BMS',ui.dataset)}</select></label></div><label class="dropzone" id="dropzone"><strong>Drop your workbook here</strong><span>Or choose a file from your device · maximum 30 MB</span><input id="import-file" type="file" accept=".xlsx,.csv" aria-label="Choose activation workbook" ${ui.loading?'disabled':''}></label>${ui.loading?'<div class="notice info" style="margin-top:16px">Reading and validating your workbook…</div>':''}${ui.importError?`<div class="notice error" style="margin-top:16px">${e(ui.importError)}</div>`:''}<p class="table-note">Files stay in your browser. Identical reimports do not duplicate quantities. Blank incoming cells retain previously recorded values.</p></section><section class="panel"><div class="panel-head"><div><h2>Expected structure</h2><p>The same matrix format works for both datasets.</p></div></div><div class="table-wrap"><table><thead><tr><th>index</th><th>202601</th><th>202602</th></tr></thead><tbody><tr><td>Product model</td><td>Quantity</td><td>Quantity</td></tr><tr><td>=== 总计 ===</td><td>Total</td><td>Total</td></tr></tbody></table></div><p class="table-note">Totals are reconciliation controls only. Blank means missing; 0 means confirmed zero. Formulas need saved numeric results.</p><div class="panel-actions"><a class="download-link" href="templates/Inverter_Import_Template.xlsx" download>Inverter .xlsx template</a><a class="download-link" href="templates/Battery_BMS_Import_Template.xlsx" download>Battery & BMS .xlsx template</a></div><p class="table-note"><button class="text-button" data-action="template-inverters">Inverter CSV</button> · <button class="text-button" data-action="template-batteries">Battery & BMS CSV</button></p></section></div>`+
+function importView(state,ui){const p=ui.pending,v=p?.validation,preview=v?D.importPreview(state,v):[],counts={};preview.forEach(r=>counts[r.action]=(counts[r.action]??0)+1);return `<div class="import-progress"><span class="${!p?'active':''}">1 · Choose dataset & file</span><span class="${p&&!v?'active':''}">2 · Confirm worksheet</span><span class="${v?'active':''}">3 · Validate & review</span><span>4 · Confirm import</span></div><div class="import-grid"><section class="panel"><div class="panel-head"><div><h2>Import a monthly snapshot</h2><p>Excel .xlsx or CSV · models in rows, YYYYMM months in columns</p></div></div><div class="form-row"><label class="field">Dataset<select id="dataset">${option('unified','Unified — all equipment',ui.dataset)}${option('inverters','Inverters only (legacy)',ui.dataset)}${option('batteries','Battery modules & BMS (legacy)',ui.dataset)}</select></label></div><label class="dropzone" id="dropzone"><strong>Drop your workbook here</strong><span>Or choose a file from your device · maximum 30 MB</span><input id="import-file" type="file" accept=".xlsx,.csv" aria-label="Choose activation workbook" ${ui.loading?'disabled':''}></label>${ui.loading?'<div class="notice info" style="margin-top:16px">Reading and validating your workbook…</div>':''}${ui.importError?`<div class="notice error" style="margin-top:16px">${e(ui.importError)}</div>`:''}<p class="table-note">Files stay in your browser. One confirmed import updates all included categories together. Identical reimports do not duplicate quantities. Blank incoming cells retain previously recorded values.</p></section><section class="panel"><div class="panel-head"><div><h2>Expected structure</h2><p>Unified uses one worksheet with inverter, battery module and BMS rows.</p></div></div><div class="table-wrap"><table><thead><tr><th>index</th><th>202601</th><th>202602</th></tr></thead><tbody><tr><td>Product model</td><td>Quantity</td><td>Quantity</td></tr><tr><td>=== 总计 ===</td><td>Total</td><td>Total</td></tr></tbody></table></div><p class="table-note">Unified: list all three equipment categories in any order, using exact model codes. Add at most one grand Total row combining all products. Totals are controls, never activations. Blank means missing; 0 means confirmed zero. Formulas need saved numeric results.</p><div class="panel-actions"><a class="download-link" href="templates/Inverter_Import_Template.xlsx" download>Inverter .xlsx template</a><a class="download-link" href="templates/Battery_BMS_Import_Template.xlsx" download>Battery & BMS .xlsx template</a></div><p class="table-note"><button class="text-button" data-action="template-unified">Download Unified CSV (opens in Excel)</button> · <button class="text-button" data-action="template-inverters">Inverter CSV</button> · <button class="text-button" data-action="template-batteries">Battery & BMS CSV</button></p></section></div>`+
 (p?panel('Confirm the source table',`${e(p.filename)} · ${e(p.sheet)}`,`<div class="form-row"><label class="field">Worksheet<select id="worksheet">${p.workbook.names.map(n=>option(n,n,p.sheet)).join('')}</select></label><label class="field">Header row (Excel row number)<input id="header-row" type="number" min="1" max="${Math.max(1,p.rows.length)}" value="${p.headerRow+1}"></label><button data-action="revalidate">Validate table</button></div>${p.headerUncertain?'<div class="notice">Header detection is uncertain. Confirm the correct row above.</div>':''}<div class="table-wrap import-review"><table><thead><tr><th>Excel row</th>${(p.rows[p.headerRow]??[]).map((x,i)=>`<th>${e(D.columnName(i))}: ${e(D.cellValue(x))}</th>`).join('')}</tr></thead><tbody>${p.rows.slice(p.headerRow+1,p.headerRow+9).map((r,i)=>`<tr><th>${p.headerRow+i+2}</th>${Array.from({length:p.rows[p.headerRow]?.length??0},(_,j)=>`<td>${e(D.cellValue(r[j])??'Missing')}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="table-note">Preview: first 8 product rows. Validation reads the full selected worksheet.</p>`):'')+
-(v?panel('Validation & proposed changes','No data is saved until you confirm the import.',`<div class="preview-stats"><span><strong>${v.months.length}</strong>months</span><span><strong>${v.models.length}</strong>models</span><span><strong>${counts.New??0}</strong>new values</span><span><strong>${counts.Replace??0}</strong>replacements</span><span><strong>${counts.Unchanged??0}</strong>unchanged</span><span><strong>${v.records.filter(r=>r.quantity===null).length}</strong>missing cells</span></div>
-${v.unknown.length?`<div class="validation-box warning"><h3>Classify ${v.unknown.length} new product model${v.unknown.length===1?'':'s'}</h3><p class="table-note">Each model must be explicitly confirmed. Similar codes remain separate.</p><form data-form="classify">${v.unknown.map((m,i)=>`<div class="form-row"><label class="field">${e(m)}<select name="category-${i}" required>${option('','Choose category','')}${(ui.dataset==='inverters'?['Inverter']:['Battery module','BMS']).map(c=>option(c,c,'')).join('')}</select></label><label class="field">Family (optional)<input name="family-${i}" placeholder="e.g. S1"></label><label class="field">Capacity (battery modules only)<input name="capacity-${i}" type="number" step="any" min="0.001" placeholder="kWh"></label><label class="field">Compatible BMS (optional)<select name="bms-${i}">${option('','Not specified','')}${Object.values({...state.catalog,...p.classifications}).filter(x=>x.category==='BMS').map(x=>option(x.model,x.model,'')).join('')}</select></label></div>`).join('')}<button class="primary" type="submit">Confirm classifications & revalidate</button></form></div>`:''}
+(v?panel('Validation & proposed changes','No data is saved until you confirm the import.',`<div class="preview-stats"><span><strong>${v.months.length}</strong>months</span><span><strong>${v.models.length}</strong>models</span>${D.CATEGORIES.map(cat=>`<span><strong>${v.models.filter(m=>({...state.catalog,...p.classifications})[m]?.category===cat).length}</strong>${e(cat)}</span>`).join("")}<span><strong>${counts.New??0}</strong>new values</span><span><strong>${counts.Replace??0}</strong>replacements</span><span><strong>${counts.Unchanged??0}</strong>unchanged</span><span><strong>${v.records.filter(r=>r.quantity===null).length}</strong>missing cells</span></div>
+${v.unknown.length?`<div class="validation-box warning"><h3>Classify ${v.unknown.length} new product model${v.unknown.length===1?'':'s'}</h3><p class="table-note">Choose Inverter, Battery module or BMS for each unknown model. Selecting a category outside a legacy dataset switches this import to Unified after confirmation. For new inverters enter rated kW and grid phase.</p><form data-form="classify">${v.unknown.map((m,i)=>`<div class="form-row"><label class="field">${e(m)}<select name="category-${i}" required>${option('','Choose category','')}${D.CATEGORIES.map(c=>option(c,c,'')).join('')}</select></label><label class="field">Family (optional)<input name="family-${i}" placeholder="e.g. S1"></label><label class="field">Capacity (battery modules only)<input name="capacity-${i}" type="number" step="any" min="0.001" placeholder="kWh"></label><label class="field">Compatible BMS (optional)<select name="bms-${i}">${option('','Not specified','')}${Object.values({...state.catalog,...p.classifications}).filter(x=>x.category==='BMS').map(x=>option(x.model,x.model,'')).join('')}</select></label><label class="field">Inverter rated power (kW)<input name="power-${i}" type="number" min="0.001" step="any" placeholder="Inverter only"></label><label class="field">Inverter grid phase<select name="phase-${i}">${option('','Choose for inverter','')}${option('Single-phase','Single-phase','')}${option('Three-phase','Three-phase','')}</select></label></div>`).join('')}<button class="primary" type="submit">Confirm classifications & revalidate</button></form></div>`:''}
 ${v.errors.length?`<div class="validation-box error"><h3>${v.errors.length} blocking validation error${v.errors.length===1?'':'s'}</h3><ul class="validation-list">${v.errors.map(x=>`<li>${e(x)}</li>`).join('')}</ul></div>`:`<div class="validation-box"><h3>Quantity and total checks passed</h3><p class="table-note">${v.totalsFound} supplied total row${v.totalsFound===1?'':'s'} recognised. ${v.unknown.length?'Model classification is still required.':'All models are classified.'}</p></div>`}
 ${v.warnings.length?`<details class="validation-box warning"><summary>${v.warnings.length} warning${v.warnings.length===1?'':'s'} / missing-value notes</summary><ul class="validation-list">${v.warnings.map(x=>`<li>${e(x)}</li>`).join('')}</ul></details>`:''}
-<details ${counts.Replace?'open':''}><summary>Review all incoming values and changes (${preview.length})</summary><div class="table-wrap import-review"><table><thead><tr><th>Month</th><th>Model</th><th class="num">Previous</th><th class="num">Incoming</th><th class="num">Difference</th><th>Proposed action</th><th>Source cell</th></tr></thead><tbody>${preview.map(r=>`<tr><td>${r.month}</td><td>${e(r.model)}</td><td class="num">${number(r.previous)}</td><td class="num">${r.quantity===null?'Missing':number(r.quantity)}</td><td class="num">${signed(r.difference)}</td><td>${r.action}</td><td>${e(r.source.cell)}</td></tr>`).join('')}</tbody></table></div></details>
+<details ${counts.Replace?'open':''}><summary>Review all incoming values and changes (${preview.length})</summary><div class="table-wrap import-review"><table><thead><tr><th>Month</th><th>Model</th><th>Category</th><th class="num">Previous</th><th class="num">Incoming</th><th class="num">Difference</th><th>Proposed action</th><th>Source cell</th></tr></thead><tbody>${preview.map(r=>`<tr><td>${r.month}</td><td>${e(r.model)}</td><td>${e(({...state.catalog,...p.classifications})[r.model]?.category??'Unclassified')}</td><td class="num">${number(r.previous)}</td><td class="num">${r.quantity===null?'Missing':number(r.quantity)}</td><td class="num">${signed(r.difference)}</td><td>${r.action}</td><td>${e(r.source.cell)}</td></tr>`).join('')}</tbody></table></div></details>
 <form data-form="commit-import"><div class="validation-box"><h3>Confirm reporting coverage</h3><p class="table-note">Tick a category only if the worksheet includes every model expected for that category across these months. Missing cells still prevent completeness. Existing expected models are retained; narrow scope separately in Coverage.</p>${[...new Set(v.models.map(m=>({...state.catalog,...p.classifications})[m]?.category).filter(Boolean))].map(c=>`<label class="check"><input type="checkbox" name="coverage" value="${e(c)}"><span>This source covers the complete expected <strong>${e(c)}</strong> model scope for ${rangeLabel(v.months[0],v.months.at(-1))}.</span></label>`).join('')}</div><label class="check"><input type="checkbox" name="approved" required><span>I reviewed the validation results and proposed values, including ${counts.Replace??0} replacement${counts.Replace===1?'':'s'}. I understand that incoming values replace matching snapshots rather than add to them.</span></label><div class="panel-actions"><button type="submit" class="primary" ${v.errors.length||v.unknown.length||ui.loading?'disabled':''}>Confirm import</button><button type="button" data-action="cancel-import">Cancel preview</button></div></form>`):'');}
 function recordsView(state,ui){const rows=D.filteredRecords(state,state.preferences).filter(r=>[r.model,r.month,r.source.filename,r.source.sheet].join(' ').toLowerCase().includes((ui.recordSearch??'').toLowerCase())),page=ui.recordPage??0,shown=rows.slice(page*100,(page+1)*100);return panel('Recorded activation values',`${rows.length.toLocaleString('en-IE')} rows in the selected period and product scope`, `<div class="table-wrap"><table><thead><tr><th>Month</th><th>Model</th><th>Category</th><th class="num">Quantity</th><th class="num">kWh</th><th>Filename</th><th>Worksheet</th><th>Cell</th></tr></thead><tbody>${shown.map(r=>{const p=state.catalog[r.model];return `<tr><td><button class="text-button" data-month="${r.month}" data-model="${e(r.model)}">${labelMonth(r.month)}</button></td><td>${e(r.model)}</td><td>${e(p.category)}</td><td class="num">${number(r.quantity)}</td><td class="num">${p.category==='Battery module'?number(r.quantity*p.capacity,1):'—'}</td><td>${e(r.source.filename)}</td><td>${e(r.source.sheet)}</td><td>${e(r.source.cell)}</td></tr>`;}).join('')||'<tr><td colspan="8">No matching recorded values. Missing cells are documented in import history and coverage.</td></tr>'}</tbody></table></div><div class="panel-actions editing" style="margin-top:15px"><button class="small" data-page="${page-1}" ${page===0?'disabled':''}>Previous</button><span class="muted">Page ${page+1} of ${Math.max(1,Math.ceil(rows.length/100))}</span><button class="small" data-page="${page+1}" ${(page+1)*100>=rows.length?'disabled':''}>Next</button></div><p class="table-note">Export includes the full period and product filter selection. This table search narrows the on-screen lookup only.</p>`,`<div class="panel-actions editing"><input id="record-search" type="search" placeholder="Search source or model…" aria-label="Search recorded data" value="${e(ui.recordSearch??'')}"><button class="small" data-action="export-records">Export filtered records</button><button class="small" data-action="export-summary">Export metric summary</button></div>`);}
 function coverageView(state,ui){const f=state.preferences,category=ui.coverageCategory??'Inverter',months=D.monthsBetween(f.start,f.end),products=Object.values(state.catalog).filter(p=>p.category===category);return `<div class="notice info"><p><strong>Completeness is declared, then checked.</strong> A month closes in Europe/Dublin. Complete coverage also requires every applicable expected model to have a numeric record. A blank source cell is missing; only an explicit 0 is a confirmed zero. Applicability dates are managed in the catalogue.</p></div>`+panel('Coverage by category',`${rangeLabel(f.start,f.end)} · independent checks; global product filters do not narrow this audit`, `<div class="table-wrap"><table><thead><tr><th>Month</th>${D.CATEGORIES.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${months.map(m=>`<tr><td><button class="text-button" data-month="${m}">${labelMonth(m)}</button></td>${D.CATEGORIES.map(c=>{const a=D.metric(state,m,m,c),cover=state.coverage[`${m}|${c}`];return `<td>${badge(a.status)}<div class="muted" style="margin-top:5px">${a.observed} observed / ${a.expected} expected${a.missing?' · '+a.missing+' missing':''}<br>${cover?e(cover.expected.join(', ')):'No expected scope declared'}</div></td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`)+panel('Declare or revise expected scope','This declaration is explicit; existing activation quantities are not altered.',`<form data-form="coverage" class="editing"><div class="form-row"><label class="field">Category<select id="coverage-category" name="category">${D.CATEGORIES.map(c=>option(c,c,category)).join('')}</select></label><label class="field">From<input type="month" name="start" value="${f.start}" required></label><label class="field">To<input type="month" name="end" value="${f.end}" required></label></div><h3>Expected models in every selected month</h3><div class="coverage-grid">${products.map(p=>`<label class="check"><input type="checkbox" name="expected" value="${e(p.model)}"><span>${e(p.model)}</span></label>`).join('')||'<p class="table-note">Add or import products in this category first.</p>'}</div><label class="check"><input name="confirmed" type="checkbox" checked><span>I confirm this is the complete expected product scope for the selected category and months.</span></label><button class="primary" type="submit">Review coverage change</button></form>`);}
-function catalogueView(state){return panel('Product catalogue','Exact model codes only · capacity applies to battery modules only',`<div class="table-wrap"><table><thead><tr><th>Model</th><th>Category</th><th>Family</th><th class="num">Module kWh</th><th>Compatible BMS</th><th>Applicable from</th><th>Applicable to</th><th class="editing"></th></tr></thead><tbody>${Object.values(state.catalog).sort((a,b)=>a.category.localeCompare(b.category)||a.model.localeCompare(b.model)).map(p=>`<tr><td>${e(p.model)}</td><td>${e(p.category)}</td><td>${e(p.family||'—')}</td><td class="num">${number(p.capacity,2)}</td><td>${e(p.bms??'—')}</td><td>${p.from??'No lower limit'}</td><td>${p.to??'No upper limit'}</td><td class="editing"><button class="small" data-edit-product="${e(p.model)}">Edit</button></td></tr>`).join('')}</tbody></table></div><p class="table-note">The initial five LUNA definitions follow the supplied brief. Applicability is explicitly declared, never inferred from the first activation. Every saved change has an impact preview and audit entry.</p>`,`<button class="small editing" data-action="add-product">Add model</button>`);}
+function catalogueView(state){return panel('Product catalogue','Exact model codes only · nominal inverter power (kW) and battery module capacity (kWh) are distinct',`<div class="table-wrap"><table><thead><tr><th>Model</th><th>Category</th><th>Family</th><th class="num">Inverter kW</th><th>Grid phase</th><th class="num">Module kWh</th><th>Compatible BMS</th><th>Applicable from</th><th>Applicable to</th><th class="editing"></th></tr></thead><tbody>${Object.values(state.catalog).sort((a,b)=>a.category.localeCompare(b.category)||a.model.localeCompare(b.model)).map(p=>`<tr><td>${e(p.model)}</td><td>${e(p.category)}</td><td>${e(p.family||'—')}</td><td class="num">${number(p.powerKw,2)}</td><td>${e(p.phase??"Not classified")}</td><td class="num">${number(p.capacity,2)}</td><td>${e(p.bms??'—')}</td><td>${p.from??'No lower limit'}</td><td>${p.to??'No upper limit'}</td><td class="editing"><button class="small" data-edit-product="${e(p.model)}">Edit</button></td></tr>`).join('')}</tbody></table></div><p class="table-note">The initial five LUNA definitions follow the supplied brief. Applicability is explicitly declared, never inferred from the first activation. Every saved change has an impact preview and audit entry.</p>`,`<button class="small editing" data-action="add-product">Add model</button>`);}
 function historyView(state){return panel('Import history','Snapshots, source provenance and conflict-aware undo',state.history.length?[...state.history].reverse().map(h=>`<article class="history-item"><div class="history-title"><div><h3>${e(h.filename)} ${h.undone?'<span class="badge">Undone</span>':''}</h3><p>${e(h.sheet)} · ${e(h.dataset)} · ${new Date(h.timestamp).toLocaleString('en-IE',{timeZone:'Europe/Dublin'})}<br>${h.changes.length} changed records · ${h.unchanged} unchanged · ${h.missing?.length??0} missing incoming cells</p></div><button class="small editing" data-undo="${e(h.id)}" ${h.undone?'disabled':''}>Review undo</button></div><details><summary>Source changes and missing cells</summary><div class="table-wrap import-review"><table><thead><tr><th>Record</th><th class="num">Before</th><th class="num">After</th><th>Source cell</th></tr></thead><tbody>${h.changes.map(c=>`<tr><td>${e(c.key)}</td><td class="num">${number(c.before?.quantity)}</td><td class="num">${number(c.after.quantity)}</td><td>${e(c.after.source.cell)}</td></tr>`).join('')}${(h.missing??[]).map(r=>`<tr><td>${e(r.month+' | '+r.model)}</td><td colspan="2">Incoming value missing; existing value retained</td><td>${e(r.source.cell)}</td></tr>`).join('')}</tbody></table></div></details>${h.skippedConflicts?.length?`<p class="table-note">${h.skippedConflicts.length} overlapping later changes were retained when undoing.</p>`:''}</article>`).join(''):'<p class="table-note">No imports yet.</p>')+panel('Catalogue & coverage audit','Historical calculation changes and scope declarations',`<div class="table-wrap"><table><thead><tr><th>When</th><th>Type</th><th>Change</th></tr></thead><tbody>${[...state.catalogLog.map(x=>({time:x.timestamp,type:'Catalogue',text:`${x.after.model}: ${x.impact?.records??0} records affected; capacity ${x.impact?.oldKwh??0} → ${x.impact?.newKwh??0} kWh`})),...state.coverageLog.map(x=>({time:x.timestamp,type:'Coverage',text:x.changes.map(c=>`${c.key}: ${c.after.expected.join(', ')} (${c.after.confirmed?'confirmed':'unconfirmed'})`).join('; ')}))].sort((a,b)=>b.time.localeCompare(a.time)).map(x=>`<tr><td>${e(new Date(x.time).toLocaleString('en-IE'))}</td><td>${x.type}</td><td class="wrap">${e(x.text)}</td></tr>`).join('')||'<tr><td colspan="3">No catalogue or coverage edits.</td></tr>'}</tbody></table></div>`);}
-function backupView(state){return `<div class="grid-equal">${panel('Back up your workspace','Full JSON backup · portable between browsers and devices',`<p class="table-note">Includes activation records, catalogue, coverage, targets, events, import history and saved filters. Browser storage belongs to this browser/device and may be cleared. Keep a backup of important work.</p><button class="primary editing" data-action="backup">Download full backup</button>`)}${panel('Restore a backup','Review the contents before replacing this browser’s workspace.',`<p class="table-note">Restore is an atomic replacement of the full workspace. Download a backup first if you need to retain the current state.</p><label class="field editing">Choose backup JSON<input id="restore-file" type="file" accept=".json,application/json"></label>`)}</div>`+panel('Working with the app','Methodology, setup, acceptance tests and source code',`<div class="help-copy"><h3>Start with two independent imports</h3><p class="table-note">Upload the inverter matrix, then the battery/BMS matrix. Confirm model classifications and reporting coverage. Choose a complete period before making definitive comparisons.</p><h3>Calculations and assumptions</h3><ul><li>Snapshot key = month + exact canonical product model. Identical reimports do not add units.</li><li>Battery capacity = recorded modules × catalogue kWh. C0/C1 BMS model numbers are never used as capacity.</li><li>Percentage change = (current ÷ comparison − 1) × 100. A zero comparison has no percentage baseline.</li><li>Ratios use sums of numerators ÷ sums of denominators. No averaging of monthly percentages.</li><li>Missing values remain missing. Open months and incomplete coverage prevent definitive growth claims.</li><li>BMS per 100 inverters is an observed activation ratio. It does not verify the percentage of newly installed systems with batteries.</li><li>Scope-specific targets override only at their defined level. Category targets and child targets are never summed together.</li></ul><div class="panel-actions"><a href="documentacao/guia.html" target="_blank" rel="noopener">Full guide & limitations ↗</a><button class="text-button" data-action="demo">Explore fictional demo</button><a href="documentacao/test-results.txt" target="_blank" rel="noopener">Test results ↗</a><a href="codigo-fonte.zip" download>Download organised source code</a></div></div>`)+panel('Commercial events','Dates and observations · no causation inferred',`<div class="context-list">${[...state.events].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="event-row"><span class="event-date">${e(x.date)}</span><div><strong>${e(x.title)}</strong><p>${e(x.type)} · ${e(x.notes??'')}</p></div><button class="small editing" data-delete-event="${e(x.id)}">Remove</button></div>`).join('')||'<p class="table-note">Add promotions, training, launches, stock issues or pricing changes to the timeline.</p>'}</div>`,`<button class="small editing" data-action="event">Add event</button>`);}
+function backupView(state){return `<div class="grid-equal">${panel('Back up your workspace','Full JSON backup · portable between browsers and devices',`<p class="table-note">Includes activation records, catalogue, coverage, targets, events, import history and saved filters. Browser storage belongs to this browser/device and may be cleared. Keep a backup of important work.</p><button class="primary editing" data-action="backup">Download full backup</button>`)}${panel('Restore a backup','Review the contents before replacing this browser’s workspace.',`<p class="table-note">Restore is an atomic replacement of the full workspace. Download a backup first if you need to retain the current state.</p><label class="field editing">Choose backup JSON<input id="restore-file" type="file" accept=".json,application/json"></label>`)}</div>`+panel('Working with the app','Methodology, setup, acceptance tests and source code',`<div class="help-copy"><h3>Import all categories together or separately</h3><p class="table-note">Use Unified for one worksheet containing inverter, battery module and BMS rows; legacy separate matrices are also supported. Confirm model classifications and reporting coverage. Choose a complete period before making definitive comparisons.</p><h3>Calculations and assumptions</h3><ul><li>Snapshot key = month + exact canonical product model. Identical reimports do not add units.</li><li>Battery capacity = recorded modules × catalogue kWh. C0/C1 BMS model numbers are never used as capacity.</li><li>Percentage change = (current ÷ comparison − 1) × 100. A zero comparison has no percentage baseline.</li><li>Ratios use sums of numerators ÷ sums of denominators. No averaging of monthly percentages.</li><li>Missing values remain missing. Open months and incomplete coverage prevent definitive growth claims.</li><li>BMS / Inverter (%) is an observed ratio: BMS activations ÷ inverter activations × 100. It does not verify the percentage of newly installed systems with batteries.</li><li>Scope-specific targets override only at their defined level. Category targets and child targets are never summed together.</li></ul><div class="panel-actions"><a href="documentacao/guia.html" target="_blank" rel="noopener">Full guide & limitations ↗</a><button class="text-button" data-action="demo">Explore fictional demo</button><a href="documentacao/test-results.txt" target="_blank" rel="noopener">Test results ↗</a><a href="codigo-fonte.zip" download>Download organised source code</a></div></div>`)+panel('Commercial events','Dates and observations · no causation inferred',`<div class="context-list">${[...state.events].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="event-row"><span class="event-date">${e(x.date)}</span><div><strong>${e(x.title)}</strong><p>${e(x.type)} · ${e(x.notes??'')}</p></div><button class="small editing" data-delete-event="${e(x.id)}">Remove</button></div>`).join('')||'<p class="table-note">Add promotions, training, launches, stock issues or pricing changes to the timeline.</p>'}</div>`,`<button class="small editing" data-action="event">Add event</button>`);}
 
 function detailView(state,{start,end,model='All'}){const f={...state.preferences,start,end,model},c=D.comparisonPeriod(f),rows=D.filteredRecords(state,f),a=D.overview(state,f),b=D.overview(state,{...f,start:c.start,end:c.end}),products=D.selectModels(state,f);const missing=[];for(const month of D.monthsBetween(start,end))for(const p of products){const r=state.records[D.keyOf(month,p.model)],cover=state.coverage[`${month}|${p.category}`];if(cover?.expected.includes(p.model)&&!r)missing.push({month,model:p.model,status:D.applicable(p,month)?'Missing':'Not applicable'});}
 return `<div class="dialog-head"><div><div class="eyebrow">Recorded evidence</div><h2 id="drawer-title">${model==='All'?rangeLabel(start,end):e(model)}</h2></div><button data-close="drawer" aria-label="Close detail drawer">×</button></div><p class="table-note">${rangeLabel(start,end)} versus ${rangeLabel(c.start,c.end)}<br>Category: ${e(f.category)} · Model: ${e(model)} · Family: ${e(f.family)}</p><div class="kpi-grid">${card('Inverters',a.inverter,b.inverter)}${card('Battery modules',a.battery,b.battery)}${card('BMS',a.bms,b.bms)}${card('Capacity',a.capacity,b.capacity,{unit:'kWh'})}</div><section><h3>Source records and calculations</h3><div class="table-wrap"><table><thead><tr><th>Month / model</th><th class="num">Recorded</th><th>Calculation</th><th>Provenance</th></tr></thead><tbody>${rows.map(r=>{const p=state.catalog[r.model];return `<tr><td>${r.month}<br>${e(r.model)}</td><td class="num">${number(r.quantity)}</td><td>${p.category==='Battery module'?`${r.quantity} × ${p.capacity} = ${number(r.quantity*p.capacity)} kWh`:'Quantity as recorded'}</td><td class="wrap">${e(r.source.filename)}<br>${e(r.source.sheet)}!${e(r.source.cell)}<br><small>Source label: ${e(r.source.originalLabel)}${r.source.formula?'<br>Cached formula: '+e(r.source.formula):''}</small></td></tr>`;}).join('')}${missing.map(r=>`<tr><td>${r.month}<br>${e(r.model)}</td><td colspan="3">${r.status}</td></tr>`).join('')||'<tr><td colspan="4">No records in this scope.</td></tr>'}</tbody></table></div></section><section><h3>Comparison records</h3><div class="table-wrap"><table><thead><tr><th>Month</th><th>Model</th><th class="num">Quantity</th><th>Source</th></tr></thead><tbody>${D.filteredRecords(state,{...f,start:c.start,end:c.end}).map(r=>`<tr><td>${r.month}</td><td>${e(r.model)}</td><td class="num">${number(r.quantity)}</td><td class="wrap">${e(r.source.filename)} · ${e(r.source.sheet)}!${e(r.source.cell)}</td></tr>`).join('')||'<tr><td colspan="4">No comparison records available.</td></tr>'}</tbody></table></div></section>${notes(f)}`;}
 
-return Object.assign({},{NAV,ROUTES,number,signed,labelMonth,rangeLabel,option,badge,navigation,filters,heading,emptyView,overviewView,inverterView,batteriesView,comparisonsView,targetsView,DATA_TABS,dataView,detailView});
+return Object.assign({},{NAV,ROUTES,number,signed,labelMonth,rangeLabel,option,badge,navigation,filters,heading,emptyView,overviewView,INVERTER_CHART_MAX,selectedInverterModels,inverterView,batteriesView,comparisonEvidenceSeries,comparisonsView,targetsView,DATA_TABS,dataView,detailView});
 })();
 
 // MODULE: parser.js
@@ -626,7 +927,7 @@ const {escapeHtml:e,download,toCsv,exportRows,summaryRows,templateRows}=__module
 const {makeDemo}=__modules["demo.js"];
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,dataset:'inverters',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',inverterSelectedModels:null,inverterPickerOpen:false,inverterModelSearch:'',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
@@ -656,9 +957,9 @@ function detail(start=state.preferences.start,end=state.preferences.end,model=st
 function validatePending(){if(!ui.pending)return;const p=ui.pending;p.validation=D.validateMatrix({rows:p.rows,filename:p.filename,sheet:p.sheet,headerRow:p.headerRow,dataset:ui.dataset,catalog:{...state.catalog,...p.classifications}});}
 async function chooseWorksheet(name){const p=ui.pending;if(!p)return;ui.loading=true;render();try{p.sheet=name;p.rows=await p.workbook.sheet(name);const h=D.suggestHeader(p.rows);p.headerRow=h.index;p.headerUncertain=h.uncertain;validatePending();}finally{ui.loading=false;render();}}
 async function importFile(file){if(!file)return;if(ui.demo){toast('Return to your real workspace before importing data.',true);return;}ui.importError=null;ui.loading=true;ui.pending=null;ui.page='data';ui.dataTab='import';render();try{const workbook=await readWorkbook(await file.arrayBuffer(),file.name);ui.pending={filename:file.name,workbook,sheet:workbook.names[0],rows:[],headerRow:0,classifications:{}};await chooseWorksheet(workbook.names[0]);}catch(err){ui.pending=null;ui.importError=err.message;}finally{ui.loading=false;render();}}
-function template(dataset){const end=D.closedMonth(),months=D.monthsBetween(D.shiftMonth(end,-5),end);download(toCsv(templateRows(dataset,months)),`${dataset==='inverters'?'Inverter':'Battery_BMS'}_Import_Template.csv`,'text/csv;charset=utf-8');}
+function template(dataset){const end=D.closedMonth(),months=D.monthsBetween(D.shiftMonth(end,-5),end);download(toCsv(templateRows(dataset,months)),`${dataset==='unified'?'Unified_Equipment':dataset==='inverters'?'Inverter':'Battery_BMS'}_Import_Template.csv`,'text/csv;charset=utf-8');}
 function showProduct(model=null){const p=model?state.catalog[model]:{model:'',category:'Battery module',family:'',capacity:null,bms:null,from:null,to:null};ui.editProduct=model;
-  openModal(model?'Edit product definition':'Add product model',`<form data-form="product"><div class="form-row"><label class="field">Exact model code<input name="model" value="${e(p.model)}" ${model?'readonly':''} required></label><label class="field">Category<select name="category">${D.CATEGORIES.map(c=>V.option(c,c,p.category)).join('')}</select></label></div><div class="form-row"><label class="field">Family<input name="family" value="${e(p.family)}" placeholder="Optional"></label><label class="field">Module capacity (kWh)<input name="capacity" type="number" min="0.001" step="any" value="${p.capacity??''}" placeholder="Battery modules only"></label></div><label class="field">Compatible BMS<select name="bms">${V.option('','Not specified',p.bms??'')}${Object.values(state.catalog).filter(x=>x.category==='BMS').map(x=>V.option(x.model,x.model,p.bms)).join('')}</select></label><div class="form-row" style="margin-top:18px"><label class="field">Reporting applicability from<input name="from" type="month" value="${p.from??''}"></label><label class="field">Reporting applicability to<input name="to" type="month" value="${p.to??''}"></label></div><p class="table-note">Blank applicability dates mean no explicit bound. They do not indicate a launch date. Capacity changes recalculate historical battery capacity; review the impact before saving.</p><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Preview impact</button></div></form>`);
+  openModal(model?'Edit product definition':'Add product model',`<form data-form="product"><div class="form-row"><label class="field">Exact model code<input name="model" value="${e(p.model)}" ${model?'readonly':''} required></label><label class="field">Category<select name="category">${D.CATEGORIES.map(c=>V.option(c,c,p.category)).join('')}</select></label></div><div class="form-row"><label class="field">Family<input name="family" value="${e(p.family)}" placeholder="Optional"></label><label class="field">Module capacity (kWh)<input name="capacity" type="number" min="0.001" step="any" value="${p.capacity??''}" placeholder="Battery modules only"></label></div><div class="form-row"><label class="field">Inverter rated power (kW)<input name="powerKw" type="number" min="0.001" step="any" value="${p.powerKw??''}" placeholder="Inverters only"></label><label class="field">Inverter grid phase<select name="phase">${V.option('','Not specified',p.phase??'')}${V.option('Single-phase','Single-phase',p.phase)}${V.option('Three-phase','Three-phase',p.phase)}</select></label></div><label class="field">Compatible BMS<select name="bms">${V.option('','Not specified',p.bms??'')}${Object.values(state.catalog).filter(x=>x.category==='BMS').map(x=>V.option(x.model,x.model,p.bms)).join('')}</select></label><div class="form-row" style="margin-top:18px"><label class="field">Reporting applicability from<input name="from" type="month" value="${p.from??''}"></label><label class="field">Reporting applicability to<input name="to" type="month" value="${p.to??''}"></label></div><p class="table-note">Blank applicability dates mean no explicit bound. They do not indicate a launch date. Capacity changes recalculate historical battery capacity; review the impact before saving.</p><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Preview impact</button></div></form>`);
 }
 function eventForm(){openModal('Add commercial context',`<form data-form="event"><div class="form-row"><label class="field">Date<input type="date" name="date" value="${state.preferences.end}-01" required></label><label class="field">Event type<select name="type">${['Promotion','Training','Product launch','Stock availability','Pricing change','Other context'].map(x=>V.option(x,x,'')).join('')}</select></label></div><label class="field">Title<input name="title" maxlength="140" required placeholder="e.g. Installer training session"></label><label class="field" style="margin-top:16px">Notes<textarea name="notes" maxlength="3000" placeholder="Record what happened. Timing alone does not establish its impact."></textarea></label><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Save event</button></div></form>`);}
 async function applyShortcut(value){if(value==='custom')return;const categories=state.preferences.category==='All'?D.CATEGORIES:[state.preferences.category],latest=D.latestComplete(state,categories);if(!latest){toast('No complete month is available for this category scope. Import data and confirm coverage.',true);return;}let start=latest,end=latest;
@@ -676,6 +977,23 @@ document.addEventListener('click',async event=>{
     if(el.dataset.dataTab){navigate('data',el.dataset.dataTab);return;}
     if(el.dataset.month){detail(el.dataset.month,el.dataset.end??el.dataset.month,el.dataset.model??state.preferences.model);return;}
     if(el.dataset.modelDetail){const model=state.catalog[el.dataset.modelDetail]?el.dataset.modelDetail:state.preferences.model;detail(state.preferences.start,state.preferences.end,model);return;}
+    if(el.dataset.inverterChartModel){
+      const model=el.dataset.inverterChartModel,preferences=state.preferences;
+      const allowed=D.selectModels(state,{category:'Inverter',model:preferences.model,family:preferences.family})
+        .some(p=>p.model===model&&((ui.gridPhase??'All')==='All'||p.phase===ui.gridPhase));
+      if(!allowed)throw new Error('This inverter is not in the current reporting scope.');
+      const initial=ui.inverterSelectedModels??D.ranking(state,preferences,'Inverter')
+        .filter(x=>(ui.gridPhase??'All')==='All'||state.catalog[x.model]?.phase===ui.gridPhase)
+        .slice(0,8).map(x=>x.model);
+      if(initial.includes(model))ui.inverterSelectedModels=initial.filter(x=>x!==model);
+      else{
+        if(initial.length>=V.INVERTER_CHART_MAX)throw new Error('Select up to '+V.INVERTER_CHART_MAX+' inverter models at a time. Remove a model to add another.');
+        ui.inverterSelectedModels=[...initial,model];
+        ui.hiddenSeries.delete(model);
+      }
+      render();
+      return;
+    }
     if(el.dataset.toggleSeries){const key=el.dataset.toggleSeries;ui.hiddenSeries.has(key)?ui.hiddenSeries.delete(key):ui.hiddenSeries.add(key);render();return;}
     if(el.dataset.editProduct){showProduct(el.dataset.editProduct);return;}
     if(el.dataset.page){ui.recordPage=Math.max(0,+el.dataset.page);render();return;}
@@ -689,14 +1007,18 @@ document.addEventListener('click',async event=>{
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;navigate('overview');}break;
       case 'help':navigate('data','backup');break;
       case 'templates':navigate('data','import');toast('Both Excel templates are available beside the import area.');break;
+      case 'inverter-chart-picker':ui.inverterPickerOpen=!ui.inverterPickerOpen;render();break;
+      case 'inverter-chart-top':ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
+      case 'inverter-chart-clear':ui.inverterSelectedModels=[];render();break;
       case 'toggle-filters':ui.moreFilters=!ui.moreFilters;render();break;
-      case 'reset-filters':{const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
+      case 'reset-filters':{ui.gridPhase='All';const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
       case 'presentation':document.body.classList.toggle('presentation');break;
       case 'print':{const previous=ui.page;ui.page='overview';render();$('#main').querySelectorAll('details').forEach(x=>x.open=true);window.print();ui.page=previous;render();break;}
       case 'event':eventForm();break;
       case 'add-product':showProduct();break;
       case 'revalidate':validatePending();render();break;
       case 'cancel-import':ui.pending=null;ui.importError=null;render();break;
+      case 'template-unified':template('unified');break;
       case 'template-inverters':template('inverters');break;
       case 'template-batteries':template('batteries');break;
       case 'export-records':download(toCsv(exportRows(state,state.preferences)),`activation-records_${state.preferences.start}_${state.preferences.end}.csv`,'text/csv;charset=utf-8');break;
@@ -712,6 +1034,10 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
     case 'shortcut':await applyShortcut(el.value);break;
+    case 'quarter-select':ui.quarter=Number(el.value);render();break;
+    case 'quarter-metric':ui.quarterMetric=el.value;render();break;
+    case 'phase-chart-mode':ui.phaseChartMode=el.value;ui.hiddenSeries.clear();render();break;
+    case 'grid-phase':ui.gridPhase=el.value;ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
     case 'dataset':ui.dataset=el.value;if(ui.pending){ui.pending.classifications={};validatePending();}render();break;
     case 'import-file':await importFile(el.files[0]);break;
     case 'worksheet':await chooseWorksheet(el.value);break;
@@ -720,11 +1046,19 @@ document.addEventListener('change',async event=>{const el=event.target;try{
     case 'mix-basis':ui.mixBasis=el.value;render();break;
     case 'compare-metric':ui.compareMetric=el.value;render();break;
     case 'coverage-category':ui.coverageCategory=el.value;render();break;
-    case 'restore-file':{if(ui.demo)throw new Error('Exit the fictional demo before restoring a real backup.');const file=el.files[0];if(!file)break;if(file.size>80*1024*1024)throw new Error('Backup exceeds 80 MB.');let restored;try{restored=D.validateBackup(JSON.parse(await file.text()));}catch(err){throw new Error('Backup not restored: '+err.message);}openModal('Replace this workspace with the backup?',`<p><strong>${e(file.name)}</strong></p><div class="preview-stats"><span><strong>${Object.keys(restored.records).length}</strong>records</span><span><strong>${Object.keys(restored.catalog).length}</strong>models</span><span><strong>${restored.history.length}</strong>imports</span><span><strong>${restored.events.length}</strong>events</span></div><p class="table-note">This will replace ${Object.keys(state.records).length} current records, targets, events, coverage and history in this browser. It will not upload the backup anywhere.</p>`,async()=>{await commit(restored,'Backup restored successfully.');ui.pending=null;navigate('overview');},'Restore full backup');break;}
+    case 'restore-file':{if(ui.demo)throw new Error('Exit the fictional demo before restoring a real backup.');const file=el.files[0];if(!file)break;if(file.size>80*1024*1024)throw new Error('Backup exceeds 80 MB.');let restored;try{restored=D.validateBackup(JSON.parse(await file.text()));restored.catalog=D.mergeInverterCatalog(restored.catalog);}catch(err){throw new Error('Backup not restored: '+err.message);}openModal('Replace this workspace with the backup?',`<p><strong>${e(file.name)}</strong></p><div class="preview-stats"><span><strong>${Object.keys(restored.records).length}</strong>records</span><span><strong>${Object.keys(restored.catalog).length}</strong>models</span><span><strong>${restored.history.length}</strong>imports</span><span><strong>${restored.events.length}</strong>events</span></div><p class="table-note">This will replace ${Object.keys(state.records).length} current records, targets, events, coverage and history in this browser. It will not upload the backup anywhere.</p>`,async()=>{await commit(restored,'Backup restored successfully.');ui.pending=null;navigate('overview');},'Restore full backup');break;}
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
+document.addEventListener('input',event=>{const el=event.target;if(el.id==='inverter-model-search'){
+    ui.inverterModelSearch=el.value;
+    const cursor=el.selectionStart;
+    render();
+    const current=$('#inverter-model-search');
+    if(current){current.focus();try{current.setSelectionRange(cursor,cursor);}catch{}}
+    return;
+  }
+  if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
 document.addEventListener('dragover',event=>{const z=event.target.closest('#dropzone');if(z){event.preventDefault();z.classList.add('drag');}});
 document.addEventListener('dragleave',event=>{event.target.closest('#dropzone')?.classList.remove('drag');});
 document.addEventListener('drop',async event=>{if(event.target.closest('#dropzone')){event.preventDefault();await importFile(event.dataTransfer.files[0]);}});
@@ -732,15 +1066,35 @@ document.addEventListener('drop',async event=>{if(event.target.closest('#dropzon
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
-    case 'classify':{const p=ui.pending,classes={...p.classifications};p.validation.unknown.forEach((model,i)=>{const category=data.get(`category-${i}`);classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,from:null,to:null};});for(const p of Object.values(classes)){const errs=D.validateProduct(p,{...state.catalog,...classes});if(errs.length)throw new Error(`${p.model}: ${errs.join(' ')}`);}p.classifications=classes;validatePending();render();toast('Model classifications confirmed for this preview.');break;}
+    case 'classify':{
+      const p=ui.pending,classes={...p.classifications};
+      p.validation.unknown.forEach((model,i)=>{
+        const category=data.get(`category-${i}`),powerInput=String(data.get(`power-${i}`)??'').trim(),phase=data.get(`phase-${i}`)||null;
+        if(category==='Inverter'&&(!powerInput||!phase))throw new Error(`${model}: Provide rated kW and grid phase for a new inverter model.`);
+        classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),
+          capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,
+          bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,
+          powerKw:category==='Inverter'?Number(powerInput):null,phase:category==='Inverter'?phase:null,from:null,to:null};
+      });
+      for(const product of Object.values(classes)){
+        const errs=D.validateProduct(product,{...state.catalog,...classes});
+        if(errs.length)throw new Error(`${product.model}: ${errs.join(' ')}`);
+      }
+      const switchToUnified=Object.values(classes).some(product=>!D.datasetAcceptsCategory(ui.dataset,product.category));
+      p.classifications=classes;
+      if(switchToUnified)ui.dataset='unified';
+      validatePending();render();
+      toast(switchToUnified?'Switched to Unified Import to include every selected equipment category.':'Model classifications confirmed for this preview.');
+      break;
+    }
     case 'commit-import':{if(!data.has('approved'))throw new Error('Confirm that you reviewed the proposed values.');const p=ui.pending;validatePending();const next=D.commitImport(state,p.validation,{classifications:p.classifications,confirmedCategories:data.getAll('coverage')});const last=D.latestComplete(next);if(last)Object.assign(next.preferences,{start:last,end:last});else if(p.validation.months.length)Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Import saved. Identical values were retained without duplication.');ui.pending=null;navigate('overview');break;}
     case 'target':{const value={month:data.get('month'),scope:data.get('scope'),value:Number(data.get('value'))};D.saveTarget(state,value);const old=state.targets[D.targetKey(value.month,value.scope)];openModal('Review monthly target',`<p>${e(value.scope)} · ${V.labelMonth(value.month)}</p><p>Previous target: <strong>${old?V.number(old.value):'Not set'}</strong><br>New target: <strong>${V.number(value.value)}</strong> activations</p>`,async()=>commit(D.saveTarget(state,value),'Monthly target saved.'));break;}
     case 'coverage':{const value={category:data.get('category'),start:data.get('start'),end:data.get('end'),expected:data.getAll('expected'),confirmed:data.has('confirmed')};D.setCoverage(state,value);openModal('Review reporting scope',`<p>${e(value.category)} · ${V.rangeLabel(value.start,value.end)}</p><p class="table-note">Expected models: ${value.expected.map(e).join(', ')}<br>Coverage: ${value.confirmed?'Confirmed':'Unconfirmed'}</p><p class="table-note">This replaces scope declarations for ${D.monthsBetween(value.start,value.end).length} months. Recorded quantities remain intact. Completeness and comparisons will be recalculated.</p>`,async()=>commit(D.setCoverage(state,value),'Coverage saved and metrics recalculated.'));break;}
-    case 'product':{const category=data.get('category'),p={model:D.canonical(data.get('model')),category,family:String(data.get('family')??'').trim(),capacity:category==='Battery module'?Number(data.get('capacity')):null,bms:category==='Battery module'?data.get('bms')||null:null,from:data.get('from')||null,to:data.get('to')||null};if(!ui.editProduct&&state.catalog[p.model])throw new Error('This model already exists. Edit its existing catalogue entry.');const impact=D.productImpact(state,p),old=state.catalog[p.model];openModal('Confirm catalogue impact',`<p><strong>${e(p.model)}</strong></p><div class="table-wrap"><table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>${['category','family','capacity','bms','from','to'].map(k=>`<tr><td>${k}</td><td>${e(old?.[k]??'Not set')}</td><td>${e(p[k]??'Not set')}</td></tr>`).join('')}</tbody></table></div><p class="table-note">${impact.records} recorded cells · ${V.number(impact.units)} units affected.<br>Historical capacity: ${V.number(impact.oldKwh,1)} → ${V.number(impact.newKwh,1)} kWh.<br>Family, compatibility and applicability changes may also change mix, coverage and ratios. The full change will be logged.</p>`,async()=>commit(D.updateProduct(state,p),'Catalogue updated with an audit entry.'));break;}
+    case 'product':{const category=data.get('category'),p={model:D.canonical(data.get('model')),category,family:String(data.get('family')??'').trim(),capacity:category==='Battery module'?Number(data.get('capacity')):null,bms:category==='Battery module'?data.get('bms')||null:null,powerKw:category==='Inverter'&&String(data.get('powerKw')??'').trim()?Number(data.get('powerKw')):null,phase:category==='Inverter'?data.get('phase')||null:null,from:data.get('from')||null,to:data.get('to')||null};if(category==='Inverter'&&!ui.editProduct&&(!p.powerKw||!p.phase))throw new Error('Provide rated kW and grid phase for a new inverter.');if(!ui.editProduct&&state.catalog[p.model])throw new Error('This model already exists. Edit its existing catalogue entry.');const impact=D.productImpact(state,p),old=state.catalog[p.model];openModal('Confirm catalogue impact',`<p><strong>${e(p.model)}</strong></p><div class="table-wrap"><table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>${['category','family','powerKw','phase','capacity','bms','from','to'].map(k=>`<tr><td>${k}</td><td>${e(old?.[k]??'Not set')}</td><td>${e(p[k]??'Not set')}</td></tr>`).join('')}</tbody></table></div><p class="table-note">${impact.records} recorded cells · ${V.number(impact.units)} units affected.<br>Historical capacity: ${V.number(impact.oldKwh,1)} → ${V.number(impact.newKwh,1)} kWh.<br>Family, compatibility and applicability changes may also change mix, coverage and ratios. The full change will be logged.</p>`,async()=>commit(D.updateProduct(state,p),'Catalogue updated with an audit entry.'));break;}
     case 'event':{const date=data.get('date'),title=String(data.get('title')).trim();if(!date||!title)throw new Error('Provide an event date and title.');const next=D.clone(state);next.events.push({id:D.uid(),date,title,type:data.get('type'),notes:String(data.get('notes')??'').trim()});next.updatedAt=new Date().toISOString();await commit(next,'Timeline event saved.');$('#modal').close();break;}
   }}catch(err){const errbox=$('#modal').open?$('#dialog-error'):null;if(errbox)errbox.textContent=err.message;else toast(err.message,true);}finally{if(button)button.disabled=false;}
 });
 
-try{const saved=await loadState();if(saved)state=D.validateBackup(saved);render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}
+try{const saved=await loadState();if(saved){state=D.validateBackup(saved);const merged=D.mergeInverterCatalog(state.catalog);if(merged!==state.catalog){state.catalog=merged;await saveState(state);}}render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}
 
 })().catch(error=>{console.error(error);const target=document.getElementById('main');if(target){target.textContent='Could not open the dashboard: '+error.message;}});

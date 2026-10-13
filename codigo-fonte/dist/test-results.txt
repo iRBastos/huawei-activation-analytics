@@ -1,22 +1,10 @@
-Huawei Activation Analytics — automated test verification status
-Branch: feature/inverter-power-catalog
-Status: NOT YET RE-EXECUTED AGAINST THIS BRANCH
-
-The previous checked-in 52/52 pass log predates additions to the inverter
-catalogue, the grid-phase classifications and the commercial KPI tests.
-It has been removed here to avoid presenting stale results as current.
-
-The catalogue assertion has been updated to verify:
-- Five original LUNA definitions (three battery modules and two BMS).
-- 83 known inverter models with valid kW and electrical phase definitions.
-- 88 total default catalogue entries.
-
-To generate an authoritative new result from the repository:
-  cd codigo-fonte
-  node --version
-  npm test > dist/test-results.txt 2>&1
-Check the exit status and preserve failing output if any tests fail.
-Copy the resulting output to documentacao/test-results.txt.
-The offline Windows/browser acceptance checks are separate from npm test.
-
-No new PASS result is claimed until the suite has actually run.
+Huawei Activation Analytics — verified automated test summary
+Source of truth: npm test output captured by GitHub Actions.
+Branch: feature/inverter-power-catalog (or its eventual merged release).
+Tests: 87
+Passed: 87
+Failed: 0
+Additional offline smoke test: node tools/verify-offline.mjs.
+A passing node test suite and simulated browser do NOT constitute manual Windows acceptance.
+For authoritative commit-specific evidence, open the green GitHub Actions run on the commit.
+This file is a reproducible summary; it is not the full TAP transcript.
