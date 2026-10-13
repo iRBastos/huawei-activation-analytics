@@ -34,11 +34,11 @@ Use the same browser, profile and file location to retain the browser-local work
 
 ## Development and validation
 
-Using Node.js 22 or newer, run `npm test` from `codigo-fonte/`. No `npm install` is needed. All 52 automated tests passed for this edition.
+Using Node.js 22 or newer, run `npm test` from `codigo-fonte/`. No `npm install` is needed. GitHub Actions runs the full test suite, the offline DOM simulator, headless-browser smoke checks and distribution freshness checks for this branch. See the latest green workflow run for commit-specific evidence; the checked-in result files are reproducible summaries.
 
-From the same directory, `python3 tools/build-offline.py` regenerates the ready-to-open HTML, and `node tools/verify-offline.mjs` verifies the bundle with a controlled DOM simulation. Python and Node.js are optional development tools, not dashboard runtime requirements.
+From the same directory, `python3 tools/build-offline.py` regenerates the ready-to-open HTML; `node tools/verify-offline.mjs` tests a controlled DOM simulation; `python3 tools/build-release.py --test-log <test-output>` assembles the deterministic `codigo-fonte.zip` and test summaries. GitHub Actions automatically synchronizes these distribution files on the development branch. Python and Node.js are optional development tools, not dashboard runtime requirements.
 
-Real Windows/browser interaction was not independently verified in the build environment. See [verification notes](documentacao/VERIFICACAO.txt) for the precise scope and remaining browser checks.
+GitHub Actions performs a headless Chromium smoke test on synthetic/demo data. A complete user acceptance pass with real imports on Windows is a separate manual check. See [verification notes](documentacao/VERIFICACAO.txt) for the precise scope and remaining browser checks.
 
 ## Dependencies
 

@@ -1,16 +1,17 @@
 import {CATEGORIES,clone,uid,canonical,monthsBetween,applicable} from './model.js';
-import {validateProduct} from './validation.js';
+import {validateProduct,IMPORT_DATASETS,datasetAcceptsCategory} from './validation.js';
 
 export function importPreview(state,validation) {
   return validation.records.map(r=>{const previous=state.records[r.key];let action=r.quantity===null?'Missing — retain existing':!previous||previous.quantity===null?'New':previous.quantity===r.quantity?'Unchanged':'Replace';return {...r,previous:previous?.quantity??null,difference:r.quantity!==null&&previous?.quantity!==null&&previous?.quantity!==undefined?r.quantity-previous.quantity:null,action};});
 }
 export function commitImport(state,validation,{classifications={},confirmedCategories=[]}={}) {
-  if(validation.errors.length||validation.unknown.some(m=>!classifications[m]&&!state.catalog[m]))throw new Error('Resolve validation errors and classify every model before importing.');
+  if(!IMPORT_DATASETS.includes(validation.dataset)||validation.errors.length||validation.unknown.some(m=>!classifications[m]&&!state.catalog[m]))throw new Error('Resolve validation errors and classify every model before importing.');
+  if(confirmedCategories.some(c=>!CATEGORIES.includes(c)))throw new Error('Invalid reporting coverage category.');
   const next=clone(state),id=uid(),timestamp=new Date().toISOString(),changes=[],coverageChanges=[],catalogChanges=[];
   for(const [model,p]of Object.entries(classifications))if(!next.catalog[model]){const errs=validateProduct(p,{...next.catalog,...classifications});if(errs.length)throw new Error(errs.join(' '));next.catalog[model]=clone(p);catalogChanges.push({model,before:null,after:clone(p)});}
   for(const r of validation.records){
     const p=next.catalog[r.model];if(!p)throw new Error(`Unclassified model: ${r.model}.`);
-    if(validation.dataset==='inverters'&&p.category!=='Inverter'||validation.dataset==='batteries'&&p.category==='Inverter')throw new Error('Dataset category conflict.');
+    if(!datasetAcceptsCategory(validation.dataset,p.category))throw new Error(`Dataset category conflict for ${r.model}.`);
     if(r.quantity===null)continue;
     if(!Number.isSafeInteger(r.quantity)||r.quantity<0)throw new Error('Invalid quantity.');
     const old=next.records[r.key];if(old?.quantity===r.quantity)continue;

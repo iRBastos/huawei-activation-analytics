@@ -40,6 +40,18 @@ assert.match(app.nodes.get('#main').innerHTML,/<svg/);
 for(const nav of ['inverters','batteries','comparisons','targets','data']){await app.click({nav});assert.ok(app.nodes.get('#main').innerHTML.length>500);}
 await app.click({action:'exit-demo'});
 assert.match(app.nodes.get('#main').innerHTML,/Ready for your activation data/);
+// Acceptance regression: an old schema-1 backup has only the original five LUNA products.
+const legacy=modules['model.js'].freshState();
+legacy.catalog=Object.fromEntries(Object.entries(legacy.catalog).filter(([,p])=>p.category!=='Inverter'));
+assert.equal(Object.keys(legacy.catalog).length,5);
+const legacyJson=JSON.stringify(legacy);
+await app.listeners.change({target:{id:'restore-file',dataset:{},files:[{name:'legacy-backup.json',size:legacyJson.length,text:async()=>legacyJson}]}});
+assert.equal(app.nodes.get('#modal').open,true);
+await app.click({action:'dialog-confirm'});
+const migrated=await modules['persistence.js'].loadState();
+assert.equal(Object.values(migrated.catalog).filter(p=>p.category==='Inverter').length,86);
+assert.equal(migrated.catalog['SUN2000-17KTL-M5(MBUS)'].powerKw,17);
+assert.equal(migrated.catalog['SUN2000-17KTL-M5(MBUS)'].phase,'Three-phase');
 const json=JSON.stringify(fixture);
 await app.listeners.change({target:{id:'restore-file',dataset:{},files:[{name:'fixture.json',size:json.length,text:async()=>json}]}});
 assert.equal(app.nodes.get('#modal').open,true);
@@ -73,4 +85,4 @@ const memory=await boot({getItem(){throw new Error('Browser blocks persistence')
 assert.match(memory.nodes.get('#main').innerHTML,/Session-only workspace/);
 await memory.click({action:'demo'});assert.match(memory.nodes.get('#main').innerHTML,/<svg/);
 assert.deepEqual(app.errors,[]);assert.deepEqual(reloaded.errors,[]);assert.deepEqual(memory.errors,[]);
-console.log(JSON.stringify({inlineScripts:scripts.length,moduleExportParity:Object.keys(modules).length,viewParity:6,simulatedAppChecks:['boot','demo','six areas','restore','filters','backup','reload','CSV import commit','two XLSX templates','blocked-storage session'],realBrowser:false}));
+console.log(JSON.stringify({inlineScripts:scripts.length,moduleExportParity:Object.keys(modules).length,viewParity:6,simulatedAppChecks:['boot','demo','six areas','legacy-backup-migration','restore','filters','backup','reload','CSV import commit','two XLSX templates','blocked-storage session'],realBrowser:false}));

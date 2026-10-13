@@ -7,7 +7,7 @@ import {makeDemo} from './demo.js';
 
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,dataset:'inverters',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',inverterSelectedModels:null,inverterPickerOpen:false,inverterModelSearch:'',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
@@ -37,9 +37,9 @@ function detail(start=state.preferences.start,end=state.preferences.end,model=st
 function validatePending(){if(!ui.pending)return;const p=ui.pending;p.validation=D.validateMatrix({rows:p.rows,filename:p.filename,sheet:p.sheet,headerRow:p.headerRow,dataset:ui.dataset,catalog:{...state.catalog,...p.classifications}});}
 async function chooseWorksheet(name){const p=ui.pending;if(!p)return;ui.loading=true;render();try{p.sheet=name;p.rows=await p.workbook.sheet(name);const h=D.suggestHeader(p.rows);p.headerRow=h.index;p.headerUncertain=h.uncertain;validatePending();}finally{ui.loading=false;render();}}
 async function importFile(file){if(!file)return;if(ui.demo){toast('Return to your real workspace before importing data.',true);return;}ui.importError=null;ui.loading=true;ui.pending=null;ui.page='data';ui.dataTab='import';render();try{const workbook=await readWorkbook(await file.arrayBuffer(),file.name);ui.pending={filename:file.name,workbook,sheet:workbook.names[0],rows:[],headerRow:0,classifications:{}};await chooseWorksheet(workbook.names[0]);}catch(err){ui.pending=null;ui.importError=err.message;}finally{ui.loading=false;render();}}
-function template(dataset){const end=D.closedMonth(),months=D.monthsBetween(D.shiftMonth(end,-5),end);download(toCsv(templateRows(dataset,months)),`${dataset==='inverters'?'Inverter':'Battery_BMS'}_Import_Template.csv`,'text/csv;charset=utf-8');}
+function template(dataset){const end=D.closedMonth(),months=D.monthsBetween(D.shiftMonth(end,-5),end);download(toCsv(templateRows(dataset,months)),`${dataset==='unified'?'Unified_Equipment':dataset==='inverters'?'Inverter':'Battery_BMS'}_Import_Template.csv`,'text/csv;charset=utf-8');}
 function showProduct(model=null){const p=model?state.catalog[model]:{model:'',category:'Battery module',family:'',capacity:null,bms:null,from:null,to:null};ui.editProduct=model;
-  openModal(model?'Edit product definition':'Add product model',`<form data-form="product"><div class="form-row"><label class="field">Exact model code<input name="model" value="${e(p.model)}" ${model?'readonly':''} required></label><label class="field">Category<select name="category">${D.CATEGORIES.map(c=>V.option(c,c,p.category)).join('')}</select></label></div><div class="form-row"><label class="field">Family<input name="family" value="${e(p.family)}" placeholder="Optional"></label><label class="field">Module capacity (kWh)<input name="capacity" type="number" min="0.001" step="any" value="${p.capacity??''}" placeholder="Battery modules only"></label></div><label class="field">Compatible BMS<select name="bms">${V.option('','Not specified',p.bms??'')}${Object.values(state.catalog).filter(x=>x.category==='BMS').map(x=>V.option(x.model,x.model,p.bms)).join('')}</select></label><div class="form-row" style="margin-top:18px"><label class="field">Reporting applicability from<input name="from" type="month" value="${p.from??''}"></label><label class="field">Reporting applicability to<input name="to" type="month" value="${p.to??''}"></label></div><p class="table-note">Blank applicability dates mean no explicit bound. They do not indicate a launch date. Capacity changes recalculate historical battery capacity; review the impact before saving.</p><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Preview impact</button></div></form>`);
+  openModal(model?'Edit product definition':'Add product model',`<form data-form="product"><div class="form-row"><label class="field">Exact model code<input name="model" value="${e(p.model)}" ${model?'readonly':''} required></label><label class="field">Category<select name="category">${D.CATEGORIES.map(c=>V.option(c,c,p.category)).join('')}</select></label></div><div class="form-row"><label class="field">Family<input name="family" value="${e(p.family)}" placeholder="Optional"></label><label class="field">Module capacity (kWh)<input name="capacity" type="number" min="0.001" step="any" value="${p.capacity??''}" placeholder="Battery modules only"></label></div><div class="form-row"><label class="field">Inverter rated power (kW)<input name="powerKw" type="number" min="0.001" step="any" value="${p.powerKw??''}" placeholder="Inverters only"></label><label class="field">Inverter grid phase<select name="phase">${V.option('','Not specified',p.phase??'')}${V.option('Single-phase','Single-phase',p.phase)}${V.option('Three-phase','Three-phase',p.phase)}</select></label></div><label class="field">Compatible BMS<select name="bms">${V.option('','Not specified',p.bms??'')}${Object.values(state.catalog).filter(x=>x.category==='BMS').map(x=>V.option(x.model,x.model,p.bms)).join('')}</select></label><div class="form-row" style="margin-top:18px"><label class="field">Reporting applicability from<input name="from" type="month" value="${p.from??''}"></label><label class="field">Reporting applicability to<input name="to" type="month" value="${p.to??''}"></label></div><p class="table-note">Blank applicability dates mean no explicit bound. They do not indicate a launch date. Capacity changes recalculate historical battery capacity; review the impact before saving.</p><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Preview impact</button></div></form>`);
 }
 function eventForm(){openModal('Add commercial context',`<form data-form="event"><div class="form-row"><label class="field">Date<input type="date" name="date" value="${state.preferences.end}-01" required></label><label class="field">Event type<select name="type">${['Promotion','Training','Product launch','Stock availability','Pricing change','Other context'].map(x=>V.option(x,x,'')).join('')}</select></label></div><label class="field">Title<input name="title" maxlength="140" required placeholder="e.g. Installer training session"></label><label class="field" style="margin-top:16px">Notes<textarea name="notes" maxlength="3000" placeholder="Record what happened. Timing alone does not establish its impact."></textarea></label><div class="dialog-actions"><button type="button" data-close="modal">Cancel</button><button type="submit" class="primary">Save event</button></div></form>`);}
 async function applyShortcut(value){if(value==='custom')return;const categories=state.preferences.category==='All'?D.CATEGORIES:[state.preferences.category],latest=D.latestComplete(state,categories);if(!latest){toast('No complete month is available for this category scope. Import data and confirm coverage.',true);return;}let start=latest,end=latest;
@@ -57,6 +57,23 @@ document.addEventListener('click',async event=>{
     if(el.dataset.dataTab){navigate('data',el.dataset.dataTab);return;}
     if(el.dataset.month){detail(el.dataset.month,el.dataset.end??el.dataset.month,el.dataset.model??state.preferences.model);return;}
     if(el.dataset.modelDetail){const model=state.catalog[el.dataset.modelDetail]?el.dataset.modelDetail:state.preferences.model;detail(state.preferences.start,state.preferences.end,model);return;}
+    if(el.dataset.inverterChartModel){
+      const model=el.dataset.inverterChartModel,preferences=state.preferences;
+      const allowed=D.selectModels(state,{category:'Inverter',model:preferences.model,family:preferences.family})
+        .some(p=>p.model===model&&((ui.gridPhase??'All')==='All'||p.phase===ui.gridPhase));
+      if(!allowed)throw new Error('This inverter is not in the current reporting scope.');
+      const initial=ui.inverterSelectedModels??D.ranking(state,preferences,'Inverter')
+        .filter(x=>(ui.gridPhase??'All')==='All'||state.catalog[x.model]?.phase===ui.gridPhase)
+        .slice(0,8).map(x=>x.model);
+      if(initial.includes(model))ui.inverterSelectedModels=initial.filter(x=>x!==model);
+      else{
+        if(initial.length>=V.INVERTER_CHART_MAX)throw new Error('Select up to '+V.INVERTER_CHART_MAX+' inverter models at a time. Remove a model to add another.');
+        ui.inverterSelectedModels=[...initial,model];
+        ui.hiddenSeries.delete(model);
+      }
+      render();
+      return;
+    }
     if(el.dataset.toggleSeries){const key=el.dataset.toggleSeries;ui.hiddenSeries.has(key)?ui.hiddenSeries.delete(key):ui.hiddenSeries.add(key);render();return;}
     if(el.dataset.editProduct){showProduct(el.dataset.editProduct);return;}
     if(el.dataset.page){ui.recordPage=Math.max(0,+el.dataset.page);render();return;}
@@ -70,14 +87,18 @@ document.addEventListener('click',async event=>{
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;navigate('overview');}break;
       case 'help':navigate('data','backup');break;
       case 'templates':navigate('data','import');toast('Both Excel templates are available beside the import area.');break;
+      case 'inverter-chart-picker':ui.inverterPickerOpen=!ui.inverterPickerOpen;render();break;
+      case 'inverter-chart-top':ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
+      case 'inverter-chart-clear':ui.inverterSelectedModels=[];render();break;
       case 'toggle-filters':ui.moreFilters=!ui.moreFilters;render();break;
-      case 'reset-filters':{const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
+      case 'reset-filters':{ui.gridPhase='All';const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
       case 'presentation':document.body.classList.toggle('presentation');break;
       case 'print':{const previous=ui.page;ui.page='overview';render();$('#main').querySelectorAll('details').forEach(x=>x.open=true);window.print();ui.page=previous;render();break;}
       case 'event':eventForm();break;
       case 'add-product':showProduct();break;
       case 'revalidate':validatePending();render();break;
       case 'cancel-import':ui.pending=null;ui.importError=null;render();break;
+      case 'template-unified':template('unified');break;
       case 'template-inverters':template('inverters');break;
       case 'template-batteries':template('batteries');break;
       case 'export-records':download(toCsv(exportRows(state,state.preferences)),`activation-records_${state.preferences.start}_${state.preferences.end}.csv`,'text/csv;charset=utf-8');break;
@@ -93,6 +114,10 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
     case 'shortcut':await applyShortcut(el.value);break;
+    case 'quarter-select':ui.quarter=Number(el.value);render();break;
+    case 'quarter-metric':ui.quarterMetric=el.value;render();break;
+    case 'phase-chart-mode':ui.phaseChartMode=el.value;ui.hiddenSeries.clear();render();break;
+    case 'grid-phase':ui.gridPhase=el.value;ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
     case 'dataset':ui.dataset=el.value;if(ui.pending){ui.pending.classifications={};validatePending();}render();break;
     case 'import-file':await importFile(el.files[0]);break;
     case 'worksheet':await chooseWorksheet(el.value);break;
@@ -101,11 +126,19 @@ document.addEventListener('change',async event=>{const el=event.target;try{
     case 'mix-basis':ui.mixBasis=el.value;render();break;
     case 'compare-metric':ui.compareMetric=el.value;render();break;
     case 'coverage-category':ui.coverageCategory=el.value;render();break;
-    case 'restore-file':{if(ui.demo)throw new Error('Exit the fictional demo before restoring a real backup.');const file=el.files[0];if(!file)break;if(file.size>80*1024*1024)throw new Error('Backup exceeds 80 MB.');let restored;try{restored=D.validateBackup(JSON.parse(await file.text()));}catch(err){throw new Error('Backup not restored: '+err.message);}openModal('Replace this workspace with the backup?',`<p><strong>${e(file.name)}</strong></p><div class="preview-stats"><span><strong>${Object.keys(restored.records).length}</strong>records</span><span><strong>${Object.keys(restored.catalog).length}</strong>models</span><span><strong>${restored.history.length}</strong>imports</span><span><strong>${restored.events.length}</strong>events</span></div><p class="table-note">This will replace ${Object.keys(state.records).length} current records, targets, events, coverage and history in this browser. It will not upload the backup anywhere.</p>`,async()=>{await commit(restored,'Backup restored successfully.');ui.pending=null;navigate('overview');},'Restore full backup');break;}
+    case 'restore-file':{if(ui.demo)throw new Error('Exit the fictional demo before restoring a real backup.');const file=el.files[0];if(!file)break;if(file.size>80*1024*1024)throw new Error('Backup exceeds 80 MB.');let restored;try{restored=D.validateBackup(JSON.parse(await file.text()));restored.catalog=D.mergeInverterCatalog(restored.catalog);}catch(err){throw new Error('Backup not restored: '+err.message);}openModal('Replace this workspace with the backup?',`<p><strong>${e(file.name)}</strong></p><div class="preview-stats"><span><strong>${Object.keys(restored.records).length}</strong>records</span><span><strong>${Object.keys(restored.catalog).length}</strong>models</span><span><strong>${restored.history.length}</strong>imports</span><span><strong>${restored.events.length}</strong>events</span></div><p class="table-note">This will replace ${Object.keys(state.records).length} current records, targets, events, coverage and history in this browser. It will not upload the backup anywhere.</p>`,async()=>{await commit(restored,'Backup restored successfully.');ui.pending=null;navigate('overview');},'Restore full backup');break;}
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
+document.addEventListener('input',event=>{const el=event.target;if(el.id==='inverter-model-search'){
+    ui.inverterModelSearch=el.value;
+    const cursor=el.selectionStart;
+    render();
+    const current=$('#inverter-model-search');
+    if(current){current.focus();try{current.setSelectionRange(cursor,cursor);}catch{}}
+    return;
+  }
+  if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
 document.addEventListener('dragover',event=>{const z=event.target.closest('#dropzone');if(z){event.preventDefault();z.classList.add('drag');}});
 document.addEventListener('dragleave',event=>{event.target.closest('#dropzone')?.classList.remove('drag');});
 document.addEventListener('drop',async event=>{if(event.target.closest('#dropzone')){event.preventDefault();await importFile(event.dataTransfer.files[0]);}});
@@ -113,13 +146,33 @@ document.addEventListener('drop',async event=>{if(event.target.closest('#dropzon
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
-    case 'classify':{const p=ui.pending,classes={...p.classifications};p.validation.unknown.forEach((model,i)=>{const category=data.get(`category-${i}`);classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,from:null,to:null};});for(const p of Object.values(classes)){const errs=D.validateProduct(p,{...state.catalog,...classes});if(errs.length)throw new Error(`${p.model}: ${errs.join(' ')}`);}p.classifications=classes;validatePending();render();toast('Model classifications confirmed for this preview.');break;}
+    case 'classify':{
+      const p=ui.pending,classes={...p.classifications};
+      p.validation.unknown.forEach((model,i)=>{
+        const category=data.get(`category-${i}`),powerInput=String(data.get(`power-${i}`)??'').trim(),phase=data.get(`phase-${i}`)||null;
+        if(category==='Inverter'&&(!powerInput||!phase))throw new Error(`${model}: Provide rated kW and grid phase for a new inverter model.`);
+        classes[model]={model,category,family:String(data.get(`family-${i}`)??'').trim(),
+          capacity:category==='Battery module'?Number(data.get(`capacity-${i}`)):null,
+          bms:category==='Battery module'?data.get(`bms-${i}`)||null:null,
+          powerKw:category==='Inverter'?Number(powerInput):null,phase:category==='Inverter'?phase:null,from:null,to:null};
+      });
+      for(const product of Object.values(classes)){
+        const errs=D.validateProduct(product,{...state.catalog,...classes});
+        if(errs.length)throw new Error(`${product.model}: ${errs.join(' ')}`);
+      }
+      const switchToUnified=Object.values(classes).some(product=>!D.datasetAcceptsCategory(ui.dataset,product.category));
+      p.classifications=classes;
+      if(switchToUnified)ui.dataset='unified';
+      validatePending();render();
+      toast(switchToUnified?'Switched to Unified Import to include every selected equipment category.':'Model classifications confirmed for this preview.');
+      break;
+    }
     case 'commit-import':{if(!data.has('approved'))throw new Error('Confirm that you reviewed the proposed values.');const p=ui.pending;validatePending();const next=D.commitImport(state,p.validation,{classifications:p.classifications,confirmedCategories:data.getAll('coverage')});const last=D.latestComplete(next);if(last)Object.assign(next.preferences,{start:last,end:last});else if(p.validation.months.length)Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Import saved. Identical values were retained without duplication.');ui.pending=null;navigate('overview');break;}
     case 'target':{const value={month:data.get('month'),scope:data.get('scope'),value:Number(data.get('value'))};D.saveTarget(state,value);const old=state.targets[D.targetKey(value.month,value.scope)];openModal('Review monthly target',`<p>${e(value.scope)} · ${V.labelMonth(value.month)}</p><p>Previous target: <strong>${old?V.number(old.value):'Not set'}</strong><br>New target: <strong>${V.number(value.value)}</strong> activations</p>`,async()=>commit(D.saveTarget(state,value),'Monthly target saved.'));break;}
     case 'coverage':{const value={category:data.get('category'),start:data.get('start'),end:data.get('end'),expected:data.getAll('expected'),confirmed:data.has('confirmed')};D.setCoverage(state,value);openModal('Review reporting scope',`<p>${e(value.category)} · ${V.rangeLabel(value.start,value.end)}</p><p class="table-note">Expected models: ${value.expected.map(e).join(', ')}<br>Coverage: ${value.confirmed?'Confirmed':'Unconfirmed'}</p><p class="table-note">This replaces scope declarations for ${D.monthsBetween(value.start,value.end).length} months. Recorded quantities remain intact. Completeness and comparisons will be recalculated.</p>`,async()=>commit(D.setCoverage(state,value),'Coverage saved and metrics recalculated.'));break;}
-    case 'product':{const category=data.get('category'),p={model:D.canonical(data.get('model')),category,family:String(data.get('family')??'').trim(),capacity:category==='Battery module'?Number(data.get('capacity')):null,bms:category==='Battery module'?data.get('bms')||null:null,from:data.get('from')||null,to:data.get('to')||null};if(!ui.editProduct&&state.catalog[p.model])throw new Error('This model already exists. Edit its existing catalogue entry.');const impact=D.productImpact(state,p),old=state.catalog[p.model];openModal('Confirm catalogue impact',`<p><strong>${e(p.model)}</strong></p><div class="table-wrap"><table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>${['category','family','capacity','bms','from','to'].map(k=>`<tr><td>${k}</td><td>${e(old?.[k]??'Not set')}</td><td>${e(p[k]??'Not set')}</td></tr>`).join('')}</tbody></table></div><p class="table-note">${impact.records} recorded cells · ${V.number(impact.units)} units affected.<br>Historical capacity: ${V.number(impact.oldKwh,1)} → ${V.number(impact.newKwh,1)} kWh.<br>Family, compatibility and applicability changes may also change mix, coverage and ratios. The full change will be logged.</p>`,async()=>commit(D.updateProduct(state,p),'Catalogue updated with an audit entry.'));break;}
+    case 'product':{const category=data.get('category'),p={model:D.canonical(data.get('model')),category,family:String(data.get('family')??'').trim(),capacity:category==='Battery module'?Number(data.get('capacity')):null,bms:category==='Battery module'?data.get('bms')||null:null,powerKw:category==='Inverter'&&String(data.get('powerKw')??'').trim()?Number(data.get('powerKw')):null,phase:category==='Inverter'?data.get('phase')||null:null,from:data.get('from')||null,to:data.get('to')||null};if(category==='Inverter'&&!ui.editProduct&&(!p.powerKw||!p.phase))throw new Error('Provide rated kW and grid phase for a new inverter.');if(!ui.editProduct&&state.catalog[p.model])throw new Error('This model already exists. Edit its existing catalogue entry.');const impact=D.productImpact(state,p),old=state.catalog[p.model];openModal('Confirm catalogue impact',`<p><strong>${e(p.model)}</strong></p><div class="table-wrap"><table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>${['category','family','powerKw','phase','capacity','bms','from','to'].map(k=>`<tr><td>${k}</td><td>${e(old?.[k]??'Not set')}</td><td>${e(p[k]??'Not set')}</td></tr>`).join('')}</tbody></table></div><p class="table-note">${impact.records} recorded cells · ${V.number(impact.units)} units affected.<br>Historical capacity: ${V.number(impact.oldKwh,1)} → ${V.number(impact.newKwh,1)} kWh.<br>Family, compatibility and applicability changes may also change mix, coverage and ratios. The full change will be logged.</p>`,async()=>commit(D.updateProduct(state,p),'Catalogue updated with an audit entry.'));break;}
     case 'event':{const date=data.get('date'),title=String(data.get('title')).trim();if(!date||!title)throw new Error('Provide an event date and title.');const next=D.clone(state);next.events.push({id:D.uid(),date,title,type:data.get('type'),notes:String(data.get('notes')??'').trim()});next.updatedAt=new Date().toISOString();await commit(next,'Timeline event saved.');$('#modal').close();break;}
   }}catch(err){const errbox=$('#modal').open?$('#dialog-error'):null;if(errbox)errbox.textContent=err.message;else toast(err.message,true);}finally{if(button)button.disabled=false;}
 });
 
-try{const saved=await loadState();if(saved)state=D.validateBackup(saved);render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}
+try{const saved=await loadState();if(saved){state=D.validateBackup(saved);const merged=D.mergeInverterCatalog(state.catalog);if(merged!==state.catalog){state.catalog=merged;await saveState(state);}}render();}catch(err){ui.storageError=err.message;render();toast('Could not open saved workspace: '+err.message,true);}

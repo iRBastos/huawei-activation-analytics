@@ -12,10 +12,10 @@ Developers can regenerate the parent HTML with `python3 tools/build-offline.py`;
 
 ## Start analysing
 
-1. Open Data → Import centre. Select Inverters or Battery modules & BMS.
+1. Open Data → Import centre. Select Unified (inverters + battery modules + BMS in one worksheet), or use either legacy category-specific import.
 2. Upload an .xlsx or comma-separated .csv matrix with exact product models in the first column and YYYYMM month headers.
 3. Select the worksheet and header row. Review the preview, classification, quantities, supplied totals and previous/incoming values.
-4. Explicitly classify unknown models. Battery modules require a positive capacity. The five initial LUNA definitions match the supplied specification.
+4. Explicitly classify unknown models. Battery modules require a positive capacity. The five initial LUNA definitions and 86 catalogued inverter variants are supplied. Unrecognised models require explicit category and metadata confirmation.
 5. Confirm full reporting scope only when the file contains every expected model for that category and period. Otherwise declare coverage separately later.
 6. Confirm the import. Matching keys replace snapshots; they never add batches. Missing incoming values retain existing records. Absent rows/months are not deleted.
 7. Select a complete period for definitive comparisons. Inspect points or model rows for source cells and calculations.
@@ -75,7 +75,7 @@ IndexedDB is specific to the site's origin and the current browser/profile/devic
 
 ## Verification
 
-Run `npm test`. The delivered test log is `dist/test-results.txt`.
+Run `npm test`. On GitHub Actions this suite is executed together with `node tools/verify-offline.mjs` and a headless Chromium smoke test. The `dist/test-results.txt` and `../documentacao/test-results.txt` files are reproducible test-count summaries, not the complete live CI logs; always consult the latest green Actions job.
 
 The specified independent numerical fixture is verified: 100 inverters, 30 BMS, 60 modules, 100 S0 kWh, 260 S1 kWh, 360 total kWh, 30 BMS per 100 inverters, 2 modules per family BMS, 10 S0 kWh per C0, 13 S1 kWh per C1, and 12 overall kWh per BMS.
 
@@ -99,3 +99,8 @@ Excel template images were rendered and visually reviewed. Browser automation wa
 ## Offline edition
 
 The parent `index.html` is the file-open release. This source directory contains its modular inputs, tests and optional build script. Hosting configuration and Git history are not part of this offline copy. The hosted dashboard is unchanged.
+
+
+## Release and consistency
+
+Run `python3 tools/build-offline.py` before `python3 tools/build-release.py --test-log /path/to/passing-test-output.tap`. The release script deterministically packages the ready-to-open `index.html`, the editable `codigo-fonte/` directory, guides and Excel templates as `codigo-fonte.zip`. The development branch GitHub Actions synchronizes generated outputs; the validation workflow fails if the committed ZIP, `dist/app.offline.js`, HTML or test-count summaries are stale. It also runs the offline DOM simulator and a headless browser smoke test on fictional data. These checks do not substitute for opening the resulting app on Windows and testing a real, backed-up user workspace.

@@ -5,7 +5,7 @@ Ele não carrega módulos ES externos, não usa CDN e não requer servidor.
 Os arquivos Excel e a documentação estão incluídos na pasta extraída.
 
 Validações concluídas:
-- 52 testes automatizados passaram, sem falhas.
+- A suite atual é executada no GitHub Actions. Conferir o job VERDE da commit atual; codigo-fonte/dist/test-results.txt e documentacao/test-results.txt registram apenas contagens reproduzíveis, não logs assinados.
 - Os 13 módulos compilados preservam todos os seus exports.
 - As seis telas geram o mesmo conteúdo que seus módulos de origem.
 - Simulação em Node.js/DOM controlado: abertura, demonstração, navegação,
@@ -24,3 +24,7 @@ Se o navegador bloquear a persistência de arquivos locais, o app informa
 
 Os dados reais do navegador anterior não foram acessados ou incorporados.
 Transfira-os por backup JSON conforme LEIA-ME.txt.
+
+- Build determinístico: python3 codigo-fonte/tools/build-offline.py + python3 codigo-fonte/tools/build-release.py --test-log <arquivo-tap>
+- Verificações adicionais: teste DOM offline, Chromium headless e comparação entre ZIP/HTML/JS e as versões geradas.
+- Aceitação manual no Windows com planilhas reais e backup continua pendente até realizada pelo usuário.
