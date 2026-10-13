@@ -97,5 +97,9 @@ try{
 }finally{
  if(ws){try{ws.close()}catch{}}
  browser.kill('SIGKILL');
- await rm(dir,{recursive:true,force:true});
+ if(browser.exitCode===null&&browser.signalCode===null){
+   await Promise.race([new Promise(resolve=>browser.once('exit',resolve)),wait(3000)]);
+ }
+ // Chrome cache writers may linger briefly after the browser exits.
+ await rm(dir,{recursive:true,force:true,maxRetries:20,retryDelay:200});
 }
