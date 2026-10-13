@@ -102,12 +102,12 @@ export function inverterPhase(model) {
   const name=String(model??'').trim().toUpperCase();
   if (!Object.hasOwn(INVERTER_POWER_KW,name)) return null;
   if (name.startsWith('SUN2000L-')) return 'Single-phase';
-  const family=name.match(/-(L0|L1|LB0|LC0|M0|M1|M2|M5|MB0|MAP0|BEM1)(?:-|\\(|$)/)?.[1];
+  const family=name.match(/-(L0|L1|LB0|LC0|M0|M1|M2|M5|MB0|MAP0|BEM1)(?:-|\(|$)/)?.[1];
   if (SINGLE_PHASE_FAMILIES.has(family)) return 'Single-phase';
   if (THREE_PHASE_FAMILIES.has(family)) return 'Three-phase';
   // Legacy un-suffixed SUN2000 models: 2/3/3.68 kW are single phase;
   // 8/10/12/17/20 kW belong to the three-phase commercial generation.
-  if (/^SUN2000-(2|3\\.68)KTL$/.test(name)) return 'Single-phase';
+  if (/^SUN2000-(2|3\.68)KTL$/.test(name)) return 'Single-phase';
   if (/^SUN2000-(8|10|12|17|20)KTL$/.test(name)) return 'Three-phase';
   return null;
 }
