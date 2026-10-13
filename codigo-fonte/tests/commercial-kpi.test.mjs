@@ -39,3 +39,14 @@ test('unknown KPI and invalid quarter are rejected',()=>{
  assert.throws(()=>D.commercialKpi(state,'2024-07','2024-09','imaginary'));
  assert.throws(()=>D.sameQuarterYears(state,{quarter:5,years:[2024]}));
 });
+
+test('all inverter phase classifications are resolved, including legacy and MBUS',()=>{
+ const inverters=Object.values(D.INITIAL_CATALOG).filter(p=>p.category==='Inverter');
+ assert.equal(inverters.length,83);
+ assert.equal(inverters.filter(p=>p.phase==='Single-phase').length,26);
+ assert.equal(inverters.filter(p=>p.phase==='Three-phase').length,57);
+ assert.equal(D.inverterPhase('SUN2000-3.68KTL'),'Single-phase');
+ assert.equal(D.inverterPhase('SUN2000-5KTL-M1-EU(MBUS)'),'Three-phase');
+ assert.equal(D.inverterPhase('SUN2000-10KTL-M1(MBUS)'),'Three-phase');
+ assert.equal(D.inverterPhase('UNKNOWN-MODEL'),null);
+});
