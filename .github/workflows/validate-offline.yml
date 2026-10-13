@@ -6,13 +6,22 @@ on:
     paths:
       - 'codigo-fonte/**'
       - 'index.html'
-      - '.github/workflows/validate-offline.yml'
+      - 'codigo-fonte.zip'
+      - 'documentacao/**'
+      - 'templates/**'
+      - 'README.md'
+      - 'LEIA-ME.txt'
+      - '.github/workflows/**'
+      - '.github/QA-STATUS.md'
   push:
     branches: [main]
     paths:
       - 'codigo-fonte/**'
       - 'index.html'
-      - '.github/workflows/validate-offline.yml'
+      - 'codigo-fonte.zip'
+      - 'documentacao/**'
+      - 'templates/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -20,7 +29,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -34,26 +43,48 @@ jobs:
           python-version: '3.12'
       - name: Run automated tests
         working-directory: codigo-fonte
-        run: npm test
-      - name: Rebuild standalone HTML
-        working-directory: codigo-fonte
-        run: npm run build:offline
-      - name: Verify generated outputs
+        shell: bash
         run: |
+          set -o pipefail
+          npm test | tee "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Rebuild standalone HTML and JavaScript
+        working-directory: codigo-fonte
+        run: python3 tools/build-offline.py
+      - name: Test offline app in simulated DOM
+        working-directory: codigo-fonte
+        run: node tools/verify-offline.mjs
+      - name: Test in real headless Chromium
+        working-directory: codigo-fonte
+        run: node tools/browser-smoke.mjs
+      - name: Regenerate reproducible ZIP and verification summaries
+        run: python3 codigo-fonte/tools/build-release.py --test-log "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Fail if committed distribution differs from sources
+        shell: bash
+        run: |
+          git diff --exit-code -- index.html codigo-fonte/dist/app.offline.js codigo-fonte.zip codigo-fonte/dist/test-results.txt documentacao/test-results.txt
           test -s index.html
-          test -s codigo-fonte/dist/app.offline.js
+          test -s codigo-fonte.zip
           python3 - <<'PY'
+          import zipfile
           from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          js = Path('codigo-fonte/dist/app.offline.js').read_text(encoding='utf-8')
-          assert 'quarterlyIntelligence' in html and 'commercialKpi' in html, 'New KPI code missing in offline HTML'
-          assert 'inverterPhase' in js and 'grid-phase' in html, 'Inverter phase code missing'
-          assert '<script' in html and '</html>' in html, 'Incomplete standalone HTML'
-          print('Offline output checks passed')
+          with zipfile.ZipFile('codigo-fonte.zip') as z:
+              names=set(z.namelist())
+              assert not z.testzip(), "Corrupt ZIP"
+              for f in ('index.html','codigo-fonte/dist/app.offline.js',
+                        'codigo-fonte/dist/modules/inverter-catalog.js',
+                        'codigo-fonte/tests/backup-migration.test.mjs',
+                        'codigo-fonte/tools/browser-smoke.mjs',
+                        'documentacao/test-results.txt'):
+                  assert f in names, 'Missing from source ZIP: '+f
+                  assert z.read(f)==Path(f).read_bytes(), 'Stale file in ZIP: '+f
+          print("HTML, JS, test records and ZIP match the checked-out sources")
           PY
-      - name: Upload Windows-ready offline HTML
+      - name: Upload distribution and browser evidence
         uses: actions/upload-artifact@v4
         with:
-          name: huawei-activation-analytics-offline
-          path: index.html
+          name: huawei-activation-analytics-verified-release
+          path: |
+            index.html
+            codigo-fonte.zip
+            browser-smoke.png
           if-no-files-found: error
