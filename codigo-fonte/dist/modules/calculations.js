@@ -81,3 +81,34 @@ export function findings(state,f) {
   return out.slice(0,3);
 }
 export function filteredRecords(state,f) {const models=new Set(selectModels(state,f).map(p=>p.model));return Object.values(state.records).filter(r=>r.month>=f.start&&r.month<=f.end&&models.has(r.model)).sort((a,b)=>a.month.localeCompare(b.month)||a.model.localeCompare(b.model));}
+
+/** Shared KPI resolver: reuse metric/ratio/familyRatios, never count configurations as installations. */
+export function commercialKpi(state,start,end,id,{family='All'}={}){
+ const inv=()=>metric(state,start,end,'Inverter');
+ const bms=()=>metric(state,start,end,'BMS');
+ const modules=()=>metric(state,start,end,'Battery module');
+ const capacity=()=>metric(state,start,end,'Battery module',{capacity:true});
+ if(id==='inverters')return inv();
+ if(id==='bms')return bms();
+ if(id==='modules')return modules();
+ if(id==='capacity')return capacity();
+ if(id==='bmsPer100')return ratio(bms(),inv(),100);
+ if(id==='modulesPerBms')return family==='All'?ratio(modules(),bms()):familyRatios(state,{start,end},family).modulesPerBms;
+ if(id==='kwhPerBms')return family==='All'?ratio(capacity(),bms()):familyRatios(state,{start,end},family).kwhPerBms;
+ throw new Error('Unknown commercial KPI');
+}
+export function sameQuarterYears(state,{quarter,years,kpi='inverters',family='All'}){
+ if(!Number.isInteger(quarter)||quarter<1||quarter>4)throw new Error('Select a quarter from Q1 to Q4');
+ if(!Array.isArray(years)||!years.length||years.length>30||years.some(y=>!Number.isInteger(y)||y<1900||y>9999))throw new Error('Select valid comparison years');
+ return [...new Set(years)].sort((a,b)=>a-b).map(year=>{
+  const first=String(year)+'-'+String((quarter-1)*3+1).padStart(2,'0');
+  const last=shiftMonth(first,2);
+  const result=commercialKpi(state,first,last,kpi,{family});
+  return {year,quarter,start:first,end:last,label:'Q'+quarter+' '+year,...result};
+ });
+}
+export function kpiTrend(state,{start,end,aggregation='month',kpi='bmsPer100',family='All'}){
+ const buckets=new Map();
+ for(const m of monthsBetween(start,end)){const key=aggregationKey(m,aggregation);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(m);}
+ return [...buckets].map(([label,ms])=>({label,start:ms[0],end:ms.at(-1),...commercialKpi(state,ms[0],ms.at(-1),kpi,{family})}));
+}
