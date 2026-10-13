@@ -5,7 +5,7 @@ Ele não carrega módulos ES externos, não usa CDN e não requer servidor.
 Os arquivos Excel e a documentação estão incluídos na pasta extraída.
 
 Validações concluídas:
-- 52 testes automatizados passaram, sem falhas.
+- Resultado histórico: 52 testes passaram na edição original. A branch atual foi modificada posteriormente e AINDA NÃO FOI REVALIDADA. Execute npm test e substitua os registros de resultados antes do merge.
 - Os 13 módulos compilados preservam todos os seus exports.
 - As seis telas geram o mesmo conteúdo que seus módulos de origem.
 - Simulação em Node.js/DOM controlado: abertura, demonstração, navegação,
