@@ -1,8 +1,8 @@
 import * as D from './domain.js';
 import {escapeHtml as e} from './exports.js';
 import {lineChart,indexedSeries,barChart,stackedMix,color} from './charts.js';
-export const NAV=['Overview','Inverters','Batteries & BMS','Comparisons','Targets','Data'];
-export const ROUTES=['overview','inverters','batteries','comparisons','targets','data'];
+export const NAV=['Overview','Inverters','Batteries & BMS','Comparisons','Targets','Data','Installers'];
+export const ROUTES=['overview','inverters','batteries','comparisons','targets','data','installers'];
 const ICONS=['M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z','M4 4h16v16H4zM8 8h8M8 12h8M8 16h4','M3 7h17v12H3zM7 7V4h8v3M8 10v6M5 13h6M14 13h3','M4 20V10h5v10M10 20V4h5v16M16 20v-8h5v8','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 10v4M10 12h4','M3 6c0-4 18-4 18 0s-18 4-18 0v12c0 4 18 4 18 0V6M3 12c0 4 18 4 18 0'];
 export const number=(v,d=0)=>v===null||v===undefined?'—':v.toLocaleString('en-IE',{maximumFractionDigits:d});
 export const signed=(v,d=0)=>v===null||v===undefined?'—':`${v>0?'+':''}${number(v,d)}`;
@@ -10,7 +10,7 @@ export const labelMonth=m=>m?new Intl.DateTimeFormat('en-IE',{month:'short',year
 export const rangeLabel=(s,en)=>s===en?labelMonth(s):`${labelMonth(s)} – ${labelMonth(en)}`;
 export const option=(value,label,selected)=>`<option value="${e(value)}" ${value===selected?'selected':''}>${e(label??value)}</option>`;
 export function badge(status){const good=status==='Complete';return `<span class="badge ${good?'good':'warn'}">${e(status)}</span>`;}
-export function navigation(active){return NAV.map((n,i)=>`<button data-nav="${ROUTES[i]}" class="${ROUTES[i]===active?'active':''}" ${ROUTES[i]===active?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[i]}"/></svg>${n}</button>`).join('');}
+export function navigation(active){return NAV.map((n,i)=>`<button data-nav="${ROUTES[i]}" class="${ROUTES[i]===active?'active':''}" ${ROUTES[i]===active?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[i]??ICONS[5]}"/></svg>${n}</button>`).join('');}
 export function filters(state,ui){const f=state.preferences,c=D.comparisonPeriod(f),last=D.latestComplete(state),models=D.selectModels(state,{category:f.category,family:f.family});return `<div class="filter-main">
 <label class="field period-select">Reporting period<select id="shortcut"><option value="custom">Custom period</option><option value="month">Latest complete month</option><option value="quarter">Latest complete quarter</option><option value="ytd">Year to date</option><option value="3">Last 3 complete months</option><option value="6">Last 6 complete months</option><option value="12">Last 12 complete months</option></select></label>
 <label class="field">From<input type="month" data-filter="start" value="${f.start}" required></label><label class="field">To<input type="month" data-filter="end" value="${f.end}" required></label>

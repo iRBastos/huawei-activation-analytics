@@ -90,11 +90,40 @@ try{
  const evidence=await evaluate("(()=>{const p=[...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence');return {chart:!!p.querySelector('svg.line-chart'),table:!!p.querySelector('table'),order:p.querySelector('svg.line-chart')?.compareDocumentPosition(p.querySelector('table'))};})()");
  assert.ok(evidence.chart&&evidence.table,'comparison must show chart AND table');
  assert.ok((evidence.order&4)!==0,'chart must appear before table');
+ // Installer UI acceptance runs on fictional CSV data in this temporary browser profile.
+ await evaluate("document.querySelector('[data-action=exit-demo]').click()");
+ await evaluate("document.querySelector('[data-nav=installers]').click()");
+ const installerCsv='Installer,202501,202502,Total\nBordGais Energy,10,5,999\nBord Gáis Energy Solar,7,3,999\nBord Gáis Energy,4,2,999\nBordGais Energy,1,,999';
+ async function uploadInstallers(csv){
+  await evaluate(`(()=>{const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(csv)}],'installer-fixture.csv',{type:'text/csv'}));const input=document.querySelector('#installer-file');input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await until("!!document.querySelector('[data-form=installer-import]')",'installer preview');
+  await evaluate("(()=>{const f=document.querySelector('[data-form=installer-import]');f.querySelector('[name=approved]').checked=true;f.requestSubmit();})()");
+  await until("!document.querySelector('[data-form=installer-import]')",'installer import committed');
+ }
+ await uploadInstallers(installerCsv);
+ assert.equal(await evaluate("document.querySelectorAll('[data-installer-select]').length"),3);
+ await evaluate("(()=>{const ids=[...document.querySelectorAll('[data-installer-select]')].map(x=>x.dataset.installerSelect);for(const id of ids){const el=document.querySelector('[data-installer-select=\"'+id+'\"]');el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}document.querySelector('[data-action=installer-merge]').click();})()");
+ await until("!!document.querySelector('[data-form=installer-merge]')",'merge preview');
+ await evaluate("(()=>{const f=document.querySelector('[data-form=installer-merge]');f.querySelector('[name=name]').value='Bord Gáis Energy';f.requestSubmit();})()");
+ await until("!document.querySelector('#modal').open",'merge saved');
+ assert.equal(await evaluate("document.querySelectorAll('[data-installer-select]').length"),1);
+ assert.equal(await evaluate("document.querySelector('[data-installer-select]').closest('tr').children[2].textContent"),'32');
+ await uploadInstallers(installerCsv);
+ assert.equal(await evaluate("document.querySelector('[data-installer-select]').closest('tr').children[2].textContent"),'32','reimport must not double count');
+ await command('Page.reload');
+ await until("!!document.querySelector('[data-installer-select]')",'installer persistence after reload');
+ assert.equal(await evaluate("document.querySelector('[data-installer-select]').closest('tr').children[2].textContent"),'32');
+ await evaluate("document.querySelector('[data-installer-unmerge]').click();document.querySelector('[data-action=dialog-confirm]').click()");
+ await until("document.querySelectorAll('[data-installer-select]').length===3",'undo union');
+ assert.ok(await evaluate("document.querySelectorAll('[data-installer-suggest]').length>0"),'automatic name suggestions');
+ await evaluate("document.querySelector('[data-installer-detail]').click()");
+ await until("document.querySelector('#modal')?.textContent.includes('installer-fixture.csv')",'source evidence');
+ await evaluate("document.querySelector('#modal [data-close]').click()");
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
  assert.deepEqual(blocked,[],'offline app must not request remote resources');
- console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','screenshot'],screenshot:'browser-smoke.png'}));
+ console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','screenshot'],screenshot:'browser-smoke.png'}));
 }finally{
  if(ws){try{ws.close()}catch{}}
  browser.kill('SIGKILL');

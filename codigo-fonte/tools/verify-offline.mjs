@@ -42,6 +42,7 @@ await app.click({action:'exit-demo'});
 assert.match(app.nodes.get('#main').innerHTML,/Ready for your activation data/);
 // Acceptance regression: an old schema-1 backup has only the original five LUNA products.
 const legacy=modules['model.js'].freshState();
+legacy.schemaVersion=1;delete legacy.installers;
 legacy.catalog=Object.fromEntries(Object.entries(legacy.catalog).filter(([,p])=>p.category!=='Inverter'));
 assert.equal(Object.keys(legacy.catalog).length,5);
 const legacyJson=JSON.stringify(legacy);

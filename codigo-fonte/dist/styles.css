@@ -25,3 +25,5 @@
 .model-count{color:var(--muted);font-size:11px;align-self:center}
 @media(max-width:850px){.model-picker-list{grid-template-columns:1fr}.model-picker-volume{white-space:normal}}
 @media print{.model-picker,.model-count{display:none}}
+
+.installer-suggestion{display:flex;gap:20px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e5e7eb}.installer-suggestion p{margin:6px 0}.panel>label.field{max-width:540px;margin:16px 0}.panel>form{margin-top:20px}
