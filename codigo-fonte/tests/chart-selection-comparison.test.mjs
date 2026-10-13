@@ -27,7 +27,7 @@ test('inverter page offers any catalog model in searchable picker, not only the 
  const {state,models}=report(),late=models[10];
  const ui={gridPhase:'All',inverterPickerOpen:true,inverterModelSearch:'',inverterSelectedModels:[late],hiddenSeries:new Set()};
  const html=V.inverterView(state,ui);
- assert.match(html,/Choose models/);
+ assert.match(html,/Close selector/);
  assert.match(html,/inverter-model-search/);
  assert.match(html,/data-inverter-chart-model=/);
  assert.match(html,/Reset to Top 8/);
