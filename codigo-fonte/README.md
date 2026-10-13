@@ -75,7 +75,7 @@ IndexedDB is specific to the site's origin and the current browser/profile/devic
 
 ## Verification
 
-Run `npm test`. The delivered test log is `dist/test-results.txt`.
+Run `npm test`. The current branch has not yet been re-tested; `dist/test-results.txt` indicates pending verification rather than an up-to-date pass result.
 
 The specified independent numerical fixture is verified: 100 inverters, 30 BMS, 60 modules, 100 S0 kWh, 260 S1 kWh, 360 total kWh, 30 BMS per 100 inverters, 2 modules per family BMS, 10 S0 kWh per C0, 13 S1 kWh per C1, and 12 overall kWh per BMS.
 
