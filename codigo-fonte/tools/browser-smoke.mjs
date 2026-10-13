@@ -88,7 +88,7 @@ try{
  await until("!![...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence')",'comparison panel');
  const evidence=await evaluate("(()=>{const p=[...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence');return {chart:!!p.querySelector('svg.line-chart'),table:!!p.querySelector('table'),order:p.querySelector('svg.line-chart')?.compareDocumentPosition(p.querySelector('table'))};})()");
  assert.ok(evidence.chart&&evidence.table,'comparison must show chart AND table');
- assert.ok(evidence.order&Node.DOCUMENT_POSITION_FOLLOWING || evidence.order&4,'chart must appear before table');
+ assert.ok((evidence.order&4)!==0,'chart must appear before table');
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
