@@ -1,6 +1,6 @@
 import * as D from './domain.js';
 import {escapeHtml as e} from './exports.js';
-import {lineChart,barChart,stackedMix,color} from './charts.js';
+import {lineChart,indexedSeries,barChart,stackedMix,color} from './charts.js';
 export const NAV=['Overview','Inverters','Batteries & BMS','Comparisons','Targets','Data'];
 export const ROUTES=['overview','inverters','batteries','comparisons','targets','data'];
 const ICONS=['M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z','M4 4h16v16H4zM8 8h8M8 12h8M8 16h4','M3 7h17v12H3zM7 7V4h8v3M8 10v6M5 13h6M14 13h3','M4 20V10h5v10M10 20V4h5v16M16 20v-8h5v8','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 10v4M10 12h4','M3 6c0-4 18-4 18 0s-18 4-18 0v12c0 4 18 4 18 0V6M3 12c0 4 18 4 18 0'];
@@ -39,18 +39,33 @@ function rollingRatios(state,f){return `<div class="ratios">${[3,12].map(n=>{con
 function inverterPhaseTrend(state,f,selected='All') {
  const months=D.monthsBetween(f.start,f.end);
  return ['Single-phase','Three-phase'].filter(phase=>selected==='All'||phase===selected).map(phase=>({
- name:phase,model:phase,points:months.map(month=>{
+ name:phase,model:'All',points:months.map(month=>{
   const products=D.selectModels(state,{category:'Inverter',model:f.model,family:f.family}).filter(p=>p.phase===phase&&D.applicable(p,month));
   const cover=state.coverage[month+'|Inverter'];
   const expected=products.filter(p=>cover?.expected?.includes(p.model));
-  const records=products.map(p=>state.records[D.keyOf(month,p.model)]).filter(r=>r&&r.quantity!==null);
-  const complete=!!cover?.confirmed && month<=D.closedMonth() && expected.length===products.length && expected.every(p=>Number.isSafeInteger(state.records[D.keyOf(month,p.model)]?.quantity)) && products.length>0;
-  return {value:records.length?records.reduce((s,r)=>s+r.quantity,0):null,complete,status:complete?'Complete':'Partial / check scope',start:month,end:month};
- }).map(({label,...rest})=>({label:D.aggregationKey(rest.start,'month'),...rest}))
+  const records=products.map(p=>({model:p.model,value:state.records[D.keyOf(month,p.model)]?.quantity})).filter(r=>Number.isSafeInteger(r.value));
+  const undeclared=records.some(r=>!cover?.expected?.includes(r.model));
+  const complete=!!cover?.confirmed && month<=D.closedMonth() && expected.length>0 && !undeclared &&
+    expected.every(p=>Number.isSafeInteger(state.records[D.keyOf(month,p.model)]?.quantity));
+  return {label:month,value:records.length?records.reduce((sum,r)=>sum+r.value,0):complete?0:null,
+    complete,status:complete?'Complete':'Partial / check scope',start:month,end:month};
+ })
  }));
 }
+function phaseComparisonPanel(state,f,ui){
+ const raw=inverterPhaseTrend(state,f,ui.gridPhase??'All');
+ const mode=ui.phaseChartMode??'indexed',index=indexedSeries(raw),normalized=mode==='indexed';
+ const selected=normalized?index.series:raw;
+ const subtitle=normalized?'Relative activation trend · common start = 100 (not absolute volume)':'Observed inverter activations by grid phase · absolute number of units';
+ const info=normalized&&index.baseLabel?`<p class="chart-note">Both series use ${e(index.baseLabel)} as the same 100-point baseline. ${index.provisional?'The baseline contains provisional observations. ':''}Actual activation counts are available in each point’s tooltip and in Absolute activations mode.</p>`:
+ normalized?'<p class="chart-note">A normalized comparison needs at least one period with positive observations in every visible phase. Switch to absolute values to inspect available data.</p>':'<p class="chart-note">The two phases share an absolute scale. Check the original volumes before drawing conclusions about market size.</p>';
+ const control=`<label class="field editing">View<select id="phase-chart-mode">${option('indexed','Trend index (base 100)',mode)}${option('absolute','Absolute activations',mode)}</select></label>`;
+ return panel('Single-phase vs Three-phase',subtitle,
+ `<div class="chart-scroll">${lineChart(selected,{hidden:ui.hiddenSeries,id:'phase',title:'Inverter activations by grid phase',unit:normalized?'index (base 100)':'activations'})}</div>${info}`,
+ control);
+}
 export function inverterView(state,ui){const f={...state.preferences},phase=ui.gridPhase??'All',phaseRows=D.ranking(state,f,'Inverter').filter(x=>phase==='All'||state.catalog[x.model]?.phase===phase),phaseTotal=phaseRows.every(x=>x.current.complete)?phaseRows.reduce((n,x)=>n+(x.current.value??0),0):null,r=phaseRows.map(x=>({...x,share:phaseTotal>0?x.current.value/phaseTotal*100:null})),show=r.slice(0,8),series=show.map(row=>({name:row.model,model:row.model,points:D.trend(state,f,'Inverter',false,row.model)}));if(f.category!=='All'&&f.category!=='Inverter')return heading(state,'Inverters','Trends, product mix and contributions to change.')+'<div class="notice">The category filter excludes inverters. Select Inverter or All categories.</div>';return heading(state,'Inverters','Trends, product mix and contributions to change.')+coverageNotice(state,{...f,category:'Inverter'})+
-panel('Single-phase vs Three-phase','Monthly inverter activations · totals are observed counts; missing or unconfirmed coverage may understate values',`<div class="chart-scroll">${lineChart(inverterPhaseTrend(state,f,phase),{hidden:ui.hiddenSeries,id:'phase',title:'Inverter activations by grid phase'})}</div>`)+panel('Inverter activations by model',`${e(rangeLabel(f.start,f.end))} · activations · ${e(f.aggregation)}${r.length>8?' · top 8 models by selected-period volume':''}`,`<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,id:'inverters',title:'Inverter activations by model'})}</div>`)+`<div class="grid-equal">${panel('Volume ranking','Recorded activations · selected period',barChart(r.slice(0,12).map(x=>({label:x.model,model:x.model,value:x.current.value}))))}${panel('Contribution to change','Signed absolute change · complete periods only',barChart([...r].sort((a,b)=>Math.abs(b.delta??0)-Math.abs(a.delta??0)).slice(0,12).map(x=>({label:x.model,model:x.model,value:x.delta})),{signed:true}))}</div>`+
+phaseComparisonPanel(state,f,ui)+panel('Inverter activations by model',`${e(rangeLabel(f.start,f.end))} · activations · ${e(f.aggregation)}${r.length>8?' · top 8 models by selected-period volume':''}`,`<div class="chart-scroll">${lineChart(series,{hidden:ui.hiddenSeries,id:'inverters',title:'Inverter activations by model'})}</div>`)+`<div class="grid-equal">${panel('Volume ranking','Recorded activations · selected period',barChart(r.slice(0,12).map(x=>({label:x.model,model:x.model,value:x.current.value}))))}${panel('Contribution to change','Signed absolute change · complete periods only',barChart([...r].sort((a,b)=>Math.abs(b.delta??0)-Math.abs(a.delta??0)).slice(0,12).map(x=>({label:x.model,model:x.model,value:x.delta})),{signed:true}))}</div>`+
 panel('Product mix','Share of recorded inverter activations · partial data can change these shares',stackedMix(r.map(x=>({label:x.model,model:x.model,value:x.current.value}))))+rankingTable(r,ui,'Inverter')+notes(f);}
 function rankingTable(rows,ui,category){const filtered=rows.filter(r=>r.model.toLowerCase().includes((ui.tableSearch??'').toLowerCase()));return panel(`${e(category)} model detail`,'Every row opens source evidence and calculations',`<div class="table-wrap"><table><thead><tr><th>Product model</th><th class="num">Current</th><th class="num">Comparison</th><th class="num">Absolute Δ</th><th class="num">Change</th><th class="num">Share</th><th>Coverage</th></tr></thead><tbody>${filtered.map(r=>`<tr><td><button class="text-button" data-model-detail="${e(r.model)}">${e(r.model)}</button></td><td class="num">${number(r.current.value)}</td><td class="num">${number(r.previous.value)}</td><td class="num">${signed(r.delta)}</td><td class="num">${r.pct===null?(r.previous.value===0&&r.previous.complete?'No % baseline':'—'):signed(r.pct,1)+'%'}</td><td class="num">${r.share===null?'—':number(r.share,1)+'%'}</td><td>${badge(r.current.status)}</td></tr>`).join('')||'<tr><td colspan="7">No matching product records.</td></tr>'}</tbody></table></div>`,`<input class="editing" id="table-search" type="search" placeholder="Search model…" aria-label="Search product models" value="${e(ui.tableSearch??'')}">`);}
 export function batteriesView(state,ui){const f=state.preferences,c=D.comparisonPeriod(f),r=D.ranking(state,f,'Battery module'),b=D.ranking(state,f,'BMS'),capacity=ui.mixBasis==='capacity';if(f.category==='Inverter')return heading(state,'Batteries & BMS','Activated capacity, family mix and compatible BMS ratios.')+'<div class="notice">The category filter excludes batteries and BMS. Select All categories, Battery module or BMS.</div>';const selectedCats=['Battery module','BMS'].filter(x=>f.category==='All'||f.category===x),series=selectedCats.flatMap(cat=>D.selectModels(state,{category:cat,model:f.model,family:f.family}).map(p=>({name:p.model,model:p.model,points:D.trend(state,f,cat,false,p.model)})));const families=['S0','S1'].filter(fam=>f.family==='All'||f.family===fam);return heading(state,'Batteries & BMS','Module volume, activated capacity and family-specific activation ratios.')+coverageNotice(state,f)+
