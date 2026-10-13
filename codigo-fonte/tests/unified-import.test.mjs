@@ -118,3 +118,40 @@ test('unified CSV template and import screen include all three equipment categor
  assert.match(view,/Unified — all equipment/);
  assert.match(view,/template-unified/);
 });
+
+test('new M2/M5 MBUS inverter models are auto-recognised in a combined workbook',()=>{
+ const models=['SUN2000-20KTL-M2-EU(MBUS)','SUN2000-12KTL-M5(MBUS)','SUN2000-17KTL-M5(MBUS)'];
+ const worksheet=[['index',202501],...models.map((model,i)=>[model,i+1]),[BAT,4],[BMS,5],['Total',15]];
+ const result=validate(worksheet);
+ assert.deepEqual(result.errors,[]);
+ assert.deepEqual(result.unknown,[]);
+ assert.equal(result.models.length,5);
+ const state=D.commitImport(D.freshState(),result,{confirmedCategories:D.CATEGORIES});
+ assert.equal(Object.keys(state.records).length,5);
+ for(const model of models){
+   assert.equal(state.catalog[model].category,'Inverter');
+   assert.equal(state.catalog[model].phase,'Three-phase');
+ }
+});
+test('unknown-model validation offers Inverter even when legacy battery mode was selected',()=>{
+ const state=D.freshState(),unknown='UNREGISTERED-INVERTER-TEST';
+ const sheet=[['index',202501],[unknown,2],['Total',2]];
+ const validation=validate(sheet,'batteries');
+ const html=V.dataView(state,{
+  dataTab:'import',dataset:'batteries',loading:false,
+  pending:{validation,filename:'test.xlsx',sheet:'Sheet1',headerRow:0,rows:sheet,
+   classifications:{},workbook:{names:['Sheet1']},headerUncertain:false}
+ });
+ assert.match(html,/option value="Inverter"/);
+ assert.match(html,/Inverter rated power/);
+ assert.match(html,/Inverter grid phase/);
+ assert.match(html,/switches this import to Unified/);
+});
+test('manual inverter metadata is validated, and legacy inverter entries remain accepted',()=>{
+ const model='SUN2000-CUSTOM';
+ const base={model,category:'Inverter',family:'M2',capacity:null,bms:null,from:null,to:null};
+ assert.deepEqual(D.validateProduct(base,D.INITIAL_CATALOG),[]);
+ assert.deepEqual(D.validateProduct({...base,powerKw:12,phase:'Three-phase'},D.INITIAL_CATALOG),[]);
+ assert.match(D.validateProduct({...base,powerKw:-3,phase:'Other'},D.INITIAL_CATALOG).join(' '),/rated power/);
+ assert.match(D.validateProduct({...base,powerKw:12,phase:'Other'},D.INITIAL_CATALOG).join(' '),/grid phase/);
+});
