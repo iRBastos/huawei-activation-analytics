@@ -1,3 +1,4 @@
+export * from './inverter-catalog.js';
 // Stable public API for the separated, browser-independent domain modules.
 export * from './model.js';
 export * from './validation.js';
