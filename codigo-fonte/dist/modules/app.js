@@ -7,7 +7,7 @@ import {makeDemo} from './demo.js';
 
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
@@ -96,6 +96,7 @@ document.addEventListener('change',async event=>{const el=event.target;try{
     case 'shortcut':await applyShortcut(el.value);break;
     case 'quarter-select':ui.quarter=Number(el.value);render();break;
     case 'quarter-metric':ui.quarterMetric=el.value;render();break;
+    case 'phase-chart-mode':ui.phaseChartMode=el.value;ui.hiddenSeries.clear();render();break;
     case 'grid-phase':ui.gridPhase=el.value;ui.hiddenSeries.clear();render();break;
     case 'dataset':ui.dataset=el.value;if(ui.pending){ui.pending.classifications={};validatePending();}render();break;
     case 'import-file':await importFile(el.files[0]);break;
