@@ -50,3 +50,5 @@ export function suggestHeader(rows) {
   return {index,score,uncertain:!score||ties>1};
 }
 export function selectModels(state,{category='All',model='All',family='All'}={}) {return Object.values(state.catalog).filter(p=>(category==='All'||p.category===category)&&(model==='All'||p.model===model)&&(family==='All'||p.family===family));}
+
+export {mergeInverterCatalog};
