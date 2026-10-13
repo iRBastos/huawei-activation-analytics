@@ -33,10 +33,11 @@ export function lineChart(series,{unit='activations',title='Activation trend',hi
   const top=focused?max+margin:Math.max(1,max*1.14);
   const range=Math.max(top-bottom,1e-9);
   const x=i=>L+(n===1?pw/2:i/(n-1)*pw),y=v=>T+ph-(v-bottom)/range*ph;
+  const showValue=v=>unit==='%'?v.toFixed(1)+'%':fmt(v);
   let svg=`<svg class="line-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${e(title)} in ${e(unit)}"><title>${e(title)} — ${e(unit)}</title>`;
   for(let i=0;i<=4;i++){
     const v=bottom+range*i/4,yy=y(v);
-    svg+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" class="gridline"/><text x="${L-12}" y="${yy+4}" text-anchor="end" class="axis">${fmt(v)}</text>`;
+    svg+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" class="gridline"/><text x="${L-12}" y="${yy+4}" text-anchor="end" class="axis">${showValue(v)}</text>`;
   }
   const step=Math.max(1,Math.ceil(n/10));
   points.forEach((p,i)=>{if(i%step===0||i===n-1)svg+=`<text x="${x(i)}" y="${H-15}" text-anchor="middle" class="axis">${e(p.label)}</text>`;});
@@ -53,7 +54,7 @@ export function lineChart(series,{unit='activations',title='Activation trend',hi
     sp.forEach((p,i)=>{
       if(!Number.isFinite(p.value))return;
       const raw=Number.isFinite(p.rawValue)?` · actual ${fmt(p.rawValue)} activations`:'';
-      const description=`${s.name} ${p.label}: ${fmt(p.value)} ${unit}${raw} · ${p.status??'Complete'}`;
+      const description=`${s.name} ${p.label}: ${showValue(p.value)}${unit==='%'?'':' '+unit}${raw} · ${p.status??'Complete'}`;
       svg+=`<g tabindex="0" role="button" aria-label="${e(description)}" data-month="${e(p.start??p.label)}" data-end="${e(p.end??p.start??p.label)}" data-model="${e(s.model??'All')}"><title>${e(description)}</title><circle cx="${x(i)}" cy="${y(p.value)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="${p.complete?c:'white'}" stroke="${c}" stroke-width="2"/></g>`;
     });
   }
