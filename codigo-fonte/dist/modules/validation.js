@@ -13,6 +13,9 @@ export function validateProduct(p,catalog={}) {
   if(!CATEGORIES.includes(p.category))errors.push('Choose a product category.');
   if(p.category==='Battery module'&&(!Number.isFinite(p.capacity)||p.capacity<=0))errors.push('Battery capacity must be a positive number in kWh.');
   if(p.category!=='Battery module'&&p.capacity!==null)errors.push('Only battery modules have capacity.');
+  if(p.category==='Inverter'&&p.powerKw!=null&&(!Number.isFinite(p.powerKw)||p.powerKw<=0))errors.push('Inverter rated power must be a positive kW value.');
+  if(p.category==='Inverter'&&p.phase!=null&&!['Single-phase','Three-phase'].includes(p.phase))errors.push('Inverter grid phase must be Single-phase or Three-phase.');
+  if(p.category!=='Inverter'&&(p.powerKw!=null||p.phase!=null))errors.push('Inverter power and phase apply only to inverter models.');
   if(p.bms && (!catalog[p.bms] || catalog[p.bms].category!=='BMS'))errors.push('Compatible BMS must be a classified BMS model.');
   if(p.from&&!monthValue(p.from)||p.to&&!monthValue(p.to)||p.from&&p.to&&p.from>p.to)errors.push('Check the applicability dates.');
   return errors;
