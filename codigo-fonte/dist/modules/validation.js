@@ -37,7 +37,7 @@ export function validateMatrix({rows,filename,sheet,headerRow=0,dataset,catalog}
     if(model.includes('|'))errors.push(`Unsupported | in model ${label}.`);
     const p=catalog[model];
     if(!p)unknown.add(model);
-    else if(!datasetAcceptsCategory(dataset,p.category))errors.push(`${model} (${p.category}) does not belong to the selected ${dataset} dataset. Choose Unified to import all categories together.`);
+    else if(!datasetAcceptsCategory(dataset,p.category))errors.push(`${model} (${p.category}) does not belong to the selected ${dataset} dataset (it belongs to the other dataset). Choose Unified to import all categories together.`);
     for(const {c,m} of cols){
       const cell=row[c],v=cellValue(cell),ref=cell?.ref??`${columnName(c)}${r+1}`,key=keyOf(m,model);
       if(seen.has(key))errors.push(`Duplicate model/month: ${model}, ${m} (${ref}).`);seen.add(key);
