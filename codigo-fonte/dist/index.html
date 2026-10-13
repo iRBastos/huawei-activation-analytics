@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Private Huawei equipment activation analysis for Ireland. Import, validate, compare and present monthly activation data.">
+  <meta name="color-scheme" content="light">
+  <title>Huawei Activation Analytics</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/jszip.min.js" defer></script>
+  <script type="module" src="modules/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to analysis</a>
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#overview"><span class="brand-word">HUAWEI</span><span>Activation Analytics</span></a>
+    <div class="workspace-label"><span class="country">IE</span><span>Ireland<br><small>Digital Power</small></span></div>
+    <nav id="navigation"></nav>
+    <div class="sidebar-bottom"><span class="privacy-dot"></span>Private workspace<p>Equipment activations<br>Browser-local data</p><button class="text-button" data-action="help">Methodology & guide <span>↗</span></button></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span id="breadcrumb">Ireland / Overview</span><div class="top-actions"><button class="quiet" data-action="presentation">Presentation mode</button><button class="quiet" data-action="print">Print / PDF</button><button class="primary" data-action="import">Import data <span>＋</span></button></div></header>
+    <div id="global-filters"></div>
+    <main id="main" tabindex="-1"><div class="loading-state">Opening your workspace…</div></main>
+    <footer><span>Huawei Activation Analytics</span><span id="footer-status">Loading local storage…</span></footer>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <dialog id="drawer" class="drawer" aria-labelledby="drawer-title"></dialog>
+  <button class="exit-presentation" data-action="presentation">Exit presentation</button>
+  <noscript>This application requires JavaScript to process Excel files and calculate metrics locally.</noscript>
+</body>
+</html>

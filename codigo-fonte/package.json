@@ -1,0 +1,10 @@
+{
+  "name": "huawei-activation-analytics",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build:offline": "python3 tools/build-offline.py"
+  }
+}

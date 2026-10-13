@@ -1,0 +1,26 @@
+VERIFICAÇÃO — EDIÇÃO PARA ABRIR COM DOIS CLIQUES
+
+O index.html principal incorpora CSS, JSZip e o JavaScript do dashboard.
+Ele não carrega módulos ES externos, não usa CDN e não requer servidor.
+Os arquivos Excel e a documentação estão incluídos na pasta extraída.
+
+Validações concluídas:
+- 52 testes automatizados passaram, sem falhas.
+- Os 13 módulos compilados preservam todos os seus exports.
+- As seis telas geram o mesmo conteúdo que seus módulos de origem.
+- Simulação em Node.js/DOM controlado: abertura, demonstração, navegação,
+  restauração JSON, filtros, exportação de backup, recarregamento,
+  importação/confirmacão CSV, leitura dos dois modelos XLSX e modo de sessão.
+- Scripts incorporados sem import/export em tempo de execução.
+- Armazenamento alternativo validado quando IndexedDB não está disponível.
+- Falhas de gravação não substituem silenciosamente o estado anterior.
+- ZIP e referências de recursos verificados.
+
+Limite da verificação: não havia um navegador executável disponível neste
+ambiente; não houve teste visual ou de duplo clique em Windows/Chrome real.
+A verificação em Node.js não equivale a um teste de navegador.
+Se o navegador bloquear a persistência de arquivos locais, o app informa
+“Session-only workspace” e permite usar backup JSON para manter o trabalho.
+
+Os dados reais do navegador anterior não foram acessados ou incorporados.
+Transfira-os por backup JSON conforme LEIA-ME.txt.

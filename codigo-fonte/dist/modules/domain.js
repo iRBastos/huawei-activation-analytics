@@ -1,0 +1,7 @@
+// Stable public API for the separated, browser-independent domain modules.
+export * from './model.js';
+export * from './validation.js';
+export * from './imports.js';
+export * from './calculations.js';
+export * from './targets.js';
+export * from './backup.js';

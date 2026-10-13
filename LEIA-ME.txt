@@ -1,0 +1,44 @@
+﻿HUAWEI ACTIVATION ANALYTICS — ABRIR DIRETAMENTE
+
+1. Clique no ZIP com o botão direito e escolha “Extrair Tudo”.
+2. Abra a pasta Huawei_Activation_Analytics extraída.
+3. Dê dois cliques no arquivo index.html desta pasta.
+
+Pronto. Não precisa instalar Python, Node.js, extensões, pacotes ou servidor.
+O dashboard funciona sem internet. Mantenha a pasta completa para acessar
+os modelos Excel, documentação e código-fonte.
+
+Os gráficos, filtros, importação de Excel/CSV, metas, comparações, histórico,
+exportações, backup e demonstração fictícia estão incluídos.
+
+PARA VER OS GRÁFICOS AGORA
+Clique em “Explore fictional demo”. Os números são fictícios e essa
+visualização não altera seu espaço de trabalho real.
+
+PARA TRAZER SEUS DADOS DO DASHBOARD ANTERIOR
+No navegador onde seus dados aparecem, abra o dashboard anterior e acesse:
+Data → Backup & guide → Download full backup.
+Na nova cópia, abra:
+Data → Backup & guide → Choose backup JSON.
+Selecione o backup e confirme a restauração. Faça isso fora da demonstração.
+O backup mantém registros, catálogo, cobertura, metas, eventos, histórico
+e filtros salvos. Dados reais que estejam apenas no navegador anterior
+não são incluídos automaticamente neste ZIP.
+
+PARA GUARDAR SEU TRABALHO
+Use o mesmo navegador, perfil e arquivo no mesmo local. Antes de mudar a
+pasta, trocar de computador ou limpar o navegador, baixe um backup completo.
+Se o navegador bloquear a gravação automática de arquivos locais, o app
+mostrará “Session-only workspace”; nesse caso baixe o backup antes de fechar.
+Ele poderá ser restaurado na próxima abertura. A cópia HTML não modifica
+planilhas originais nem grava automaticamente um arquivo JSON na pasta.
+
+ESTRUTURA
+index.html: arquivo pronto para abrir; estilos e scripts estão incorporados.
+templates: os dois modelos de importação Excel.
+documentacao: guia, licença e verificação.
+codigo-fonte: código modular editável e testes para desenvolvedores.
+codigo-fonte.zip: código disponibilizado também pelo botão interno do app.
+
+Abra o index.html da pasta principal. Os arquivos dentro de codigo-fonte
+são os materiais de desenvolvimento, não precisam ser executados para usar.

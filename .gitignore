@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+Huawei_Activation_Backup_*.json
+activation-records_*.csv
+activation-summary_*.csv
