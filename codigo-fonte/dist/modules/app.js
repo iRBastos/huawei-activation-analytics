@@ -7,7 +7,7 @@ import {makeDemo} from './demo.js';
 
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',dataset:'inverters',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',quarter:3,quarterMetric:'inverters',dataset:'inverters',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
@@ -93,6 +93,8 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
     case 'shortcut':await applyShortcut(el.value);break;
+    case 'quarter-select':ui.quarter=Number(el.value);render();break;
+    case 'quarter-metric':ui.quarterMetric=el.value;render();break;
     case 'grid-phase':ui.gridPhase=el.value;ui.hiddenSeries.clear();render();break;
     case 'dataset':ui.dataset=el.value;if(ui.pending){ui.pending.classifications={};validatePending();}render();break;
     case 'import-file':await importFile(el.files[0]);break;
