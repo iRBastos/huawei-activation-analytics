@@ -7,7 +7,7 @@ import {makeDemo} from './demo.js';
 
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',inverterSelectedModels:null,inverterPickerOpen:false,inverterModelSearch:'',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
@@ -57,6 +57,23 @@ document.addEventListener('click',async event=>{
     if(el.dataset.dataTab){navigate('data',el.dataset.dataTab);return;}
     if(el.dataset.month){detail(el.dataset.month,el.dataset.end??el.dataset.month,el.dataset.model??state.preferences.model);return;}
     if(el.dataset.modelDetail){const model=state.catalog[el.dataset.modelDetail]?el.dataset.modelDetail:state.preferences.model;detail(state.preferences.start,state.preferences.end,model);return;}
+    if(el.dataset.inverterChartModel){
+      const model=el.dataset.inverterChartModel,preferences=state.preferences;
+      const allowed=D.selectModels(state,{category:'Inverter',model:preferences.model,family:preferences.family})
+        .some(p=>p.model===model&&((ui.gridPhase??'All')==='All'||p.phase===ui.gridPhase));
+      if(!allowed)throw new Error('This inverter is not in the current reporting scope.');
+      const initial=ui.inverterSelectedModels??D.ranking(state,preferences,'Inverter')
+        .filter(x=>(ui.gridPhase??'All')==='All'||state.catalog[x.model]?.phase===ui.gridPhase)
+        .slice(0,8).map(x=>x.model);
+      if(initial.includes(model))ui.inverterSelectedModels=initial.filter(x=>x!==model);
+      else{
+        if(initial.length>=V.INVERTER_CHART_MAX)throw new Error('Select up to '+V.INVERTER_CHART_MAX+' inverter models at a time. Remove a model to add another.');
+        ui.inverterSelectedModels=[...initial,model];
+        ui.hiddenSeries.delete(model);
+      }
+      render();
+      return;
+    }
     if(el.dataset.toggleSeries){const key=el.dataset.toggleSeries;ui.hiddenSeries.has(key)?ui.hiddenSeries.delete(key):ui.hiddenSeries.add(key);render();return;}
     if(el.dataset.editProduct){showProduct(el.dataset.editProduct);return;}
     if(el.dataset.page){ui.recordPage=Math.max(0,+el.dataset.page);render();return;}
@@ -70,6 +87,9 @@ document.addEventListener('click',async event=>{
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;navigate('overview');}break;
       case 'help':navigate('data','backup');break;
       case 'templates':navigate('data','import');toast('Both Excel templates are available beside the import area.');break;
+      case 'inverter-chart-picker':ui.inverterPickerOpen=!ui.inverterPickerOpen;render();break;
+      case 'inverter-chart-top':ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
+      case 'inverter-chart-clear':ui.inverterSelectedModels=[];render();break;
       case 'toggle-filters':ui.moreFilters=!ui.moreFilters;render();break;
       case 'reset-filters':{ui.gridPhase='All';const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
       case 'presentation':document.body.classList.toggle('presentation');break;
@@ -97,7 +117,7 @@ document.addEventListener('change',async event=>{const el=event.target;try{
     case 'quarter-select':ui.quarter=Number(el.value);render();break;
     case 'quarter-metric':ui.quarterMetric=el.value;render();break;
     case 'phase-chart-mode':ui.phaseChartMode=el.value;ui.hiddenSeries.clear();render();break;
-    case 'grid-phase':ui.gridPhase=el.value;ui.hiddenSeries.clear();render();break;
+    case 'grid-phase':ui.gridPhase=el.value;ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
     case 'dataset':ui.dataset=el.value;if(ui.pending){ui.pending.classifications={};validatePending();}render();break;
     case 'import-file':await importFile(el.files[0]);break;
     case 'worksheet':await chooseWorksheet(el.value);break;
@@ -110,7 +130,15 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
+document.addEventListener('input',event=>{const el=event.target;if(el.id==='inverter-model-search'){
+    ui.inverterModelSearch=el.value;
+    const cursor=el.selectionStart;
+    render();
+    const current=$('#inverter-model-search');
+    if(current){current.focus();try{current.setSelectionRange(cursor,cursor);}catch{}}
+    return;
+  }
+  if(el.id==='table-search'||el.id==='record-search'){const id=el.id,value=el.value;ui[id==='table-search'?'tableSearch':'recordSearch']=value;ui.recordPage=0;const caret=el.selectionStart;render();const replacement=$('#'+id);replacement?.focus();replacement?.setSelectionRange(caret,caret);}});
 document.addEventListener('dragover',event=>{const z=event.target.closest('#dropzone');if(z){event.preventDefault();z.classList.add('drag');}});
 document.addEventListener('dragleave',event=>{event.target.closest('#dropzone')?.classList.remove('drag');});
 document.addEventListener('drop',async event=>{if(event.target.closest('#dropzone')){event.preventDefault();await importFile(event.dataTransfer.files[0]);}});
