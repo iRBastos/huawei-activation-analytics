@@ -42,11 +42,27 @@ test('unknown KPI and invalid quarter are rejected',()=>{
 
 test('all inverter phase classifications are resolved, including legacy and MBUS',()=>{
  const inverters=Object.values(D.INITIAL_CATALOG).filter(p=>p.category==='Inverter');
- assert.equal(inverters.length,83);
+ assert.equal(inverters.length,86);
  assert.equal(inverters.filter(p=>p.phase==='Single-phase').length,26);
- assert.equal(inverters.filter(p=>p.phase==='Three-phase').length,57);
+ assert.equal(inverters.filter(p=>p.phase==='Three-phase').length,60);
  assert.equal(D.inverterPhase('SUN2000-3.68KTL'),'Single-phase');
  assert.equal(D.inverterPhase('SUN2000-5KTL-M1-EU(MBUS)'),'Three-phase');
  assert.equal(D.inverterPhase('SUN2000-10KTL-M1(MBUS)'),'Three-phase');
  assert.equal(D.inverterPhase('UNKNOWN-MODEL'),null);
+});
+
+test('M2 and M5 EU/MBUS variants retain exact names and correct three-phase ratings',()=>{
+ const expected={
+  'SUN2000-20KTL-M2-EU(MBUS)':{family:'M2',powerKw:20},
+  'SUN2000-12KTL-M5(MBUS)':{family:'M5',powerKw:12},
+  'SUN2000-17KTL-M5(MBUS)':{family:'M5',powerKw:17}
+ };
+ for(const [model,info] of Object.entries(expected)){
+  const found=D.INITIAL_CATALOG[model];
+  assert.ok(found,'Missing exact model '+model);
+  assert.equal(found.category,'Inverter');
+  assert.equal(found.family,info.family);
+  assert.equal(found.phase,'Three-phase');
+  assert.equal(found.powerKw,info.powerKw);
+ }
 });
