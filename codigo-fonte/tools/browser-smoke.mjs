@@ -17,7 +17,8 @@ const browser=spawn(binary,processArgs,{stdio:'ignore'});
 let ws,closed=false;
 try{
  let port=null;
- for(let i=0;i<140;i++){
+ // A loaded CI host can need longer to open Chrome's debugging socket.
+ for(let i=0;i<350;i++){
   if(browser.exitCode!==null)throw new Error('Chrome exited before opening DevTools');
   try{const parts=(await readFile(path.join(dir,'DevToolsActivePort'),'utf8')).trim().split('\n');port=Number(parts[0]);if(port>0)break;}catch{}
   await wait(100);
