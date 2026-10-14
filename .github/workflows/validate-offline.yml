@@ -87,4 +87,5 @@ jobs:
             index.html
             codigo-fonte.zip
             browser-smoke.png
+            browser-smoke-mobile.png
           if-no-files-found: error
