@@ -125,14 +125,24 @@ try{
  await until("document.querySelector('#main').textContent.includes('Account-by-account comparison')",'2 installer comparison');
  assert.ok(await evaluate("document.querySelectorAll('svg.line-chart').length>=1"));
  assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Underlying period values')"));
+ // F3: comparison summary precedes the chart, and both chart modes are reachable.
+ assert.ok(await evaluate("(()=>{const h=document.querySelector('#main').innerHTML;return h.indexOf('Account-by-account comparison')<h.indexOf('Absolute activation trends')})()"));
+ await evaluate("document.querySelector('[data-installer-compare-mode=indexed]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-installer-compare-mode=indexed]').getAttribute('aria-pressed')"),'true');
+ await evaluate("document.querySelector('[data-installer-compare-mode=absolute]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-installer-compare-mode=absolute]').getAttribute('aria-pressed')"),'true');
  await evaluate("document.querySelector('[data-installer-tab=insights]').click()");
  await until("!!document.querySelector('#installer-insight-volume')",'installer insights');
  assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Suggested next action')"));
+ assert.ok(await evaluate("(()=>{const h=document.querySelector('#main').innerHTML;return h.indexOf('Account priorities')<h.indexOf('Evidence thresholds')})()"));
+ assert.ok(await evaluate("!!document.querySelector('details.installer-insight-rules')"));
  await evaluate("(()=>{const select=document.querySelector('#installer-insight-volume');select.value='10';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
  await until("document.querySelector('#installer-insight-volume')?.value==='10'",'persisted installer insight threshold');
  await evaluate("document.querySelector('[data-installer-tab=overview]').click()");
 
  await until("document.querySelectorAll('[data-installer-select]').length===3",'portfolio after comparison');
+ assert.ok(await evaluate("!!document.querySelector('details.installer-account-management')"));
+ assert.ok(await evaluate("document.querySelector('.installer-account-management').open===false"));
  await evaluate("(()=>{const ids=[...document.querySelectorAll('[data-installer-select]')].map(x=>x.dataset.installerSelect);for(const id of ids){const el=document.querySelector('[data-installer-select=\"'+id+'\"]');el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}document.querySelector('[data-action=installer-merge]').click();})()");
  await until("!!document.querySelector('[data-form=installer-merge]')",'merge preview');
  await evaluate("(()=>{const f=document.querySelector('[data-form=installer-merge]');f.querySelector('[name=name]').value='Bord Gáis Energy';f.requestSubmit();})()");

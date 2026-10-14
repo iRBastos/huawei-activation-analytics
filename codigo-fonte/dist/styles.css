@@ -111,3 +111,30 @@
 @media(max-width:850px){.sidebar{overflow:visible}.sidebar nav{display:flex;flex-direction:row;gap:0;overflow-x:auto}.sidebar .nav-group{display:flex;flex-direction:row;gap:0;flex-shrink:0}.sidebar .nav-home{padding-bottom:0;border:0}.sidebar .nav-group-label{display:none}.sidebar .nav-group button{width:auto;min-height:0}.filter-methodology{text-align:left}}
 @media(max-width:560px){#global-filters{padding:11px 16px}.filter-context{gap:5px;margin-bottom:9px}.filter-context span{font-size:10px}.filter-primary{gap:8px}.filter-primary>.field{flex:1 1 calc(50% - 6px);min-width:0;width:auto}.filter-primary>.period-select{flex:1 1 100%;width:100%}.filter-actions{width:100%;gap:8px}.filter-actions .filter-toggle{flex:1 1 0;min-width:0;white-space:normal;padding:9px 7px;font-size:11px}.filter-options .field{flex:1 1 100%;max-width:none}.filter-caption{font-size:10px;line-height:1.4}.filter-methodology{max-width:100%}}
 @media print{.filter-methodology{display:none}}
+
+/* F3 — Installer Intelligence: decisions before administrative actions */
+.installer-account-management{margin:20px 0;overflow:visible}
+.installer-account-management>summary,.installer-compare-edit>summary,.installer-insight-rules>summary{cursor:pointer;font-size:13px;font-weight:650;list-style-position:inside}
+.installer-account-management>summary{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap}
+.installer-account-management>summary::before{content:'+';font-weight:700;color:var(--red,#c8102e)}
+.installer-account-management[open]>summary::before{content:'−'}
+.installer-account-management>summary span{font-size:12px;font-weight:400;color:var(--muted,#667085)}
+.installer-management-body{margin-top:16px;display:grid;gap:14px}
+.installer-management-actions{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;padding:14px;background:var(--surface-alt,#f8f9fa);border:1px solid var(--line,#e5e7eb);border-radius:8px}
+.installer-management-actions h3{font-size:14px;margin:0 0 6px}
+.installer-management-actions p{margin:0}
+.installer-account-subpanel{margin:0!important}
+.installer-compare-selection-summary{display:grid;gap:5px;margin:0 0 14px}
+.installer-compare-selection-summary>span{font-size:12px;color:var(--muted,#667085)}
+.installer-compare-edit{border-top:1px solid var(--line,#e5e7eb);padding-top:12px}
+.installer-compare-edit[open]>summary{margin-bottom:14px}
+.installer-compare-mode{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:18px 0 0}
+.installer-compare-mode button{padding:10px 14px;font-size:12px;border:1px solid var(--line,#e5e7eb);border-radius:7px}
+.installer-compare-mode button.active{border-color:#c71932;color:#a51930;background:#fff4f5;font-weight:650}
+.installer-insight-rules{margin-top:18px}
+.installer-insight-rules .installer-rules-body{margin-top:16px}
+.installer-priority-actions{justify-content:flex-end;margin-bottom:10px}
+.installer-insight-context{margin:3px 0 12px}
+.installer-heatmap{max-width:100%;overflow:auto;overscroll-behavior-x:contain}
+@media(max-width:560px){.installer-account-management>summary{align-items:flex-start}.installer-compare-mode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.installer-compare-mode button{min-width:0;white-space:normal}}
+@media print{.installer-account-management,.installer-compare-edit>summary,.installer-compare-mode{display:none!important}}

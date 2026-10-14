@@ -55,6 +55,12 @@ async function chooseInstallerSheet(name){const p=ui.installerPending;if(!p)retu
 async function importInstallerFile(file){if(!file)return;if(ui.demo)throw new Error('Exit demo before importing.');ui.installerLoading=true;ui.installerPending=null;ui.installerError=null;render();try{const workbook=await readWorkbook(await file.arrayBuffer(),file.name);ui.installerPending={workbook,filename:file.name};await chooseInstallerSheet(workbook.names[0]);}catch(error){ui.installerPending=null;ui.installerError=error.message;}finally{ui.installerLoading=false;render();}}
 function reviewInstallerMerge(ids){if(ui.demo)throw new Error('Exit demo before merging installers.');ui.installerMergeIds=ids;openModal('Unify installers',IV.installerMergePreview(state,ids));}
 
+document.addEventListener('toggle',event=>{
+  if(event.target.matches?.('details.installer-compare-edit')&&event.target.isConnected){
+    ui.installerCompareEditorOpen=event.target.open;
+  }
+},true);
+
 document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
@@ -64,6 +70,10 @@ document.addEventListener('click',async event=>{
     }
     if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerCompareMode){
+      if(!['absolute','indexed'].includes(el.dataset.installerCompareMode))return;
+      ui.installerCompareMode=el.dataset.installerCompareMode;render();return;
+    }
     if(el.dataset.installerComparePick){
       const previousScroll=document.querySelector('.installer-compare-picker')?.scrollTop??0;
       const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
@@ -71,6 +81,7 @@ document.addEventListener('click',async event=>{
       if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
       else if(ids.length<6)ui.installerCompareIds=[...ids,id];
       else throw new Error('Compare a maximum of six installers.');
+      ui.installerCompareEditorOpen=true;
       ui.hiddenSeries.clear();render();
       const picker=document.querySelector('.installer-compare-picker');if(picker)picker.scrollTop=previousScroll;
       return;
