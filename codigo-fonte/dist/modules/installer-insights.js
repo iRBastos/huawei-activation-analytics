@@ -15,6 +15,7 @@ const TYPES={
  declining:{label:'Declining activations',weight:35,action:'Arrange an account review to understand the decline and offer relevant support.'},
  growing:{label:'Growing activations',weight:25,action:'Discuss installer capacity and upcoming plans; explore how to support further activity.'},
  first:{label:'First recorded activity after confirmed zeros',weight:20,action:'Welcome the recorded activity and discuss future opportunities.'},
+ zeroBase:{label:'Activity after zero comparison baseline',weight:20,action:'Review the activity with the installer; percentage growth is unavailable from a zero baseline.'},
  steady:{label:'No significant movement',weight:10,action:'Monitor the account at the next reporting cycle.'},
  zero:{label:'No recorded activity in selected periods',weight:10,action:'Keep the account on the watchlist; no selected-period activations are evidenced.'},
  coverage:{label:'Verify reporting coverage',weight:null,action:'Confirm missing or open reporting months before interpreting the trend.'}
@@ -40,9 +41,16 @@ function classify(account,row,report,f,now,minVolume,thresholdPct){
  else if(first)type='first';
  else if(substantial&&units<0)type='declining';
  else if(substantial&&units>0)type='growing';
+ else if(usable&&base===0&&row.current.value>0)type='zeroBase';
  else if(usable&&row.current.value===0&&base===0)type='zero';
  else if(usable)type='steady';
- const rule=TYPES[type],scale=Math.max(row.current.value??0,base??0),magnitude=Math.abs(units??0);
+ const rule=TYPES[type],recentHistory=Object.entries(account.cells)
+   .filter(([month])=>month<=last&&month>=shiftMonth(last,-12))
+   .reduce((sum,[,cell])=>sum+cell.value,0);
+ const scale=type==='inactive'||type==='reactivated'
+   ?Math.max(row.current.value??0,base??0,recentHistory)
+   :Math.max(row.current.value??0,base??0);
+ const magnitude=Math.abs(units??0);
  const score=rule.weight===null?null:Math.min(100,rule.weight+
    (scale>=minVolume*4?20:scale>=minVolume?10:0)+
    (magnitude>=minVolume*4?20:magnitude>=minVolume?10:0));

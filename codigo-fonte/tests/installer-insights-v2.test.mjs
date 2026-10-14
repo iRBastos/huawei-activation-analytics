@@ -116,3 +116,23 @@ test('F5: missing account data is never silently classified as declining',()=>{
  assert.equal(entry.type,'zero'); // full population in existing May/June supplies 0.
  assert.equal(entry.current.complete,true);
 });
+
+test('F5: zero previous baseline is an observable activation signal, not infinite growth',()=>{
+ const state=fullState();
+ const row=D.installerInsights(state,f,{now}).rows.find(r=>r.name==='First');
+ assert.equal(row.type,'first');
+ assert.equal(row.growthPct,null);
+ const alt=fullState();
+ delete alt.installers.coverage['2025-03'];
+ const signal=D.installerInsights(alt,f,{now}).rows.find(r=>r.name==='First');
+ assert.equal(signal.type,'zeroBase');
+ assert.equal(signal.growthPct,null);
+ assert.match(signal.action,/zero baseline/);
+});
+test('F5: an account with meaningful historical volume earns a higher inactivity priority',()=>{
+ const report=D.installerInsights(fullState(),f,{now});
+ const row=report.rows.find(r=>r.name==='Inactive');
+ assert.equal(row.type,'inactive');
+ assert.equal(row.priority,'High');
+ assert.ok(row.score>=60);
+});
