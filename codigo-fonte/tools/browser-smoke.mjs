@@ -169,11 +169,39 @@ try{
  await evaluate("document.querySelector('#modal [data-close]').click()");
  await uploadInstallers('Installer,202501,202502\nBord Gáis Energy Solar,7,3');
  assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'26');
+
+ // Responsive acceptance in a real mobile-sized Chromium viewport. Tables are
+ // allowed to scroll internally; the page itself must not overflow sideways.
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+ const responsive=[];
+ async function inspectMobile(view){
+  const result=await evaluate("({viewport:window.innerWidth,documentWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth,mainWidth:document.querySelector('#main')?.scrollWidth})");
+  responsive.push({view,...result});
+  assert.ok(result.documentWidth<=result.viewport+2,'mobile horizontal page overflow in '+view+': '+JSON.stringify(result));
+ }
+ await inspectMobile('installer-overview');
+ await evaluate("document.querySelector('[data-installer-tab=profile]').click()");
+ await until("!!document.querySelector('#installer-profile-picker')",'mobile profile');
+ await inspectMobile('installer-profile');
+ await evaluate("document.querySelector('[data-installer-tab=compare]').click()");
+ await until("!!document.querySelector('#installer-compare-search')",'mobile comparison');
+ await inspectMobile('installer-compare');
+ await evaluate("document.querySelector('[data-installer-tab=insights]').click()");
+ await until("!!document.querySelector('#installer-insight-search')",'mobile insights');
+ await inspectMobile('installer-insights');
+ const mobileShot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+ await writeFile(path.join(root,'browser-smoke-mobile.png'),Buffer.from(mobileShot.data,'base64'));
+ await evaluate("document.querySelector('[data-nav=data]').click()");
+ await evaluate("document.querySelector('[data-data-tab=installer-import]').click()");
+ await until("!!document.querySelector('#installer-file')",'mobile installer import');
+ await inspectMobile('data-installer-import');
+ await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+ await evaluate("document.querySelector('[data-nav=installers]').click()");
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
  assert.deepEqual(blocked,[],'offline app must not request remote resources');
- console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','installer KPIs','monthly heatmap evidence','installer chart routing','comparable cohort','screenshot'],screenshot:'browser-smoke.png'}));
+ console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','installer KPIs','monthly heatmap evidence','installer chart routing','comparable cohort','responsive 390px for 5 workspaces','mobile screenshot','screenshot'],screenshot:'browser-smoke.png'}));
 }finally{
  if(ws){try{ws.close()}catch{}}
  browser.kill('SIGKILL');
