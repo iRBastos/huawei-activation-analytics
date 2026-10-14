@@ -83,3 +83,12 @@ No CRM integration, cloud database, browser sync, live source refresh, generativ
 - Equipment and installer date, comparison and aggregation filters now persist separately (`preferences` and `installerPreferences`). Importing an installer matrix changes only the installer reporting window.
 - Old schema-1 and schema-2 backups without installer preferences inherit the saved reporting period on restore, without modifying existing equipment filters; no schema version bump or new data storage technology.
 - Added tests for Data-only import controls, preview/approval, audit history, backup migration and independent filter behavior; Chromium file-open smoke covers upload through Data and checks that equipment dates remain unchanged.
+
+## F4 profile and multi-account comparison — implemented
+
+- Installers now has **Installer overview**, **Installer profile**, and **Compare 2–6** tabs. Existing ranking source-evidence modal and account-union controls are preserved.
+- The profile searches imported/consolidated account names, shows independent KPIs, monthly/quarterly/yearly historical charts, first/last observed activation, confirmed monthly peak, coverage and clickable source evidence.
+- The comparison supports 2–6 distinct accounts from search, multi-selection, removal, direct navigation from ranking, absolute-volume lines, indexed trends (all companies must have a complete, positive first plotted bucket), one aligned chart data table and a matching CSV export.
+- Indexed comparison never invents percentages from zero baselines or incomplete months. Shared F2 selectors power all profiles and comparisons.
+- UI and arithmetic regression tests plus the existing real Chromium file-open smoke must pass before calling F4 complete.
+- Future F5 builds deterministic commercial activity findings from eligible periods; no causal, market-share, product/install-site or revenue claims follow from these graphs.

@@ -112,3 +112,13 @@ three selected months with the preceding three, independent of comparison select
 
 The user confirmed the first-stage import/union flow worked. Production XLSX contents have
 not been inspected in this workspace. Stage 2 needs user acceptance on the actual dataset.
+
+## Dedicated installer analytics pages (V2)
+
+Open **Installers** and select the **Installer overview**, **Installer profile**, or **Compare 2–6** tab. The overview retains ranking, existing quick detail dialogs, manually confirmed name unions and monthly heatmaps. Use **Full profile** beside an installer name for its dedicated page.
+
+The profile offers a searchable account picker, selected-period KPI and growth, three historical trend charts (monthly/quarterly/yearly), latest observed activity, confirmed historical peak, original source aliases, clickable month evidence, and CSV export. An account can have older observed records and missing periods; its lifetime volume may be a *partial subtotal*. Do not mistake an observed zero for an unknown interval.
+
+On Compare 2–6, search and choose distinct accounts. Selected chips remove accounts; additional choices are disabled at the six-account limit. Volumes and growth come from the same domain calculations as the portfolio ranking. The volume chart is always available for reported data. **Indexed comparisons use 100 for the same first displayed reporting bucket, but only if every selected installer has a complete, positive baseline**. Otherwise the indexed chart is withheld. All account figures and chart periods are exportable as CSV, while missing values stay unknown.
+
+These figures represent tracked Huawei inverter activations by consolidated account only: they cannot establish site counts, battery attachment, installation of specific equipment per installer, Irish-wide market shares, revenue or causal impacts.

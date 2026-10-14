@@ -110,5 +110,6 @@ Run `python3 tools/build-offline.py` before `python3 tools/build-release.py --te
 Open **Data → Installer imports** for source import, validation and import history. Open **Installers** for analytics and account consolidation.
 Blank monthly cells mean zero in this importer; repeated names are summed; the trailing
 Total column is ignored. This does not change equipment blank-cell handling.
+Use **Installers → Installer profile** to inspect one consolidated account and **Installers → Compare 2–6** for side-by-side volume and indexed trends. A valid indexed baseline requires complete, positive first-period observations for every selected company. Exports preserve unknown values.
 See [Installer import guide](docs/INSTALLER-IMPORT.md) for snapshot replacement, aliases,
 undo, schema-2 backup compatibility and current limitations.

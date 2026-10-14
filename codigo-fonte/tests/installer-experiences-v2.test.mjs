@@ -74,3 +74,20 @@ test('F4: profile and comparison never alter saved reporting preferences',()=>{
  V.installerView(state,{installerTab:'compare',installerCompareIds:selected.slice(0,3)});
  assert.deepEqual(state,original);
 });
+
+test('F4: six-account selection disables further additions but retains removals',()=>{
+ let state=seed();
+ const additional=D.validateInstallerMatrix({rows:[
+   ['Installer',202401,202402,202501,202502],
+   ['Delta Solar',1,2,3,4],['Epsilon Solar',2,2,4,4],['Zeta Solar',5,5,5,5],
+   ['Eta Solar',3,3,3,3]
+ ],filename:'more-fixture.csv',sheet:'CSV'});
+ state=D.commitInstallerImport(state,additional,{scope:'full',fullScopeConfirmed:true});
+ const options=ids(state),ui={installerTab:'compare',installerCompareIds:options.slice(0,6)};
+ const html=V.installerView(state,ui);
+ assert.match(html,/6 of 6 selected/);
+ assert.equal((html.match(/aria-pressed="true"/g)??[]).length,6);
+ assert.match(html,/data-installer-compare-pick="[^"]+" disabled/);
+ assert.match(html,/Account-by-account comparison/);
+ assert.equal(D.installerComparison(state,filters,options.slice(0,6),{now:clock}).rows.length,6);
+});
