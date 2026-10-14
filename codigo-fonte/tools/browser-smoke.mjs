@@ -94,9 +94,10 @@ try{
  await evaluate("document.querySelector('[data-action=exit-demo]').click()");
  await evaluate("document.querySelector('[data-nav=installers]').click()");
  const installerCsv='Installer,202501,202502,Total\nBordGais Energy,10,5,999\nBord Gáis Energy Solar,7,3,999\nBord Gáis Energy,4,2,999\nBordGais Energy,1,,999';
- async function uploadInstallers(csv){
+ async function uploadInstallers(csv,full=false){
   await evaluate(`(()=>{const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(csv)}],'installer-fixture.csv',{type:'text/csv'}));const input=document.querySelector('#installer-file');input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   await until("!!document.querySelector('[data-form=installer-import]')",'installer preview');
+  if(full)await evaluate("(()=>{const f=document.querySelector('[data-form=installer-import]');f.querySelector('[name=scope]').value='full';f.querySelector('[name=fullScopeConfirmed]').checked=true;})()");
   await evaluate("(()=>{const f=document.querySelector('[data-form=installer-import]');f.querySelector('[name=approved]').checked=true;f.requestSubmit();})()");
   await until("!document.querySelector('[data-form=installer-import]')",'installer import committed');
  }
@@ -131,6 +132,14 @@ try{
  await until("document.querySelectorAll('[data-installer-select]').length===0",'missing comparison excludes accounts');
  await evaluate("(()=>{const el=document.querySelector('#installer-cohort');el.value='all';el.dispatchEvent(new Event('change',{bubbles:true}));})()");
  await until("document.querySelectorAll('[data-installer-select]').length===3",'restore full installer base');
+  // Full snapshot supersedes stale omitted rows; partial updates may restore one.
+ await uploadInstallers('Installer,202501,202502\nBordGais Energy,11,5',true);
+ assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'16');
+ await evaluate("document.querySelector('[data-installer-detail]').click()");
+ await until("document.querySelector('#modal')?.textContent.includes('Historical')",'superseded evidence');
+ await evaluate("document.querySelector('#modal [data-close]').click()");
+ await uploadInstallers('Installer,202501,202502\nBord Gáis Energy Solar,7,3');
+ assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'26');
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
