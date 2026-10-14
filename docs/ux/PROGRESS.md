@@ -23,8 +23,8 @@ Working branch: `ux/redesign-v2.1`
 | Preparation | DONE | Dedicated branch created at official V2.0.0 SHA; approved plan and UX audit committed | F0 baseline |
 | F0 — baseline | PILOT BASELINE VERIFIED | 174/174 original tests; measured same-fixture screenshots for profile on 5 viewports; full app matrix remains for F6; original file:// smoke passes on GitHub Actions | Reference evidence `docs/ux/F0_F1_VERIFICATION.md` |
 | F1 — pilot Installer Profile | APPROVED BY OWNER | 174/174 local tests; 12/12 targeted; Actions run 38589444121 PASS; KPI begins 80–126 px higher | Direction approved; F2 performed |
-| F2 — navigation/filters | IMPLEMENTED — VERIFIED | 178/178 local Node tests; 4 F2 regressions; 25 browser viewport screenshots; Actions run 38594347939 PASS; generated HTML/ZIP synced. See `docs/ux/F2_VERIFICATION.md` | Owner reviews checkpoint before F3 |
-| F3 — Installer Intelligence | NOT STARTED | — | After F2 |
+| F2 — navigation/filters | APPROVED BY OWNER | 178/178 tests; 25 viewport screenshots; Actions 38594347939 PASS | F3 performed |
+| F3 — Installer Intelligence | IMPLEMENTED — CI PASS; OWNER REVIEW / SCALE PERF OPEN | 182/182 tests; Actions 38598060565 PASS; F3 hierarchy, compare modes, rules, account management, CI screenshot artifact; 1000×48 UI benchmark completed, full bulk importer >120s | Owner visual review, track scale-performance fix before release |
 | F4 — Market Intelligence | NOT STARTED | — | After F3 |
 | F5 — Data & Targets | NOT STARTED | — | After F4 |
 | F6 — responsive/a11y | NOT STARTED | — | After F5 |
@@ -40,7 +40,7 @@ Working branch: `ux/redesign-v2.1`
 4. Resume the earliest IN PROGRESS phase; never skip a gate or assume tests passed without run evidence.
 5. Update this ledger after each validated checkpoint.
 
-No visual redesign implemented yet.
+Historical note: this ledger was created before the F1/F2/F3 implementation milestones below; consult latest checkpoints for current status.
 
 ## Latest execution update — 2026-10-14
 - Created isolated branch at release SHA and committed approved plan, full UX audit, checkpoint ledger and F0 baseline inventory.
@@ -65,3 +65,12 @@ No visual redesign implemented yet.
 - Evidence saved in `docs/ux/F2_VERIFICATION.md`; desktop/mobile comparisons saved in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign/UX Evidence`.
 - `main` remained at V2.0.0 SHA `a962fe159bd5dd8b7d20f978910b27424d02e4db` at checkpoint.
 - **STOP GATE:** Request owner approval of F2 navigation/filter direction before F3. No main merge, PR or release.
+
+## F3 milestone — 2026-10-14
+- F2 direction explicitly approved by owner; F3 source commit `dfc70dd97c0c8600404c5b44da07c9c620a8d672` on isolated branch, generated assets sync commit `7c6db26b52a6989c18122c5043cc356691f3f43b`.
+- **182/182 Node tests PASS; GitHub Actions run 38598060565 SUCCESS** (real Chromium file:// smoke + generated ZIP and HTML).
+- F3 restores analytical hierarchy (KPIs, contributions, ranking), contextualizes account union/undo, improves 2–6 comparison mode/summary, prioritizes insight table before threshold administration, keeps Data check explicit.
+- The synthetic in-memory 1000×48 UI benchmark completed (20–28 s for multiple heavy views), but **the full 1000×48 bulk import attempt exceeded 120 s and is still unverified**. Document as a release/performance acceptance risk; do not claim comprehensive performance sign-off.
+- Independent local viewport screenshot harness stalled; GH Actions Chromium succeeded at desktop and 390px; multi-viewport visual QA planned for F6.
+- See `docs/ux/F3_VERIFICATION.md` for full evidence and limitations; comparison screenshots archived in ChatGPT Library UX Evidence folder.
+- Owner acceptance of F3 UX and full-scale performance remediation pending. `main` has not changed. No merge, PR or release.
