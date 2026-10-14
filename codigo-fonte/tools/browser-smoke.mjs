@@ -127,7 +127,7 @@ try{
  assert.equal(await evaluate("document.querySelector('[data-filter=start]').value"),originalInstallerStart,'installer imports cannot change equipment dates');
  await evaluate("document.querySelector('[data-nav=installers]').click()");
  // F6: installer tabs form one roving keyboard tab stop and support arrow/Home/End.
- assert.equal(await evaluate("document.querySelectorAll('.installer-section-tabs [role=tab][tabindex=0]').length"),1);
+ assert.equal(await evaluate("[...document.querySelectorAll('.installer-section-tabs [role=tab]')].filter(el=>el.tabIndex===0).length"),1);
  await evaluate("document.querySelector('[data-installer-tab=overview]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");
  assert.equal(await evaluate("document.querySelector('.installer-section-tabs [aria-selected=true]').dataset.installerTab"),'profile');
  assert.equal(await evaluate("document.activeElement?.dataset.installerTab"),'profile');
