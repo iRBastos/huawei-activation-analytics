@@ -44,7 +44,8 @@ export function columnName(i) {let s=''; for(i++;i;i=Math.floor((i-1)/26))s=Stri
 export function installerPreferenceDefaults(preferences){
   return {start:preferences.start,end:preferences.end,
     aggregation:preferences.aggregation==='half'?'month':preferences.aggregation,
-    comparison:preferences.comparison,compareStart:preferences.compareStart,compareEnd:preferences.compareEnd};
+    comparison:preferences.comparison,compareStart:preferences.compareStart,compareEnd:preferences.compareEnd,
+    insightMinVolume:5,insightThresholdPct:20};
 }
 export function installerFilters(state){
   return state.installerPreferences??installerPreferenceDefaults(state.preferences);

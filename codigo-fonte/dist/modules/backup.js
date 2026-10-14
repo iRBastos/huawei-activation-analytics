@@ -22,7 +22,8 @@ export function validateBackup(input) {
   const p=next.installerPreferences;
   if(!monthValue(p.start)||!monthValue(p.end)||p.start>p.end||
     !monthValue(p.compareStart)||!monthValue(p.compareEnd)||p.compareStart>p.compareEnd||
-    !['month','quarter','year'].includes(p.aggregation)||!['year','previous','custom'].includes(p.comparison))
+    !['month','quarter','year'].includes(p.aggregation)||!['year','previous','custom'].includes(p.comparison)||
+    ![1,5,10,25].includes(p.insightMinVolume)||![10,20,30,50].includes(p.insightThresholdPct))
     throw new Error('Invalid installer reporting preferences.');
   return next;
 }

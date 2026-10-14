@@ -9,3 +9,4 @@ export * from './backup.js';
 
 export * from './installers.js';
 export * from './installer-analytics.js';
+export * from './installer-insights.js';
