@@ -39,6 +39,8 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - Tests cover Data-only importer placement, preview/approvals, audit evidence, backup validity and isolation of reporting windows.
 - **144 / 144 automated tests passing** and sync-workflow offline/Chromium generation successful. Acceptance on representative actual XLSX and Windows remains pending.
 
+ - F3 release sync: 144 tests, offline Chromium, and regenerated HTML/JS/ZIP all passed in the dedicated branch workflow. Source-file commits are not merge-approved until the post-sync independent PR check is green.
+
 ## Remaining gates — not certified yet
 
 - [ ] Manual user acceptance on a representative **sanitized actual installer XLSX** (not included in GitHub).
