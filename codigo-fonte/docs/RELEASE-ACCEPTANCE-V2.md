@@ -23,6 +23,20 @@ The headless mobile viewport takes a screenshot at **390×844** and verifies tha
 
 **No actual installer activation workbook was uploaded to GitHub or used in CI.**
 
+## Fully synthetic independent audit — 14 October 2026
+
+A new independent test campaign uses **entirely fictional names and generated numbers**, not any connected customer's activation records:
+
+- **Cross-language oracle:** a separate Python generator created 320 unique imaginary installers, 345 actual source rows (25 repeated names), 45 consecutive months (January 2023–September 2026), **139,352** generated inverter activations, a deliberately misleading Total column and a Chinese `=== 总计 ===` summary. It also created a 30-company partial correction file.
+- The local Node harness independently validated the actual importer against the Python-generated JSON and Excel-style CSV totals for **every company and every month**; all 45 portfolio totals, the overall volume, the partial correction overwrite, reimport idempotence, undo, name unions, 2–6 comparisons, insights, backup round-trips and equipment/installer isolation passed.
+- A real multi-worksheet `.xlsx` created with a separate workbook writer (100 data rows, a non-data introduction worksheet, title/header offset, blanks, repeated names and a literal Chinese summary row) parsed and reconciled all twelve months against the raw cell sums.
+- A **newly discovered validator flaw** was fixed: Excel may interpret `=== 总计 ===` or another installer-name string as a formula if incorrectly encoded. Such a workbook can contain a formula-error name cell (`#NAME?`); the importer previously accepted that as a company. The importer now **rejects Excel error/formula cells in the installer-name column** rather than corrupting counts. Formula-free textual `=== 总计 ===` still remains excluded. Added synthetic regression tests against error and cached-name formula cells.
+- A **portable CI reference fixture** independently generates and checks 240 fictional installers × 33 months, repeated rows, real total exclusion and 6-account comparisons. It checks **each individual company-month** and every monthly total against separately accumulated expected quantities, plus backups, idempotent reimport and equipment isolation.
+- The QA package additionally contains real importable CSVs/XLSX, a self-contained full **fictional workspace backup** with 320 installers, 162 equipment records and complete synthetic importer declarations, and the explicit Python reference ledger. This package is user-facing and **not committed to a public repository**.
+- The 320 × 45 example yields approximately 8.9 MB of saved JSON once equipment and import histories are included. IndexedDB is the preferred browser storage. **LocalStorage fallback may hit quota;** storage failure must not be treated as a successful save, and a full offline backup remains recommended.
+
+**Interpretation:** Cross-language reconciliation provides strong independent assurance for the supported export format, but is not proof of compatibility with every unshared proprietary SO variant. The local ChatGPT Chromium installation denies `file://` navigation by a platform policy; the project's separate GitHub Actions real headless Chromium runner validates the shipped offline `file://` HTML instead. Neither establishes manual Windows acceptance on the user's private workspace.
+
 ## Actual files reviewed without exposing values
 
 Two prior workbook artefacts were available only inside the private ChatGPT working environment:
