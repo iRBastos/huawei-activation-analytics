@@ -4,13 +4,21 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
 ## Completed: foundation and F1 coverage snapshot semantics
 
-- Node regression suite: **127 / 127 passing** on synthetic data during latest source-branch sync, including 17 additional V2 tests against the 110-test PR #2 foundation.
+- Node regression suite: **130 / 130 passing** on synthetic data during latest source-branch sync, including 20 additional V2 tests against the 110-test PR #2 foundation.
 - Full-snapshot import **requires explicit user confirmation**. Partial imports never assume omitted companies have zero activations.
 - Full months have auditable reporting-scope metadata (filename, worksheet, timestamp, import ID). Absent accounts contribute confirmed zero only where the entire population is declared complete.
 - Later complete snapshots **supersede stale earlier records** of omitted source names without deleting their audit evidence. Partial corrections can reintroduce individual aliases. Undo restores previous values and scope; conflicts are rejected.
 - Old schema-2 backups with no installer scope ledger normalize to empty coverage; equipment records remain independent.
 - Browser smoke now covers a full-snapshot reimport that excludes stale source rows, historical evidence, and a subsequent partial correction.
 - Offline simulation, Chromium file-open smoke, deterministic HTML/JS/ZIP generation, and release parity completed in the branch synchronization workflow. Use the actual workflow run for authoritative evidence.
+
+## Chinese summary-row import rule (14 Oct 2026)
+
+- The final row labelled `=== 总计 ===` means Grand Total, not an installer or product.
+- Equipment validation already recognizes and excludes it from product rows; it retains numeric total reconciliation.
+- Installer matrix validation now shares `totalLabel` from the model module; `=== 总计 ===`, `Total`, `Grand Total` and `合计` are ignored as summary rows and never included in activations or account identities.
+- Added three regression checks: CSV non-double-count/reimport, CSV duplicate names with invalid summary cells, and XLSX parsed summary row.
+- 130 automated tests, offline and Chromium checks passed in the branch release synchronization; generated distribution files updated.
 
 ## Remaining gates — not certified yet
 
