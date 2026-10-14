@@ -24,8 +24,8 @@ Working branch: `ux/redesign-v2.1`
 | F0 — baseline | PILOT BASELINE VERIFIED | 174/174 original tests; measured same-fixture screenshots for profile on 5 viewports; full app matrix remains for F6; original file:// smoke passes on GitHub Actions | Reference evidence `docs/ux/F0_F1_VERIFICATION.md` |
 | F1 — pilot Installer Profile | APPROVED BY OWNER | 174/174 local tests; 12/12 targeted; Actions run 38589444121 PASS; KPI begins 80–126 px higher | Direction approved; F2 performed |
 | F2 — navigation/filters | APPROVED BY OWNER | 178/178 tests; 25 viewport screenshots; Actions 38594347939 PASS | F3 performed |
-| F3 — Installer Intelligence | IMPLEMENTED — CI PASS; OWNER REVIEW / SCALE PERF OPEN | 182/182 tests; Actions 38598060565 PASS; F3 hierarchy, compare modes, rules, account management, CI screenshot artifact; 1000×48 UI benchmark completed, full bulk importer >120s | Owner visual review, track scale-performance fix before release |
-| F4 — Market Intelligence | NOT STARTED | — | After F3 |
+| F3 — Installer Intelligence | IMPLEMENTED — CI VERIFIED; DIRECTION CARRIED FORWARD | 182/182 tests; Actions 38598060565 passed; visual checkpoint F3; full 1000×48 bulk import performance remediated during F4 | Independent broad UX acceptance pending F6 |
+| F4 — Market Intelligence + Scale | IMPLEMENTED — CI VERIFIED | 187/187 tests; Actions 38601026894 pass; 91×48 market benchmark KPI parity; complete 1000-account×48-month first import/reimport passes; F4 verification report | Product review; next F5 Data Workspace & Targets |
 | F5 — Data & Targets | NOT STARTED | — | After F4 |
 | F6 — responsive/a11y | NOT STARTED | — | After F5 |
 | F7 — final QA/Draft PR | NOT STARTED | — | After F6 |
@@ -74,3 +74,13 @@ Historical note: this ledger was created before the F1/F2/F3 implementation mile
 - Independent local viewport screenshot harness stalled; GH Actions Chromium succeeded at desktop and 390px; multi-viewport visual QA planned for F6.
 - See `docs/ux/F3_VERIFICATION.md` for full evidence and limitations; comparison screenshots archived in ChatGPT Library UX Evidence folder.
 - Owner acceptance of F3 UX and full-scale performance remediation pending. `main` has not changed. No merge, PR or release.
+
+## F4 milestone — 2026-10-14
+- Owner requested continuing redesign while preserving large-dataset performance.
+- UX source commit `489cde04fcc59c35d31904652ffd765c4a649003` and CI-generated asset sync commit `0ba1df1f4276232a65592265ee3dd9ad7eb610ea`, isolated branch only.
+- Market hierarchy: headline KPI/cards, evidence findings, model rankings, module/BMS mix, and paired comparison table promoted; quarterly intelligence retained as secondary.
+- Performance fix in installer import: build source-by-account and import-order maps once during commit validation; no change to sum, zero/missing, full/partial, history, import provenance or persisted schema.
+- 1,000 companies × 48 months (48,000 synthetic cells): initial import 1.44 s, snapshot replacement 6.51 s, full validation/index/reimport workflow 8.65 s locally. Earlier full-file attempt timed out after 120 s; test environments were not matched, so results are not a controlled speedup ratio.
+- 91 product models × 48 months market benchmark: KPI readings identical to F3, no clear rendering slowdown. Full Node tests 187/187 pass, offline verification pass, GitHub Actions run 38601026894 successful (real Chromium file://, deterministic assets).
+- See `docs/ux/F4_VERIFICATION.md`; screenshots archived in Library UX Evidence folder. F6 full visual matrix and additional scale/memory UAT remain pending.
+- `main` remained at V2.0.0 baseline SHA `a962fe159bd5dd8b7d20f978910b27424d02e4db`; no merge, PR or release.
