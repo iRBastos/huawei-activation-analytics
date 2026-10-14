@@ -5,7 +5,7 @@ Status: **draft contract + existing behavior locked by tests**. Future reporting
 ## 1. Existing inputs
 
 `equipment` matrix: product model × month, separated into inverter, battery module, BMS.  
-`installers` matrix: installer name × month, **inverter activation count only**. Optional trailing `Total` is ignored. Empty monthly cells in an imported column mean **0**. Missing month columns mean **unknown**, never implicit zero.
+`installers` matrix: installer name × month, **inverter activation count only**. Optional trailing `Total` column is ignored. Summary rows (`Total`, `Grand Total`, `=== 总计 ===`, `合计`) are excluded as source identities and from all installer activation sums; their numerical values are ignored by the installer importer. Empty monthly cells in an imported column mean **0**. Missing month columns mean **unknown**, never implicit zero.
 
 `validateInstallerMatrix` validates the installer matrix, preserves cell provenance, sums repeated normalized name rows, checks nonnegative safe integers, and rejects error cells/formulas without cached results.
 

@@ -21,7 +21,8 @@ commercial actions, forecasts or device-to-installer joins yet.
    Error/formula-without-cache cells are rejected, not converted to zero.
 
 Source names are matched case-insensitively after trimming/collapsing spaces.
-Rows marked `Total`, `Grand Total`, `=== 总计 ===`, or `合计` are summary rows and never become installer records or add to activation counts. Any numeric totals in these rows are ignored for installer data.\nRepeated source names in one file are summed month by month. Each file is a snapshot
+Rows marked `Total`, `Grand Total`, `=== 总计 ===`, or `合计` are summary rows and never become installer records or add to activation counts. Any numeric totals in these rows are ignored for installer data.
+Repeated source names in one file are summed month by month. Each file is a snapshot
 of the named sources and months it supplies, not an incremental batch.
 Reimporting replaces those source/month snapshots. Omitted sources and months remain.
 
