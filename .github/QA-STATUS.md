@@ -4,7 +4,7 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
 ## Completed: foundation and F1 coverage snapshot semantics
 
-- Node regression suite: **154 / 154 passing** on synthetic data during latest source-branch sync, including 44 additional V2 tests against the 110-test PR #2 foundation.
+- Node regression suite: **167 / 167 passing** on synthetic data during latest source-branch sync, including 57 additional V2 tests against the 110-test PR #2 foundation.
 - Full-snapshot import **requires explicit user confirmation**. Partial imports never assume omitted companies have zero activations.
 - Full months have auditable reporting-scope metadata (filename, worksheet, timestamp, import ID). Absent accounts contribute confirmed zero only where the entire population is declared complete.
 - Later complete snapshots **supersede stale earlier records** of omitted source names without deleting their audit evidence. Partial corrections can reintroduce individual aliases. Undo restores previous values and scope; conflicts are rejected.
@@ -51,11 +51,23 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - **154/154 Node tests passed** in the development branch generation workflow; offline simulated app, real Chromium, HTML/JS and ZIP sync passed. The final independent validation run must be green before review.
 - Commercial analysis and priority insights (F5) and real-data Windows acceptance (F6) remain open.
 
+
+## F5 — verified activity insights and actionable priorities (14 Oct 2026)
+
+- Added an **Insights & priorities** tab with evidence-backed, rule-based commercial signals for all consolidated accounts, irrespective of a comparable cohort filter.
+- Valid signals: growing/declining under complete equal-length reporting and configurable significant absolute/percentage changes; inactive after **three confirmed closed zero months plus previously recorded activity**; reactivated after three prior closed zero months and a current positive month with earlier activity; first recorded positive after confirmed zeros; newly observed activity after a zero comparison baseline; insignificant movement/no recorded activity; incomplete reporting as **Data check** rather than commercial risk.
+- Priority weight + volume band + change band is deterministic, documented and capped at 100. No market-share, product-site inference, causal attribution, forecast or AI guess. High ≥60, Medium 30–59, Low <30. Unconfirmed data has no score.
+- Configurable minimum volume (1/5/10/25, default 5) and change percentage (10/20/30/50, default 20) save in installer-only reporting preferences, with backward-compatible schema-1/2 backup defaults and validation.
+- Account-level signal appears on the **Installer profile**, reusing its existing domain report; the full insight list supports search, filters, pagination, evidence, suggested outreach, and export of the **same derived rows** to CSV.
+- Added synthetic edge-case tests for incomplete/open months, inactivity vs reactivation, zero baselines, thresholds and score bands, CSV consistency, backup compatibility, six-account legacy features and non-mutating profiles.
+- GitHub release sync validated **167/167** automated tests, offline DOM and headless Chromium smoke (including the insights tab and saving a threshold) and regenerated the standalone HTML/JS and ZIP. The independent current-head check must be green before release consideration.
+- Reference method: `codigo-fonte/docs/INSTALLER-INSIGHTS.md`. Final representative actual XLSX, manual Windows file-open acceptance and explicit merge authorisation remain open in F6.
+
 ## Remaining gates — not certified yet
 
 - [ ] Manual user acceptance on a representative **sanitized actual installer XLSX** (not included in GitHub).
 - [ ] Confirm field-level scope descriptions and whether all real monthly reports represent full installer population.
-- [ ] Build deterministic commercial insights (F5). Dedicated account profile and 2–6 installer comparison UX have been implemented in F4.
+- [x] Deterministic commercial insights (F5): implemented and tested with auditable rules, priority bands, filters, saved thresholds, profile integration and CSV.
 - [ ] Windows file-open browser, multi-month import/reload, export, responsive layout, and full backed-up workspace acceptance (F6).
 - [ ] Merge only with explicit user approval after all V2 gates.
 
