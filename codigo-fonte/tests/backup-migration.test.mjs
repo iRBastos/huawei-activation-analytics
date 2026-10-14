@@ -79,7 +79,7 @@ test('F3: older schema-2 backup migrates installer dates without touching produc
  assert.equal(migrated.installerPreferences.end,'2024-12');
  assert.equal(migrated.installerPreferences.aggregation,'month');
  assert.equal(migrated.preferences.aggregation,'half');
- migrated.preferences.start='2026-03';
+ migrated.preferences.start='2024-03';
  assert.equal(migrated.installerPreferences.start,'2024-01');
  assert.deepEqual(D.validateBackup(migrated).installerPreferences,migrated.installerPreferences);
 });

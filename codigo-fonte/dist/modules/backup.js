@@ -16,7 +16,7 @@ export function validateBackup(input) {
   if(next.installers&&next.installers.coverage===undefined)next.installers.coverage={};
   validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};
   if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');
-  const defaults=installerPreferenceDefaults(next.preferences),saved=input.installerPreferences;
+  const defaults=installerPreferenceDefaults(next.preferences),saved=input.schemaVersion===1?undefined:input.installerPreferences;
   if(saved!==undefined&&(saved===null||typeof saved!=='object'||Array.isArray(saved)))throw new Error('Invalid installer reporting preferences.');
   next.installerPreferences={...defaults,...(saved??{})};
   const p=next.installerPreferences;
