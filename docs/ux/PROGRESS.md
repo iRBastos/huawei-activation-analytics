@@ -25,8 +25,8 @@ Working branch: `ux/redesign-v2.1`
 | F1 — pilot Installer Profile | APPROVED BY OWNER | 174/174 local tests; 12/12 targeted; Actions run 38589444121 PASS; KPI begins 80–126 px higher | Direction approved; F2 performed |
 | F2 — navigation/filters | APPROVED BY OWNER | 178/178 tests; 25 viewport screenshots; Actions 38594347939 PASS | F3 performed |
 | F3 — Installer Intelligence | IMPLEMENTED — CI VERIFIED; DIRECTION CARRIED FORWARD | 182/182 tests; Actions 38598060565 passed; visual checkpoint F3; full 1000×48 bulk import performance remediated during F4 | Independent broad UX acceptance pending F6 |
-| F4 — Market Intelligence + Scale | IMPLEMENTED — CI VERIFIED | 187/187 tests; Actions 38601026894 pass; 91×48 market benchmark KPI parity; complete 1000-account×48-month first import/reimport passes; F4 verification report | Product review; next F5 Data Workspace & Targets |
-| F5 — Data & Targets | NOT STARTED | — | After F4 |
+| F4 — Market Intelligence + Scale | IMPLEMENTED — CI VERIFIED; DIRECTION ACCEPTED FOR CONTINUATION | 187/187 tests; Actions 38601026894 pass; 91×48 KPI parity and large importer remediation | F5 completed; F6 full visual audit pending |
+| F5 — Data & Targets | IMPLEMENTED — CI VERIFIED | 193/193 tests; Actions 38603929592 PASS; equipment preview 200 rows with full CSV, grouped data tabs, targets and coverage disclosures, backup guidance; 25 visual screenshots; 1000×48 importer PASS | Owner F5 visual review; F6 accessibility/responsiveness next |
 | F6 — responsive/a11y | NOT STARTED | — | After F5 |
 | F7 — final QA/Draft PR | NOT STARTED | — | After F6 |
 
@@ -84,3 +84,14 @@ Historical note: this ledger was created before the F1/F2/F3 implementation mile
 - 91 product models × 48 months market benchmark: KPI readings identical to F3, no clear rendering slowdown. Full Node tests 187/187 pass, offline verification pass, GitHub Actions run 38601026894 successful (real Chromium file://, deterministic assets).
 - See `docs/ux/F4_VERIFICATION.md`; screenshots archived in Library UX Evidence folder. F6 full visual matrix and additional scale/memory UAT remain pending.
 - `main` remained at V2.0.0 baseline SHA `a962fe159bd5dd8b7d20f978910b27424d02e4db`; no merge, PR or release.
+
+## F5 milestone — 2026-10-14
+- Owner approved continuation after F4 and requested an efficient, well-protected rollout.
+- Source commit `cbb7b1b6acf87edfddadf4386cc6d9111a47d877` and generated release sync commit `2e1e494348446c159f83ff8eef0b2414810a22d2` on the isolated branch only.
+- Data Workspace now groups the same seven tabs into Import, Inspect, Configure, Protect; accessible keyboard tab navigation added without persisted schema changes.
+- Equipment import preview caps visible HTML at 200 rows while preserving all validated values and a full CSV export; installer Full/Partial declarations unchanged; target and coverage editors contextual; backup/restore protections intact.
+- **193/193 tests PASS**, offline verification pass; GitHub Actions run https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38603929592 SUCCESS with real `file://` Chromium and deterministic release rebuild.
+- 25 browser snapshots across 5 viewports × Data Import/Coverage/Backup/History/Targets: no horizontal overflow or detected JS exceptions. Local snapshot harness injects a document, so actual `file://` verification relies on CI.
+- Full import benchmark 1,000 installers × 48 months × 48,000 synthetic cells: validation 322 ms, initial commit 1,356 ms, index 66 ms, repeated import 3,121 ms, total 4,865 ms, 0 validation errors.
+- F5 evidence in `docs/ux/F5_VERIFICATION.md`; screenshots and JSON report stored in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign/UX Evidence`.
+- **F6 open gate**: full app visual and keyboard/a11y checks, manual Windows acceptance with safe test-profile backup, verify complete CSV download in real browser. No PR, merge, release; `main` stays at V2.0.0.
