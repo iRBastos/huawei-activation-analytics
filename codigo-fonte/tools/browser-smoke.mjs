@@ -170,6 +170,20 @@ try{
  await evaluate("document.querySelector('#modal [data-close]').click()");
  await uploadInstallers('Installer,202501,202502\nBord Gáis Energy Solar,7,3');
  assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'26');
+ // Regression: 140+ installer accounts must all appear in both selectors, not just
+ // the initial 80/100. This is separate from the existing 1,000 x 48 import test.
+ const longList='Installer,202503\n'+Array.from({length:142},(_,i)=>'QA Installer '+String(i).padStart(4,'0')+','+(i+1)).join('\n');
+ await uploadInstallers(longList);
+ await evaluate("document.querySelector('[data-installer-tab=profile]').click()");
+ await until("document.querySelector('#installer-profile-picker')?.options.length>=140",'full installer account list');
+ assert.ok(await evaluate("([...document.querySelector('#installer-profile-picker').options].some(x=>x.textContent==='QA Installer 0141'))"),'last installer visible without searching');
+ await evaluate("document.querySelector('[data-installer-tab=compare]').click()");
+ await until("document.querySelectorAll('.installer-compare-picker [data-installer-compare-pick]').length>=140",'full scrollable comparison list');
+ assert.ok(await evaluate("([...document.querySelectorAll('.installer-compare-picker button')].some(x=>x.textContent.includes('QA Installer 0141')))"),'last account appears in comparison before searching');
+ const scrollBefore=await evaluate("(()=>{const p=document.querySelector('.installer-compare-picker');p.scrollTop=p.scrollHeight;return p.scrollTop;})()");
+ assert.ok(scrollBefore>200,'long-list scroll must be substantive');
+ await evaluate("([...document.querySelectorAll('.installer-compare-picker button')].find(x=>x.textContent.includes('QA Installer 0141'))).click()");
+ assert.ok(await evaluate("document.querySelector('.installer-compare-picker').scrollTop>200"),'selection must preserve scroll position after redraw');
 
  // Responsive acceptance in a real mobile-sized Chromium viewport. Tables are
  // allowed to scroll internally; the page itself must not overflow sideways.
@@ -207,7 +221,7 @@ try{
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
  assert.deepEqual(blocked,[],'offline app must not request remote resources');
- console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','installer KPIs','monthly heatmap evidence','installer chart routing','comparable cohort','responsive 390px for 5 workspaces','mobile screenshot','screenshot'],screenshot:'browser-smoke.png'}));
+ console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','installer KPIs','monthly heatmap evidence','installer chart routing','comparable cohort','full installer pickers after 140+ source names','scroll position persists after selection','responsive 390px for 5 workspaces','mobile screenshot','screenshot'],screenshot:'browser-smoke.png'}));
 }finally{
  if(ws){try{ws.close()}catch{}}
  browser.kill('SIGKILL');

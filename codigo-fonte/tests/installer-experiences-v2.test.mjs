@@ -115,3 +115,61 @@ test('F5: filtering insights never mutates records or saved thresholds',()=>{
  assert.match(html,/No accounts match these filters|Verify reporting coverage/);
  assert.deepEqual(state,before);
 });
+
+function extensiveFixture(count=1105){
+ const s=D.freshState(),rows=[['Installer',202501],...Array.from({length:count},(_,i)=>['QA Installer '+String(i).padStart(4,'0'),(i%17)+1]),['=== 总计 ===',0]];
+ const v=D.validateInstallerMatrix({rows,filename:'long-list.xlsx',sheet:'Installers'});
+ assert.deepEqual(v.errors,[]);
+ const state=D.commitInstallerImport(s,v,{scope:'full',fullScopeConfirmed:true});
+ state.installerPreferences={...state.installerPreferences,...filters};
+ return state;
+}
+test('F6 regression: native Installer Profile selector exposes all 1105 accounts, including the last',()=>{
+ const s=extensiveFixture(),accounts=D.installerIndex(s).sort((a,b)=>a.name.localeCompare(b.name,'en-IE'));
+ const last=accounts.at(-1),first=accounts[0];
+ const html=X.installerProfilePage(s,{installerProfileId:last.id});
+ assert.equal((html.match(/<option value="/g)??[]).length,1105,'no hidden top-100 cap');
+ assert.ok(html.includes('value="'+last.id+'" selected'));
+ assert.ok(html.includes('1105 available of 1105 tracked accounts'));
+ const filtered=X.installerProfilePage(s,{installerProfileId:first.id,installerProfileSearch:'Installer 1104'});
+ assert.equal((filtered.match(/<option value="/g)??[]).length,2,'search retains selected account plus match');
+ assert.ok(filtered.includes('value="'+first.id+'" selected'));
+ assert.ok(filtered.includes('value="'+last.id+'"'));
+ assert.deepEqual(D.installerIndex(s).length,1105,'render does not change source accounts');
+});
+test('F6 regression: Compare 2–6 scroll list exposes all 1105 and keeps search functional',()=>{
+ const s=extensiveFixture(),accounts=D.installerIndex(s).sort((a,b)=>a.name.localeCompare(b.name,'en-IE')),last=accounts.at(-1);
+ const html=X.installerComparisonPage(s,{installerCompareIds:[]});
+ assert.equal((html.match(/aria-pressed="false" data-installer-compare-pick=/g)??[]).length,1105);
+ assert.ok(html.includes('1105 options shown from 1105 tracked accounts'));
+ assert.ok(html.includes('data-installer-compare-pick="'+last.id+'"'));
+ const filtered=X.installerComparisonPage(s,{installerCompareIds:[],installerCompareSearch:'Installer 1104'});
+ assert.equal((filtered.match(/aria-pressed="false" data-installer-compare-pick=/g)??[]).length,1);
+ assert.ok(filtered.includes('data-installer-compare-pick="'+last.id+'"'));
+ const withSix=X.installerComparisonPage(s,{installerCompareIds:accounts.slice(0,6).map(a=>a.id)});
+ assert.equal((withSix.match(/aria-pressed="true" data-installer-compare-pick=/g)??[]).length,6);
+ assert.equal((withSix.match(/data-installer-compare-pick="[^"]+" disabled/g)??[]).length,1099);
+});
+test('F6 regression: old imports remain accessible with original undo buttons',()=>{
+ let s=seed();
+ for(let i=0;i<12;i++){
+  const rows=[['Installer',202503+i],['Audit Company',i+1]];
+  const v=D.validateInstallerMatrix({rows,filename:'history-'+String(i)+'.csv',sheet:'CSV'});
+  s=D.commitInstallerImport(s,v);
+ }
+ const html=V.installerImportView(s,{dataTab:'installer-import'});
+ assert.ok(html.includes('Show 3 older installer imports'));
+ assert.equal((html.match(/data-installer-undo-import=/g)??[]).length,13);
+ assert.ok(html.includes('history-0.csv'));
+});
+test('F6 regression: old manual account unions remain accessible and traceable',()=>{
+ const rows=[['Installer',202501],...Array.from({length:13},(_,i)=>['Identity '+i,1])];
+ let s=D.commitInstallerImport(D.freshState(),
+   D.validateInstallerMatrix({rows,filename:'identity.csv',sheet:'CSV'}));
+ const all=Object.keys(s.installers.accounts),base=all[0];
+ for(const other of all.slice(1))s=D.mergeInstallers(s,[base,other],'Consolidated account');
+ const html=V.installerView(s,{hiddenSeries:new Set()});
+ assert.ok(html.includes('Show 2 older account unions'));
+ assert.equal((html.match(/data-installer-unmerge=/g)??[]).length,12);
+ assert.ok(html.includes('data-installer-unmerge="'+s.installers.merges[0].id+'"'));
+});
