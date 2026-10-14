@@ -123,3 +123,58 @@ test('XLSX source parser also excludes === 总计 === final row in installer dat
  assert.equal(v.sources.length,2);
  assert.equal(sum(D.commitInstallerImport(D.freshState(),v)),18);
 });
+
+test('synthetic release: error/formula in name column blocks false company and inflated totals',()=>{
+ const invalid=[['Installer',202601], [{v:'#NAME?',type:'e',ref:'A2'},10], ['FICTITIOUS Solar QA',2]];
+ const report=D.validateInstallerMatrix({rows:invalid,filename:'formula.xlsx',sheet:'SO'});
+ assert.match(report.errors.join(' '),/error or formula in installer name at A2/i);
+ assert.throws(()=>D.commitInstallerImport(D.freshState(),report),/Resolve import errors/);
+ const withFormula=D.validateInstallerMatrix({rows:[['Installer',202601],[{v:'Fake installer',type:'str',f:'B2&"x"',ref:'A2'},8]],filename:'formula.xlsx',sheet:'SO'});
+ assert.match(withFormula.errors.join(' '),/error or formula in installer name/);
+});
+test('synthetic release: 240 x 33 months independently reconciles duplicate rows and full totals',()=>{
+ const months=D.monthsBetween('2024-01','2026-09'),names=Array.from({length:240},(_,i)=>'FICTITIOUS QA '+String(i).padStart(4,'0'));
+ const reference=new Map(),rows=[['Installer',...months.map(m=>m.replace('-','')),'Total']];
+ for(let i=0;i<names.length;i++){
+   const quantities={};for(const m of months)quantities[m]=0;
+   for(let part=0;part<(i%11===0?2:1);part++){
+     const row=[names[i]];
+     for(let j=0;j<months.length;j++){
+       const v=((i*13+j*7+part*3)%19);
+       row.push(v===0&&(i+j)%3===0?'':v);
+       quantities[months[j]]+=v;
+     }
+     row.push(999999);rows.push(row);
+   }
+   reference.set(names[i],quantities);
+ }
+ const grand=months.map(m=>[...reference.values()].reduce((s,r)=>s+r[m],0));
+ rows.push(['=== 总计 ===',...grand,999999]);
+ const v=D.validateInstallerMatrix({rows,filename:'synthetic.csv',sheet:'CSV'});
+ assert.deepEqual(v.errors,[]);
+ assert.equal(v.sources.length,240);
+ assert.equal(v.duplicates,22);
+ const state=D.commitInstallerImport(D.freshState(),v,{scope:'full',fullScopeConfirmed:true});
+ const index=D.installerIndex(state),lookup=new Map(index.map(x=>[x.name,x])),now=new Date('2026-10-14T12:00:00Z');
+ for(const [name,ref] of reference)for(const month of months){
+   const metric=D.installerMeasure([lookup.get(name)],month,month,now);
+   assert.equal(metric.value,ref[month],name+' '+month);
+   assert.equal(metric.complete,true);
+ }
+ for(let i=0;i<months.length;i++)assert.equal(D.installerMeasure(index,months[i],months[i],now).value,grand[i]);
+ assert.equal(index.length,240);
+ const repeated=D.commitInstallerImport(state,v);
+ assert.equal(repeated.installers.imports.at(-1).changes.length,0);
+ const copy=D.validateBackup(JSON.parse(JSON.stringify(repeated)));
+ assert.equal(D.installerIndex(copy).length,240);
+});
+test('synthetic release: inverter, battery and BMS data cannot fabricate installer attribution',()=>{
+ const s=D.commitInstallerImport(D.freshState(),validate('Installer,202601\nFICTITIOUS Solar QA,8'),{scope:'full',fullScopeConfirmed:true});
+ const before=structuredClone(s.installers);
+ const v=D.validateMatrix({rows:parseCsv('index,202601,202602\nSUN2000-5K-LB0,9,10\nLUNA2000-5-E1,2,4\nLUNA2000-10KW-C1,2,3\n=== 总计 ===,13,17'),filename:'fictional-equipment.csv',sheet:'CSV',dataset:'unified',catalog:s.catalog});
+ assert.deepEqual(v.errors,[]);
+ const imported=D.commitImport(s,v);
+ assert.deepEqual(imported.installers,before);
+ assert.equal(Object.keys(imported.records).length,6);
+ assert.equal(D.installerIndex(imported).length,1);
+});
