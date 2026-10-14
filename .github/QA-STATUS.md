@@ -4,7 +4,7 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
 ## Completed: foundation and F1 coverage snapshot semantics
 
-- Node regression suite: **144 / 144 passing** on synthetic data during latest source-branch sync, including 34 additional V2 tests against the 110-test PR #2 foundation.
+- Node regression suite: **154 / 154 passing** on synthetic data during latest source-branch sync, including 44 additional V2 tests against the 110-test PR #2 foundation.
 - Full-snapshot import **requires explicit user confirmation**. Partial imports never assume omitted companies have zero activations.
 - Full months have auditable reporting-scope metadata (filename, worksheet, timestamp, import ID). Absent accounts contribute confirmed zero only where the entire population is declared complete.
 - Later complete snapshots **supersede stale earlier records** of omitted source names without deleting their audit evidence. Partial corrections can reintroduce individual aliases. Undo restores previous values and scope; conflicts are rejected.
@@ -41,11 +41,21 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
  - F3 release sync: 144 tests, offline Chromium, and regenerated HTML/JS/ZIP all passed in the dedicated branch workflow. Source-file commits are not merge-approved until the post-sync independent PR check is green.
 
+## F4 — dedicated profiles and 2–6 installer comparison (14 Oct 2026)
+
+- Installers now provides three dedicated tabs: Installer overview, Installer profile, and Compare 2–6. The existing rank-table quick modal and account-union flow still work.
+- The searchable individual profile has selected-period KPI, growth, confirmed peak, first/last recorded activity, monthly/quarterly/yearly charts and evidence table; partial lifetime totals stay labeled.
+- Comparison offers a searchable multi-select picker, enforces a maximum of six distinct accounts, supports removal and selecting from ranking, and shows total/previous/delta/growth/share, colored absolute charts, indexed charts with one complete positive common starting period, aligned period table and CSV export.
+- All numerical views use the same coverage-aware domain selectors; no spurious zeros or growth from missing months. Indexed comparison refuses zero or incomplete baselines.
+- F4 regression tests include six-account limit, all major UI sections, indexed safeguards, CSV/graph reconciliation, and an extended Chromium browser smoke covering profile and comparison.
+- **154/154 Node tests passed** in the development branch generation workflow; offline simulated app, real Chromium, HTML/JS and ZIP sync passed. The final independent validation run must be green before review.
+- Commercial analysis and priority insights (F5) and real-data Windows acceptance (F6) remain open.
+
 ## Remaining gates — not certified yet
 
 - [ ] Manual user acceptance on a representative **sanitized actual installer XLSX** (not included in GitHub).
 - [ ] Confirm field-level scope descriptions and whether all real monthly reports represent full installer population.
-- [ ] Build dedicated account profile and interactive 2–6 comparison UX (F4) and deterministic commercial insights (F5).
+- [ ] Build deterministic commercial insights (F5). Dedicated account profile and 2–6 installer comparison UX have been implemented in F4.
 - [ ] Windows file-open browser, multi-month import/reload, export, responsive layout, and full backed-up workspace acceptance (F6).
 - [ ] Merge only with explicit user approval after all V2 gates.
 
