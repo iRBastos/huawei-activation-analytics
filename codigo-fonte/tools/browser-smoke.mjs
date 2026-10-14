@@ -93,15 +93,25 @@ try{
  // Installer UI acceptance runs on fictional CSV data in this temporary browser profile.
  await evaluate("document.querySelector('[data-action=exit-demo]').click()");
  await evaluate("document.querySelector('[data-nav=installers]').click()");
+ const originalInstallerStart=await evaluate("document.querySelector('[data-filter=start]').value");
+ assert.equal(await evaluate("document.querySelector('#installer-file')"),null,'import UI belongs to Data');
  const installerCsv='Installer,202501,202502,Total\nBordGais Energy,10,5,999\nBord Gáis Energy Solar,7,3,999\nBord Gáis Energy,4,2,999\nBordGais Energy,1,,999';
  async function uploadInstallers(csv,full=false){
+  await evaluate("document.querySelector('[data-nav=data]').click()");
+  await evaluate("document.querySelector('[data-data-tab=installer-import]').click()");
+  await until("!!document.querySelector('#installer-file')",'installer Data import tab');
   await evaluate(`(()=>{const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(csv)}],'installer-fixture.csv',{type:'text/csv'}));const input=document.querySelector('#installer-file');input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   await until("!!document.querySelector('[data-form=installer-import]')",'installer preview');
   if(full)await evaluate("(()=>{const f=document.querySelector('[data-form=installer-import]');f.querySelector('[name=scope]').value='full';f.querySelector('[name=fullScopeConfirmed]').checked=true;})()");
   await evaluate("(()=>{const f=document.querySelector('[data-form=installer-import]');f.querySelector('[name=approved]').checked=true;f.requestSubmit();})()");
   await until("!document.querySelector('[data-form=installer-import]')",'installer import committed');
+  await evaluate("document.querySelector('[data-nav=installers]').click()");
  }
  await uploadInstallers(installerCsv);
+ assert.equal(await evaluate("document.querySelector('[data-filter=start]').value"),'2025-01');
+ await evaluate("document.querySelector('[data-nav=overview]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-filter=start]').value"),originalInstallerStart,'installer imports cannot change equipment dates');
+ await evaluate("document.querySelector('[data-nav=installers]').click()");
  assert.equal(await evaluate("document.querySelectorAll('[data-installer-select]').length"),3);
  await evaluate("(()=>{const ids=[...document.querySelectorAll('[data-installer-select]')].map(x=>x.dataset.installerSelect);for(const id of ids){const el=document.querySelector('[data-installer-select=\"'+id+'\"]');el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}document.querySelector('[data-action=installer-merge]').click();})()");
  await until("!!document.querySelector('[data-form=installer-merge]')",'merge preview');
