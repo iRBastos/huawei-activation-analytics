@@ -111,5 +111,6 @@ Open **Data → Installer imports** for source import, validation and import his
 Blank monthly cells mean zero in this importer; repeated names are summed; the trailing
 Total column is ignored. This does not change equipment blank-cell handling.
 Use **Installers → Installer profile** to inspect one consolidated account and **Installers → Compare 2–6** for side-by-side volume and indexed trends. A valid indexed baseline requires complete, positive first-period observations for every selected company. Exports preserve unknown values.
+Open **Installers → Insights & priorities** for verified inactivity/reactivation, meaningful growth/decline and accounts needing a reporting-coverage check. Adjust the saved minimum change thresholds and export a source-backed CSV; see [Insight rules](docs/INSTALLER-INSIGHTS.md).
 See [Installer import guide](docs/INSTALLER-IMPORT.md) for snapshot replacement, aliases,
 undo, schema-2 backup compatibility and current limitations.

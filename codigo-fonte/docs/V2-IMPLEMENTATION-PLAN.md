@@ -92,3 +92,12 @@ No CRM integration, cloud database, browser sync, live source refresh, generativ
 - Indexed comparison never invents percentages from zero baselines or incomplete months. Shared F2 selectors power all profiles and comparisons.
 - UI and arithmetic regression tests plus the existing real Chromium file-open smoke must pass before calling F4 complete.
 - Future F5 builds deterministic commercial activity findings from eligible periods; no causal, market-share, product/install-site or revenue claims follow from these graphs.
+
+## F5 deterministic commercial intelligence — implemented
+
+- Installer workspace has a fourth tab, **Insights & priorities**, and the same single-account signal appears on Installer profile without a second portfolio scan.
+- The engine classifies each consolidated account from confirmed reporting only: inactive after three consecutive closed zero months plus historical positive activity; reactivated after three closed zero months plus a new positive month and earlier activity; first recorded activity after confirmed zero months; meaningful growing/declining periods; activity after a confirmed zero comparison base; no significant movement; no activity; and reporting-coverage check.
+- Configurable minimum absolute volume (1/5/10/25) and percentage change (10/20/30/50) are stored under installer-only preferences, validated on backup restore and defaulted for older schema-1/schema-2 backups. No equipment preferences are changed.
+- High/Medium/Low rule scores reflect transparent signal weights, recent volume and change magnitude; unverified reporting is a separate **Data check**, never a confident commercial signal.
+- Evidence strings, suggested next actions, priority filters, search, paging and CSV exports all derive from one selector. No automatic activity cause, competitor attribution, installer-model association, predicted revenue or market share is claimed.
+- Final release requires post-build green CI and representative XLSX/Windows acceptance (F6); do not merge yet.

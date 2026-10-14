@@ -122,3 +122,7 @@ The profile offers a searchable account picker, selected-period KPI and growth, 
 On Compare 2–6, search and choose distinct accounts. Selected chips remove accounts; additional choices are disabled at the six-account limit. Volumes and growth come from the same domain calculations as the portfolio ranking. The volume chart is always available for reported data. **Indexed comparisons use 100 for the same first displayed reporting bucket, but only if every selected installer has a complete, positive baseline**. Otherwise the indexed chart is withheld. All account figures and chart periods are exportable as CSV, while missing values stay unknown.
 
 These figures represent tracked Huawei inverter activations by consolidated account only: they cannot establish site counts, battery attachment, installation of specific equipment per installer, Irish-wide market shares, revenue or causal impacts.
+
+## Commercial insights
+
+Open **Installers → Insights & priorities** for coverage-aware action suggestions and risk flags. The same signal and supporting evidence appear in a single installer profile. The thresholds are saved in the full offline backup, not synchronized to a cloud server. See [Insight methodology](INSTALLER-INSIGHTS.md) for how signals and rule-based priority bands are calculated.

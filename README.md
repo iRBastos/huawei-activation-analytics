@@ -50,9 +50,9 @@ Data → Installer imports handles monthly inverter totals by company, sums repe
 excludes Chinese grand-total rows, ignores the trailing Total column and tracks import history.
 Installers provides rankings, growth KPIs, alias consolidation and undo, with independent
 reporting date filters. See [the installer guide](codigo-fonte/docs/INSTALLER-IMPORT.md).
-The Installer Profile and 2–6 Installer Comparison are available as dedicated tabs under Installers, with historical monthly/quarterly/annual charts, coverage-aware growth, indexed trends and CSV exports. Deterministic commercial insights are planned in the next release phase.
+The Installer Profile and 2–6 Installer Comparison are available as dedicated tabs under Installers, with historical monthly/quarterly/annual charts, coverage-aware growth, indexed trends and CSV exports. The Insights & priorities tab offers evidence-backed account signals, configurable significance thresholds and exportable follow-up suggestions.
 
 ### Installer analytics workspaces
 The installer branch adds monthly trends, comparison KPIs, ranking, concentration, retention,
 three-month momentum, a dedicated account profile with all recorded history, a 2–6 company comparative chart/table and a clickable activity heatmap. Import and confirmed
-unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules.
+unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules and [the commercial insights guide](codigo-fonte/docs/INSTALLER-INSIGHTS.md) for prioritisation methodology.
