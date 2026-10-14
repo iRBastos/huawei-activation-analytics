@@ -1,3 +1,4 @@
+import * as IA from './installer-analytics-views.js';
 import * as IV from './installer-views.js';
 import * as D from './domain.js';
 import * as V from './views.js';
@@ -15,7 +16,7 @@ function toast(text,error=false){const el=$('#toast');el.textContent=text;el.sty
 function render(){
   $('#navigation').innerHTML=V.navigation(ui.page);
   $('#breadcrumb').textContent=`Ireland / ${V.NAV[V.ROUTES.indexOf(ui.page)]}`;
-  $('#global-filters').innerHTML=ui.page==='installers'?IV.installerFilters(state):V.filters(state,ui);
+  $('#global-filters').innerHTML=ui.page==='installers'?IA.installerAnalyticsFilters(state,ui):V.filters(state,ui);
   const pages={overview:V.overviewView,inverters:V.inverterView,batteries:V.batteriesView,comparisons:V.comparisonsView,targets:V.targetsView,data:V.dataView,installers:IV.installerView};
   const storage=storageInfo();
   const sessionNotice=!ui.demo&&storage.mode==='memory'?'<div class="notice"><p><strong>Session-only workspace.</strong> This browser does not allow this file to save automatically. Import and analyse normally, then download a full backup before closing.</p><button class="small" data-action="backup">Download full backup</button></div>':'';
@@ -58,7 +59,7 @@ document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
     if(ui.demo&&['print','export-records','export-summary','backup'].includes(el.dataset.action)){toast('Exports are disabled for fictional data. Return to your real workspace to report actual values.',true);return;}
-    if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IV.installerDetail(state,id));return;}
+    if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IA.installerProfile(state,id,ui)+'<details><summary>All original monthly source values</summary>'+IV.installerDetail(state,id)+'</details>');return;}
     if(el.dataset.installerSuggest){reviewInstallerMerge(el.dataset.installerSuggest.split(','));return;}
     if(el.dataset.installerPage){ui.installerPage=Number(el.dataset.installerPage);render();return;}
     if(el.dataset.installerUnmerge){const id=el.dataset.installerUnmerge;openModal('Undo installer union?', '<p>Restore the original account identities. Any monthly values updated since the union will be retained.</p>',async()=>{await commit(D.undoInstallerMerge(state,id),'Installer union undone.');ui.installerSelected=new Set();render();});return;}
@@ -66,6 +67,7 @@ document.addEventListener('click',async event=>{
     if(el.dataset.close){$('#'+el.dataset.close).close();return;}
     if(el.dataset.nav){navigate(el.dataset.nav);return;}
     if(el.dataset.dataTab){navigate('data',el.dataset.dataTab);return;}
+    if(el.dataset.installerPoint){openModal('Installer activation evidence',IA.installerPointEvidence(state,el.dataset.installerPoint,el.dataset.month,el.dataset.end??el.dataset.month,ui));return;}
     if(el.dataset.month){detail(el.dataset.month,el.dataset.end??el.dataset.month,el.dataset.model??state.preferences.model);return;}
     if(el.dataset.modelDetail){const model=state.catalog[el.dataset.modelDetail]?el.dataset.modelDetail:state.preferences.model;detail(state.preferences.start,state.preferences.end,model);return;}
     if(el.dataset.inverterChartModel){
@@ -96,7 +98,8 @@ document.addEventListener('click',async event=>{
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
-      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=state.preferences,months=D.monthsBetween(f.start,f.end);download(toCsv([['Installer',...months,'Reported total'],...D.installerRows(state,f.start,f.end).map(r=>[r.name,...months.map(m=>r.monthly[m]??null),r.total])]),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
+      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,state.preferences,{cohort:ui.installerCohort??'all'}),state.preferences)),'installer-kpis.csv','text/csv;charset=utf-8');break;}
+      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=state.preferences,months=D.monthsBetween(f.start,f.end);download(toCsv([['Installer',...months,'Reported total'],...D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}).rows.map(r=>[r.name,...months.map(m=>r.cells[m]?.value??null),r.current.value])]),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
       case 'import':navigate('data','import');break;
       case 'demo':if(!ui.demo){realState=state;state=makeDemo();ui.demo=true;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
@@ -129,6 +132,9 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
   if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
+    case 'installer-cohort':ui.installerCohort=el.value;ui.installerPage=0;ui.installerSelected=new Set();render();break;
+    case 'installer-sort':ui.installerSort=el.value;ui.installerPage=0;render();break;
+    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.preferences,{start,end});await commit(next);break;}
     case 'installer-file':await importInstallerFile(el.files[0]);break;
     case 'installer-sheet':await chooseInstallerSheet(el.value);render();break;
     case 'installer-header':{const p=ui.installerPending;if(!p||!Number.isInteger(+el.value)||+el.value<1||+el.value>p.rows.length)throw new Error('Select a valid header row.');p.headerRow=+el.value-1;validateInstallerPending();render();break;}

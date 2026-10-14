@@ -69,3 +69,27 @@ by 48-month fixture. Existing equipment regressions run unchanged alongside thes
 `tools/browser-smoke.mjs` exercises CSV preview/import, manual union, repeated import,
 reload persistence, undo, suggestions and source evidence in temporary Chromium storage.
 Production XLSX and manual Windows acceptance remain separate release checks.
+
+## Stage 2 — portfolio analytics
+
+Installers now includes period filters, monthly/quarterly/annual trends, comparison overlays,
+activation and active-account KPIs, volume ranking, contribution to change, retention,
+Top 5 share, HHI, YTD, rolling three-month momentum, individual profiles and a monthly heatmap.
+Click a point or cell to inspect original file/sheet/cell evidence. Export KPI or monthly CSV.
+
+Blank cells in imported month columns are zero. Missing source-month records remain unavailable.
+A complete interval requires every tracked source alias to report every selected month and
+all months to be closed. This conservative coverage rule also applies after account unions.
+Open/future periods and missing coverage show provisional subtotals; growth, retention and
+shares are withheld where their required base is incomplete. Zero denominators have no growth
+percentage. Custom comparison intervals of different lengths have no growth or retention.
+Same comparable installers includes only accounts with complete coverage in both intervals.
+Search and pagination affect the table and heatmap, never portfolio denominators.
+Period shortcuts end at the latest complete month; earlier gaps remain flagged.
+Volume ranks include provisional reported subtotals and share tied ranks. Top 5 and HHI
+measure this tracked portfolio, not market share. Activity means at least one activation
+in the entire interval, not the sum of monthly active counts. Momentum compares the final
+three selected months with the preceding three, independent of comparison selection.
+
+The user confirmed the first-stage import/union flow worked. Production XLSX contents have
+not been inspected in this workspace. Stage 2 needs user acceptance on the actual dataset.

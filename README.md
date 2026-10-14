@@ -50,3 +50,8 @@ The Installers tab imports monthly inverter totals by company, sums repeated nam
 ignores the trailing Total column, and supports confirmed name consolidation and undo.
 See [the installer guide](codigo-fonte/docs/INSTALLER-IMPORT.md). Advanced installer KPIs
 and the commercial Action Centre are separate planned deliveries.
+
+### Installer analytics preview
+The installer branch adds monthly trends, comparison KPIs, ranking, concentration, retention,
+three-month momentum, account profiles and a clickable activity heatmap. Import and confirmed
+unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules.

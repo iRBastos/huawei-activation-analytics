@@ -119,11 +119,23 @@ try{
  await evaluate("document.querySelector('[data-installer-detail]').click()");
  await until("document.querySelector('#modal')?.textContent.includes('installer-fixture.csv')",'source evidence');
  await evaluate("document.querySelector('#modal [data-close]').click()");
+ assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'32');
+ assert.ok(await evaluate("document.querySelectorAll('.installer-heatmap .heat-cell').length===6"));
+ await evaluate("document.querySelector('.installer-heatmap [data-installer-point]').click()");
+ await until("document.querySelector('#modal')?.textContent.includes('source-month cells reported')",'heatmap source evidence');
+ await evaluate("document.querySelector('#modal [data-close]').click()");
+ await evaluate("document.querySelector('g[data-installer-point]').dispatchEvent(new MouseEvent('click',{bubbles:true}))");
+ await until("document.querySelector('#modal')?.textContent.includes('Portfolio evidence')",'installer chart routing');
+ await evaluate("document.querySelector('#modal [data-close]').click()");
+ await evaluate("(()=>{const el=document.querySelector('#installer-cohort');el.value='comparable';el.dispatchEvent(new Event('change',{bubbles:true}));})()");
+ await until("document.querySelectorAll('[data-installer-select]').length===0",'missing comparison excludes accounts');
+ await evaluate("(()=>{const el=document.querySelector('#installer-cohort');el.value='all';el.dispatchEvent(new Event('change',{bubbles:true}));})()");
+ await until("document.querySelectorAll('[data-installer-select]').length===3",'restore full installer base');
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
  assert.deepEqual(blocked,[],'offline app must not request remote resources');
- console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','screenshot'],screenshot:'browser-smoke.png'}));
+ console.log(JSON.stringify({browser:'Chromium',realBrowser:true,offline:true,checks:['file-open boot','self-contained assets','demo KPI','inverter chart','search any model','chart model selection','comparison evidence chart and table','installer CSV preview and import','duplicate-row sum','manual union','idempotent reimport after union','installer reload persistence','undo union','name suggestions','source evidence','installer KPIs','monthly heatmap evidence','installer chart routing','comparable cohort','screenshot'],screenshot:'browser-smoke.png'}));
 }finally{
  if(ws){try{ws.close()}catch{}}
  browser.kill('SIGKILL');
