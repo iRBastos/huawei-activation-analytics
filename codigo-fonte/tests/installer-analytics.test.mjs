@@ -102,3 +102,21 @@ test('F2: fully declared monthly zero reconciles across account, compare and mon
  assert.equal(csv.find(line=>line[0]==='Two Solar')[1],0);
  assert.equal(overview.current.value,6);
 });
+
+test('F2: all six selected companies reconcile with the same tracked portfolio',()=>{
+ const s=seed();
+ for(const name of ['Delta','Epsilon','Zeta']){
+   s.installers.accounts[name]={id:name,name};
+   s.installers.sources[name]={...structuredClone(s.installers.sources.Alpha),label:name,accountId:name};
+ }
+ const ids=['Zeta','Alpha','Beta','Epsilon','Gamma','Delta'];
+ const selected=D.installerComparison(s,f,ids,{now});
+ const portfolio=analyze(s);
+ assert.deepEqual(selected.rows.map(row=>row.id),ids);
+ assert.equal(selected.rows.length,6);
+ assert.equal(selected.current.value,portfolio.current.value);
+ assert.equal(selected.previous.value,portfolio.previous.value);
+ assert.equal(selected.change.delta,portfolio.change.delta);
+ assert.deepEqual(selected.trend.map(point=>point.value),portfolio.trend.map(point=>point.value));
+ assert.ok(Math.abs(selected.rows.reduce((n,row)=>n+row.share,0)-100)<1e-9);
+});
