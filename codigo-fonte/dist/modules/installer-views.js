@@ -3,6 +3,14 @@ import * as X from './installer-experiences.js';
 import * as D from './domain.js';
 import {escapeHtml as e} from './exports.js';
 const n=x=>x==null?'—':x.toLocaleString('en-IE');
+// Recent history stays visible. Older records are expandable, not discarded.
+const historyList=(items,label,format)=>{
+ const reversed=[...items].reverse(),recent=reversed.slice(0,10),older=reversed.slice(10);
+ return recent.map(format).join('')+(older.length?`<details class="installer-history-older"><summary>Show ${older.length} older ${label}</summary>${older.map(format).join('')}</details>`:'');
+};
+const unionHistoryLine=h=>`<p>${e(h.before.map(a=>a.name).join(' + '))} → <strong>${e(h.after.name)}</strong> · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-unmerge="${e(h.id)}">Undo union</button>`}</p>`;
+const importHistoryLine=h=>`<p>${e(h.filename)} · ${h.changes.length} changed monthly values · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-undo-import="${e(h.id)}">Undo import</button>`}</p>`;
+
 export function installerView(state,ui){
  const tab=ui.installerTab??'overview';
  if(tab==='profile'||tab==='compare'||tab==='insights')return `<div class="page-title"><div><div class="eyebrow">Ireland · Digital Power</div><h1>Installers</h1><p>Explore individual accounts and compare tracked activity.</p></div></div>${X.installerTabNav(tab)}${tab==='profile'?X.installerProfilePage(state,ui):tab==='compare'?X.installerComparisonPage(state,ui):X.installerInsightsPage(state,ui)}`;
@@ -12,7 +20,7 @@ export function installerView(state,ui){
 ${X.installerTabNav('overview')}${A.installerDashboard(state,ui,report)}
 <section class="panel"><div class="panel-head"><h2>Installer ranking (${rows.length})</h2><button data-action="installer-compare-from-selected" ${selected.size<2||selected.size>6?'disabled':''}>Compare selected (${selected.size})</button><button class="primary" data-action="installer-merge" ${selected.size<2?'disabled':''}>Unify selected (${selected.size})</button></div><label class="field">Search installer or source name<input id="installer-search" type="search" value="${e(ui.installerSearch??'')}" placeholder="e.g. Bord Gáis"></label><label class="field">Sort ranking<select id="installer-sort">${[['volume','Activations'],['change','Change in units'],['growth','Growth %'],['momentum','3M momentum'],['name','Name']].map(([v,t])=>`<option value="${v}" ${(ui.installerSort??'volume')===v?'selected':''}>${t}</option>`).join('')}</select></label>${table}<div class="panel-actions"><button data-installer-page="${page-1}" ${page===0?'disabled':''}>Previous</button><span>${filtered.length} matches · page ${page+1} of ${Math.max(1,Math.ceil(filtered.length/50))}</span><button data-installer-page="${page+1}" ${(page+1)*50>=filtered.length?'disabled':''}>Next</button></div><p class="table-note">Select two or more accounts to sum their monthly activations. Click an installer to inspect its source values. Rank uses reported volume, with tied values sharing a rank. * Incomplete source coverage or open period. Shares require a complete selected base. 3M momentum compares the last three months ending at the selected end with the previous three.</p></section>
 ${A.installerHeatmap(shown,f,report)}<section class="panel"><div class="panel-head"><h2>Suggested matches</h2></div><p class="table-note">Spelling suggestions only. Confirm which names belong to the same installer. All confirmed matches are summed.</p>${suggestions.map(s=>`<div class="installer-suggestion"><div><strong>${s.names.map(e).join(' + ')}</strong><p class="table-note">${e(s.reason)}</p></div><button data-installer-suggest="${e(s.ids.join(','))}">Review union</button></div>`).join('')||'<p>No similar names awaiting review.</p>'}${suggestions.length===20?'<p class="table-note">Showing the first 20 suggestions. More may appear after these are resolved.</p>':''}</section>
-<section class="panel"><div class="panel-head"><h2>Account union history</h2></div>${[...d.merges].reverse().slice(0,10).map(h=>`<p>${e(h.before.map(a=>a.name).join(' + '))} → <strong>${e(h.after.name)}</strong> · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-unmerge="${e(h.id)}">Undo union</button>`}</p>`).join('')}</section>`;
+<section class="panel"><div class="panel-head"><h2>Account union history</h2></div>${historyList(d.merges,'account unions',unionHistoryLine)}</section>`;
 }
 
 // The same importer and preview formerly shown in Installers are now owned by Data.
@@ -21,7 +29,7 @@ export function installerImportView(state,ui){
   const d=state.installers,pending=ui.installerPending;
   return `<div class="page-title"><div><div class="eyebrow">Data workspace</div><h2>Installer activation imports</h2><p>Import, review and audit installer monthly snapshots. Analysis stays in the Installers workspace.</p></div><div class="panel-actions"><button data-nav="installers">Open Installer Analytics</button></div></div>
 <section class="panel"><details open><summary>Import installer activations</summary><p class="table-note">One installer per row, monthly columns and an optional trailing Total column (ignored). Blank monthly cells = zero. Repeated names are summed. Summary rows such as === 总计 === are ignored. Reimporting replaces source/month snapshots. Full reporting scope requires explicit confirmation; partial imports never infer zero from absent companies.</p><label class="field">Excel or CSV file<input id="installer-file" type="file" accept=".xlsx,.csv" ${ui.demo||ui.installerLoading?'disabled':''}></label>${ui.installerLoading?'<p role="status">Reading worksheet…</p>':''}${ui.installerError?`<p class="notice error" role="alert">${e(ui.installerError)}</p>`:''}${pending?installerPreview(state,pending):''}</details></section>
-<section class="panel"><div class="panel-head"><h2>Installer import history</h2></div>${[...d.imports].reverse().slice(0,10).map(h=>`<p>${e(h.filename)} · ${h.changes.length} changed monthly values · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-undo-import="${e(h.id)}">Undo import</button>`}</p>`).join('')||'<p class="table-note">No installer imports yet.</p>'}</section>`;
+<section class="panel"><div class="panel-head"><h2>Installer import history</h2></div>${historyList(d.imports,'installer imports',importHistoryLine)||'<p class="table-note">No installer imports yet.</p>'}</section>`;
 }
 
 export function installerPreview(state,p){

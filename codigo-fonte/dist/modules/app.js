@@ -65,12 +65,15 @@ document.addEventListener('click',async event=>{
     if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerComparePick){
+      const previousScroll=document.querySelector('.installer-compare-picker')?.scrollTop??0;
       const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
       if(!D.installerIndex(state).some(a=>a.id===id))throw new Error('Unknown installer account.');
       if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
       else if(ids.length<6)ui.installerCompareIds=[...ids,id];
       else throw new Error('Compare a maximum of six installers.');
-      ui.hiddenSeries.clear();render();return;
+      ui.hiddenSeries.clear();render();
+      const picker=document.querySelector('.installer-compare-picker');if(picker)picker.scrollTop=previousScroll;
+      return;
     }
     if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IA.installerProfile(state,id,ui)+'<details><summary>All original monthly source values</summary>'+IV.installerDetail(state,id)+'</details>');return;}
     if(el.dataset.installerSuggest){reviewInstallerMerge(el.dataset.installerSuggest.split(','));return;}
