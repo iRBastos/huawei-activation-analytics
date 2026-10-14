@@ -135,7 +135,7 @@ try{
   // Full snapshot supersedes stale omitted rows; partial updates may restore one.
  await uploadInstallers('Installer,202501,202502\nBordGais Energy,11,5',true);
  assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'16');
- await evaluate("document.querySelector('[data-installer-detail]').click()");
+ await evaluate("([...document.querySelectorAll('[data-installer-detail]')].find(el=>el.textContent.includes('Bord Gáis Energy Solar'))).click()");
  await until("document.querySelector('#modal')?.textContent.includes('Historical')",'superseded evidence');
  await evaluate("document.querySelector('#modal [data-close]').click()");
  await uploadInstallers('Installer,202501,202502\nBord Gáis Energy Solar,7,3');
