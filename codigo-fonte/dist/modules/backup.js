@@ -1,5 +1,5 @@
 import {emptyInstallers,validateInstallerState} from './installers.js';
-import {CATEGORIES,clone,canonical,monthValue,keyOf,freshState} from './model.js';
+import {CATEGORIES,clone,canonical,monthValue,keyOf,freshState,installerPreferenceDefaults} from './model.js';
 import {validateProduct} from './validation.js';
 import {targetKey} from './targets.js';
 
@@ -14,5 +14,15 @@ export function validateBackup(input) {
   const next=clone(input);if(input.schemaVersion===1){next.installers=emptyInstallers();}
   // Schema-2 backups created before the V2 scope ledger had no coverage field.
   if(next.installers&&next.installers.coverage===undefined)next.installers.coverage={};
-  validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');return next;
+  validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};
+  if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');
+  const defaults=installerPreferenceDefaults(next.preferences),saved=input.installerPreferences;
+  if(saved!==undefined&&(saved===null||typeof saved!=='object'||Array.isArray(saved)))throw new Error('Invalid installer reporting preferences.');
+  next.installerPreferences={...defaults,...(saved??{})};
+  const p=next.installerPreferences;
+  if(!monthValue(p.start)||!monthValue(p.end)||p.start>p.end||
+    !monthValue(p.compareStart)||!monthValue(p.compareEnd)||p.compareStart>p.compareEnd||
+    !['month','quarter','year'].includes(p.aggregation)||!['year','previous','custom'].includes(p.comparison))
+    throw new Error('Invalid installer reporting preferences.');
+  return next;
 }

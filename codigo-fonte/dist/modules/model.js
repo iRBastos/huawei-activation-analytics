@@ -40,9 +40,19 @@ export const totalLabel=x=>/^(total|grand\s*total|sum|总计|合计)$/i.test(Str
 export const isBlank=x=>x===null||x===undefined||typeof x==='string'&&x.trim()==='';
 export const cellValue=c=>c && typeof c==='object' && ('v' in c || 'type' in c || 'f' in c) ? c.v : c;
 export function columnName(i) {let s=''; for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;}
+// Installer reporting has its own dates and comparisons, not product filters.
+export function installerPreferenceDefaults(preferences){
+  return {start:preferences.start,end:preferences.end,
+    aggregation:preferences.aggregation==='half'?'month':preferences.aggregation,
+    comparison:preferences.comparison,compareStart:preferences.compareStart,compareEnd:preferences.compareEnd};
+}
+export function installerFilters(state){
+  return state.installerPreferences??installerPreferenceDefaults(state.preferences);
+}
 export function freshState() {
   const end=closedMonth();
-  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[],coverage:{}},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences:{start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)},updatedAt:null};
+  const preferences={start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)};
+  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[],coverage:{}},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences,installerPreferences:installerPreferenceDefaults(preferences),updatedAt:null};
 }
 export function suggestHeader(rows) {
   let index=0,score=0,ties=0;

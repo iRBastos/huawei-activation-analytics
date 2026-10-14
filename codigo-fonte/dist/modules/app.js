@@ -98,8 +98,8 @@ document.addEventListener('click',async event=>{
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
-      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,state.preferences,{cohort:ui.installerCohort??'all'}),state.preferences)),'installer-kpis.csv','text/csv;charset=utf-8');break;}
-      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=state.preferences,report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
+      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),D.installerFilters(state))),'installer-kpis.csv','text/csv;charset=utf-8');break;}
+      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
       case 'import':navigate('data','import');break;
       case 'demo':if(!ui.demo){realState=state;state=makeDemo();ui.demo=true;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
@@ -130,11 +130,11 @@ document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key==
 
 document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
-  if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
+  if(el.dataset.filter){const next=D.clone(state),f=ui.page==='installers'?next.installerPreferences:next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
     case 'installer-cohort':ui.installerCohort=el.value;ui.installerPage=0;ui.installerSelected=new Set();render();break;
     case 'installer-sort':ui.installerSort=el.value;ui.installerPage=0;render();break;
-    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.preferences,{start,end});await commit(next);break;}
+    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.installerPreferences,{start,end});await commit(next);break;}
     case 'installer-file':await importInstallerFile(el.files[0]);break;
     case 'installer-sheet':await chooseInstallerSheet(el.value);render();break;
     case 'installer-header':{const p=ui.installerPending;if(!p||!Number.isInteger(+el.value)||+el.value<1||+el.value>p.rows.length)throw new Error('Select a valid header row.');p.headerRow=+el.value-1;validateInstallerPending();render();break;}
@@ -173,7 +173,7 @@ document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
     case 'installer-import':{if(ui.demo)throw new Error('Exit demo before importing.');if(!data.has('approved'))throw new Error('Review and approve the import.');validateInstallerPending();const p=ui.installerPending;if(!p)throw new Error('Select a file.');const scope=String(data.get('scope')??'partial'),fullScopeConfirmed=data.has('fullScopeConfirmed');
-    const next=D.commitInstallerImport(state,p.validation,{scope,fullScopeConfirmed});Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
+    const next=D.commitInstallerImport(state,p.validation,{scope,fullScopeConfirmed});Object.assign(next.installerPreferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
     case 'installer-merge':{await commit(D.mergeInstallers(state,ui.installerMergeIds,data.get('name')),'Installers unified. Monthly values were summed.');ui.installerSelected=new Set();$('#modal').close();render();break;}
     case 'classify':{
       const p=ui.pending,classes={...p.classifications};
