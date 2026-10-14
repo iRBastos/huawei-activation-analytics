@@ -59,6 +59,9 @@ document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
     if(ui.demo&&['print','export-records','export-summary','backup'].includes(el.dataset.action)){toast('Exports are disabled for fictional data. Return to your real workspace to report actual values.',true);return;}
+    if(el.dataset.installerInsightPage!==undefined){
+      ui.installerInsightPage=Math.max(0,Number(el.dataset.installerInsightPage)||0);render();return;
+    }
     if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerComparePick){
@@ -124,6 +127,12 @@ document.addEventListener('click',async event=>{
         if(!h)throw new Error('Select an installer first.');
         download(toCsv([['Month','Inverter activations','Status','Observed','Expected'],...h.monthly.map(p=>[p.start,p.value,p.status,p.observed,p.expected])]),'installer-profile-history.csv','text/csv;charset=utf-8');break;
       }
+      case 'installer-insights-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const result=D.installerInsights(state,D.installerFilters(state));
+        download(toCsv(D.installerInsightsCsv(result)),'installer-insights.csv','text/csv;charset=utf-8');
+        break;
+      }
       case 'installer-compare-export':{
         if(ui.demo)throw new Error('Exit demo before exporting.');
         const c=D.installerComparison(state,D.installerFilters(state),ui.installerCompareIds??[]);
@@ -166,6 +175,21 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
   if(el.dataset.filter){const next=D.clone(state),f=ui.page==='installers'?next.installerPreferences:next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
+    case 'installer-insight-volume':
+    case 'installer-insight-pct':{
+      const v=Number(el.value),allowed=el.id==='installer-insight-volume'?D.INSIGHT_MIN_VOLUMES:D.INSIGHT_CHANGE_THRESHOLDS;
+      if(!allowed.includes(v))throw new Error('Invalid commercial insight threshold.');
+      const next=D.clone(state),key=el.id==='installer-insight-volume'?'insightMinVolume':'insightThresholdPct';
+      next.installerPreferences[key]=v;ui.installerInsightPage=0;await commit(next);break;
+    }
+    case 'installer-insight-priority':{
+      if(!['All','High','Medium','Low','Data check'].includes(el.value))throw new Error('Invalid priority filter.');
+      ui.installerInsightPriority=el.value;ui.installerInsightPage=0;render();break;
+    }
+    case 'installer-insight-type':{
+      if(!['All','inactive','reactivated','declining','growing','first','zeroBase','steady','zero','coverage'].includes(el.value))throw new Error('Invalid signal filter.');
+      ui.installerInsightType=el.value;ui.installerInsightPage=0;render();break;
+    }
     case 'installer-profile-picker':{
       if(!D.installerIndex(state).some(a=>a.id===el.value))throw new Error('Unknown installer account.');
       ui.installerProfileId=el.value;render();break;
@@ -195,6 +219,10 @@ document.addEventListener('change',async event=>{const el=event.target;try{
 }catch(err){toast(err.message,true);render();}});
 
 document.addEventListener('input',event=>{const el=event.target;
+  if(el.id==='installer-insight-search'){
+    const cursor=el.selectionStart;ui.installerInsightSearch=el.value;ui.installerInsightPage=0;render();
+    const input=$('#installer-insight-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
   if(el.id==='installer-profile-search'||el.id==='installer-compare-search'){
     const field=el.id==='installer-profile-search'?'installerProfileSearch':'installerCompareSearch';
     const cursor=el.selectionStart;ui[field]=el.value;render();

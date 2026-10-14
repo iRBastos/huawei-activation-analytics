@@ -47,3 +47,11 @@
 .installer-compare-picker button[aria-pressed=true] strong{color:#ae1530}
 .installer-compare-picker button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:560px){.installer-compare-picker{grid-template-columns:1fr}.installer-profile-heading .panel-actions{margin-left:0}}
+
+.installer-insight-header{margin:16px 0 8px}
+.installer-insight-header h2{font-size:23px;letter-spacing:-.4px;margin-bottom:5px}
+.installer-insight-header p{color:#647083;font-size:12px}
+.insight-priority{display:inline-block;background:#f0f2f5;color:#394455;padding:5px 9px;border-radius:5px;font-size:11px;white-space:nowrap}
+.insight-priority.insight-high{background:#fcf0f2;color:#9b1830;font-weight:600}
+.insight-pagination{align-items:center;justify-content:flex-end;margin-top:15px}
+.installer-insight-header+ .installer-kpis{margin-top:15px}

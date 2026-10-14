@@ -91,3 +91,25 @@ test('F4: six-account selection disables further additions but retains removals'
  assert.match(html,/Account-by-account comparison/);
  assert.equal(D.installerComparison(state,filters,options.slice(0,6),{now:clock}).rows.length,6);
 });
+
+test('F5: insights tab displays evidence, saved thresholds, priorities and export',()=>{
+ const state=seed(),html=V.installerView(state,{installerTab:'insights',hiddenSeries:new Set()});
+ assert.match(html,/data-installer-tab="insights"/);
+ assert.match(html,/Account insights &amp; priorities/);
+ assert.match(html,/id="installer-insight-volume"/);
+ assert.match(html,/id="installer-insight-pct"/);
+ assert.match(html,/id="installer-insight-priority"/);
+ assert.match(html,/id="installer-insight-type"/);
+ assert.match(html,/id="installer-insight-search"/);
+ assert.match(html,/data-action="installer-insights-export"/);
+ assert.match(html,/Suggested next action/);
+ assert.match(html,/How prioritisation works/);
+ assert.match(html,/data-installer-fullprofile=/);
+});
+test('F5: filtering insights never mutates records or saved thresholds',()=>{
+ const state=seed(),before=structuredClone(state);
+ const html=V.installerView(state,{installerTab:'insights',installerInsightPriority:'Data check',
+  installerInsightType:'coverage',installerInsightSearch:'Alpha'});
+ assert.match(html,/No accounts match these filters|Verify reporting coverage/);
+ assert.deepEqual(state,before);
+});

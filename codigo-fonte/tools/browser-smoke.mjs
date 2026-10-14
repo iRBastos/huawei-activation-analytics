@@ -124,7 +124,13 @@ try{
  await until("document.querySelector('#main').textContent.includes('Account-by-account comparison')",'2 installer comparison');
  assert.ok(await evaluate("document.querySelectorAll('svg.line-chart').length>=1"));
  assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Underlying period values')"));
+ await evaluate("document.querySelector('[data-installer-tab=insights]').click()");
+ await until("!!document.querySelector('#installer-insight-volume')",'installer insights');
+ assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Suggested next action')"));
+ await evaluate("(()=>{const select=document.querySelector('#installer-insight-volume');select.value='10';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+ await until("document.querySelector('#installer-insight-volume')?.value==='10'",'persisted installer insight threshold');
  await evaluate("document.querySelector('[data-installer-tab=overview]').click()");
+
  await until("document.querySelectorAll('[data-installer-select]').length===3",'portfolio after comparison');
  await evaluate("(()=>{const ids=[...document.querySelectorAll('[data-installer-select]')].map(x=>x.dataset.installerSelect);for(const id of ids){const el=document.querySelector('[data-installer-select=\"'+id+'\"]');el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}document.querySelector('[data-action=installer-merge]').click();})()");
  await until("!!document.querySelector('[data-form=installer-merge]')",'merge preview');
