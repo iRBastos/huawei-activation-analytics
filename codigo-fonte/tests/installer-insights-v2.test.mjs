@@ -8,7 +8,7 @@ const f={start:'2025-06',end:'2025-06',comparison:'previous',
   aggregation:'month',compareStart:'2025-05',compareEnd:'2025-05'};
 function fullState(){
  const data={
-  Inactive:[10,0,0,0,0,0],
+  Inactive:[30,0,0,0,0,0],
   Reactivated:[8,0,0,0,0,9],
   First:[0,0,0,0,0,7],
   Declining:[0,0,0,0,20,10],
@@ -124,6 +124,7 @@ test('F5: zero previous baseline is an observable activation signal, not infinit
  assert.equal(row.growthPct,null);
  const alt=fullState();
  delete alt.installers.coverage['2025-03'];
+ delete alt.installers.sources['name:first'].months['2025-03'];
  const signal=D.installerInsights(alt,f,{now}).rows.find(r=>r.name==='First');
  assert.equal(signal.type,'zeroBase');
  assert.equal(signal.growthPct,null);

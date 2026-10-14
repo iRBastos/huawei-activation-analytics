@@ -95,7 +95,7 @@ test('F4: six-account selection disables further additions but retains removals'
 test('F5: insights tab displays evidence, saved thresholds, priorities and export',()=>{
  const state=seed(),html=V.installerView(state,{installerTab:'insights',hiddenSeries:new Set()});
  assert.match(html,/data-installer-tab="insights"/);
- assert.match(html,/Account insights &amp; priorities/);
+ assert.match(html,/Account insights & priorities/);
  assert.match(html,/id="installer-insight-volume"/);
  assert.match(html,/id="installer-insight-pct"/);
  assert.match(html,/id="installer-insight-priority"/);
