@@ -21,7 +21,7 @@ Working branch: `ux/redesign-v2.1`
 | Phase | Status | Evidence | Next action |
 |---|---|---|---|
 | Preparation | DONE | Dedicated branch created at official V2.0.0 SHA; approved plan and UX audit committed | F0 baseline |
-| F0 — baseline | IN PROGRESS | Prior V2.0.0 CI passed 174 tests; new baseline not yet independently run | Obtain exact baseline source; run test suite, offline browser and screenshots at five viewports |
+| F0 — baseline | IN PROGRESS | Source-by-source baseline inventory saved to `docs/ux/F0_BASELINE_INVENTORY.md`; prior V2 CI and screenshot artifact identified. Fresh tests and visual captures pending | Execute fresh Node/Chromium/file:// tests and 5-viewport screenshots on exact baseline before F1 |
 | F1 — pilot Installer Profile | NOT STARTED | — | Begin only after baseline is documented |
 | F2 — navigation/filters | NOT STARTED | — | After F1 acceptance |
 | F3 — Installer Intelligence | NOT STARTED | — | After F2 |
@@ -41,3 +41,9 @@ Working branch: `ux/redesign-v2.1`
 5. Update this ledger after each validated checkpoint.
 
 No visual redesign implemented yet.
+
+## Latest execution update — 2026-10-14
+- Created isolated branch at release SHA and committed approved plan, full UX audit, checkpoint ledger and F0 baseline inventory.
+- Located historical green main validation and artifact ID 11898058019; historical evidence cannot substitute a new independent baseline.
+- Development repository checkout was unavailable from the connected GitHub tool, so F0 fresh local/browser run is pending. No source or CSS has been edited.
+- `main` remained `a962fe159bd5dd8b7d20f978910b27424d02e4db` at last verification.
