@@ -1,0 +1,74 @@
+name: Validate V2.1 candidate on Windows
+
+on:
+  push:
+    branches:
+      - ux/redesign-v2.1
+    paths:
+      - 'codigo-fonte/**'
+      - '.github/workflows/windows-v2-candidate.yml'
+  pull_request:
+    paths:
+      - 'codigo-fonte/**'
+      - '.github/workflows/windows-v2-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-offline-acceptance:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out candidate source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run full Node regression suite
+        working-directory: codigo-fonte
+        run: npm test
+      - name: Build complete single-file dashboard
+        working-directory: codigo-fonte
+        run: python tools/build-offline.py
+      - name: Validate offline exports and legacy backup compatibility
+        working-directory: codigo-fonte
+        run: node tools/verify-offline.mjs
+      - name: Locate installed Windows Chrome or Edge
+        shell: pwsh
+        run: |
+          $candidates = @(
+            "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+            "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe",
+            "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+            "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+          )
+          $browser = $candidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+          if (-not $browser) { throw 'Neither Chrome nor Edge executable found on Windows runner' }
+          "CHROME_BIN=$browser" >> $env:GITHUB_ENV
+          Write-Host "Windows headless browser located: $browser"
+      - name: Test real file-open dashboard in Windows browser
+        working-directory: codigo-fonte
+        run: node tools/browser-smoke.mjs
+      - name: Verify Windows browser screenshots exist
+        shell: pwsh
+        run: |
+          if (!(Test-Path browser-smoke.png) -or !(Test-Path browser-smoke-mobile.png)) {
+            throw 'Windows browser screenshots missing'
+          }
+      - name: Save Windows acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: huawei-v2.1-windows-smoke
+          path: |
+            browser-smoke.png
+            browser-smoke-mobile.png
+          if-no-files-found: error
+          retention-days: 14

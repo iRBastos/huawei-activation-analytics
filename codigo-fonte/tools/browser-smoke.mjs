@@ -4,7 +4,7 @@ import {spawn} from 'node:child_process';
 import {mkdtemp,readFile,writeFile,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const root=path.resolve(fileURLToPath(new URL('../../',import.meta.url)));
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const binaries=[process.env.CHROME_BIN,'/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].filter(Boolean);
@@ -67,7 +67,7 @@ try{
  await command('Runtime.enable');
  await command('Network.enable');
  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
- const url='file://'+path.join(root,'index.html');
+ const url=pathToFileURL(path.join(root,'index.html')).href;
  await command('Page.navigate',{url});
  await until("document.querySelector('#main')?.textContent?.includes('Ready for your activation data')",'empty dashboard');
  assert.equal(await evaluate("document.querySelectorAll('script[src]').length"),0,'all runtime scripts must be inlined');
