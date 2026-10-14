@@ -60,7 +60,7 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - Configurable minimum volume (1/5/10/25, default 5) and change percentage (10/20/30/50, default 20) save in installer-only reporting preferences, with backward-compatible schema-1/2 backup defaults and validation.
 - Account-level signal appears on the **Installer profile**, reusing its existing domain report; the full insight list supports search, filters, pagination, evidence, suggested outreach, and export of the **same derived rows** to CSV.
 - Added synthetic edge-case tests for incomplete/open months, inactivity vs reactivation, zero baselines, thresholds and score bands, CSV consistency, backup compatibility, six-account legacy features and non-mutating profiles.
-- GitHub release sync validated **171/171** automated tests, offline DOM and headless Chromium smoke (including the insights tab and saving a threshold) and regenerated the standalone HTML/JS and ZIP. The independent current-head check must be green before release consideration.
+- GitHub release sync validated **174/174** automated tests, offline DOM and headless Chromium smoke (including the insights tab and saving a threshold) and regenerated the standalone HTML/JS and ZIP. The independent current-head check must be green before release consideration.
 - Reference method: `codigo-fonte/docs/INSTALLER-INSIGHTS.md`. Final representative actual XLSX, manual Windows file-open acceptance and explicit merge authorisation remain open in F6.
 
 ## F6 — independent technical acceptance (14 Oct 2026)
@@ -94,6 +94,20 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - **Regression cases:** 1,105 source accounts in both selectors, final alphabetic account without search, search preserving selected account, last-name search, all accounts disabled except the six selected when max reached, 13 import-history entries, 12 account unions, and browser flow with 140+ accounts plus scroll-position preservation.
 - **Automated suite: 171 / 171 passing**, and standalone Chrome smoke passed on the development synchronisation job. No data contract, analytics, backup schema, account mappings or persistent storage were changed.
 - The final **post-synchronisation, current-head independent validation** must be green before reporting this correction as certified. Operational real-XLSX and Windows acceptance remain separate release blockers; do not merge `main` without approval.
+
+## F6 fictional cross-language audit (14 Oct 2026)
+
+**Passed technically, with explicitly declared scope.** The user cannot share operational installer data, so an independently generated fully fictional reference dataset was built and tested privately in the test workspace.
+
+- Python-generated independent reference data: **320 fabricated installers, 345 source rows including 25 duplicates, 45 months (Jan 2023–Sep 2026), and 139,352 activations**. Monthly checks and individual account-month checks all reconciled with the dashboard importer; the Sep 2026 total is 3,033. Summary `=== 总计 ===` and deliberately wrong trailing Total values are not counted.
+- A 30-installer partial correction, identical reimport, undo, manual aliases/merges, 2–6 comparison sums, insights, full backup validation, and fully separate inverter/battery/BMS matrices were validated against values independently accumulated by Python. **7 / 7 private cross-language acceptance tests passed.**
+- A distinct spreadsheet writer generated a genuine two-sheet `.xlsx` fixture, with a worksheet title, header on Excel row 4, 100 data lines, quoted/Unicode names, deliberate duplicates and a literal Chinese total row. The importer located the sheet/header, excluded the Chinese summary and correctly summed each of its 12 months.
+- **One additional real defect was discovered and fixed:** when an Excel/other spreadsheet writer accidentally treats `=== 总计 ===` as a formula, the cell may be cached as `#NAME?`. Previously, an error/formula in the **installer-name column** could be counted as a false company. The validator now rejects error/formula name cells before creating any source account. Existing literal Chinese totals continue to be ignored.
+- CI now contains an independent arithmetic regression fixture for **240 imaginary accounts × 33 months**, error/formula input cells, and product-vs-installer isolation. The synced development suite is **174 / 174 passing**; generated HTML/JS/ZIP and browser smoke have been rebuilt. The post-sync exact-head check must pass independently before declaring the release verified.
+- The **entirely fictional QA package** created for the user contains CSV imports, the XLSX matrix, independent per-company/month oracle CSV/JSON, a corrections CSV, two equipment datasets and a ready-to-restore **8.9 MB fictional full-workspace JSON backup** (320 installer accounts + 162 model/month equipment records).
+- No customer data were used or published. The private test container's local Chromium policy blocks `file://`; the separate GitHub Actions Linux Chromium test verifies opening the delivered file directly. Windows user acceptance and unknown actual SO exporter variations cannot be certified without the user's own test. IndexedDB should be preferred over size-limited LocalStorage fallback.
+
+**Recommendation:** synthetically validated release candidate; keep PR #3 Draft and `main` unchanged until explicit user sign-off. Do not promise absolute zero defects.
 
 ## Remaining gates — not certified yet
 
