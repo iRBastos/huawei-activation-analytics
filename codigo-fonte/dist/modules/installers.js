@@ -1,8 +1,8 @@
-import {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween} from './model.js';
+import {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween,totalLabel} from './model.js';
 
 // Source-name snapshots survive account merges. Reimports replace a source/month,
 // never the already consolidated account total. Equipment records stay separate.
-export function emptyInstallers(){return {accounts:{},sources:{},imports:[],merges:[]};}
+export function emptyInstallers(){return {accounts:{},sources:{},imports:[],merges:[],coverage:{}};}
 export function installerSourceKey(name){return 'name:'+String(name).trim().replace(/\s+/g,' ').toLocaleLowerCase('en-IE');}
 export function installerMonth(value){
   const direct=monthValue(value);if(direct)return direct;
@@ -40,9 +40,16 @@ export function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameCol
   let duplicates=0,blankZeros=0;
   for(let r=headerRow+1;r<rows.length;r++){
     const row=rows[r]??[];if(row.every(c=>isBlank(cellValue(c))))continue;
+    const nameCell=row[nameColumn];
+    // An Excel formula error in a name cell must not become an invented account.
+    // Some spreadsheet tools interpret === 总计 === as a formula unless stored as text.
+    if(nameCell?.type==='e'||nameCell?.f){
+      errors.push(`Excel error or formula in installer name at ${nameCell?.ref??`${columnName(nameColumn)}${r+1}`}. Convert the name to text and save the workbook.`);
+      continue;
+    }
     const raw=cellValue(row[nameColumn]),label=String(raw??'').trim().replace(/\s+/g,' ');
     if(!label){if(columns.some(({c})=>!isBlank(cellValue(row[c]))))errors.push(`Missing installer name on row ${r+1}.`);continue;}
-    if(/^(?:grand\s*)?total$/i.test(label)){warnings.push(`Ignored summary row ${r+1}.`);continue;}
+    if(totalLabel(label)){warnings.push(`Ignored summary row ${r+1}: ${label}.`);continue;}
     if(label.length>200){errors.push(`Installer name on row ${r+1} exceeds 200 characters.`);continue;}
     const key=installerSourceKey(label);
     if(Object.hasOwn(sources,key))duplicates++;else sources[key]={key,label,months:{}};
@@ -60,16 +67,34 @@ export function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameCol
   if(!ignoredTotal)warnings.push('No trailing Total column detected. Only monthly columns will be imported.');
   return {filename,sheet,months:[...new Set(months)].sort(),sources:Object.values(sources),errors:[...new Set(errors)],warnings,duplicates,blankZeros,ignoredTotal};
 }
+// Full imports establish a source-month boundary, not a destructive deletion.
+// Older omitted source snapshots stay available for audit and undo.
+export function installerImportOrder(state){
+  return new Map((state.installers?.imports??[]).map((h,i)=>[h.id,i]));
+}
+export function installerEffectiveRecord(state,source,month,order=installerImportOrder(state)){
+  const record=source?.months?.[month]??null;
+  if(!record)return null;
+  const full=state.installers?.coverage?.[month];
+  if(full?.mode!=='full')return record;
+  const boundary=order.get(full.importId);
+  return boundary!==undefined&&(order.get(record.importId)??-1)>=boundary?record:null;
+}
 export function installerImportPreview(state,validation){
   const data=state.installers??emptyInstallers();
   return validation.sources.flatMap(s=>Object.entries(s.months).map(([month,r])=>{
-    const old=data.sources[s.key],previous=old?.months[month]?.quantity??null;
+    const old=data.sources[s.key],active=installerEffectiveRecord(state,old,month);
+    const previous=active?.quantity??(data.coverage?.[month]?.mode==='full'?0:null);
     return {key:s.key,label:s.label,account:old?data.accounts[old.accountId].name:s.label,month,previous,quantity:r.quantity,action:previous===null?'New':previous===r.quantity?'Unchanged':'Replace'};
   }));
 }
-export function commitInstallerImport(state,validation){
+export function commitInstallerImport(state,validation,{scope='partial',fullScopeConfirmed=false}={}){
   if(validation.errors.length)throw new Error('Resolve import errors first.');
-  const next=clone(state);next.installers??=emptyInstallers();const d=next.installers,id=uid(),timestamp=new Date().toISOString(),changes=[],created=[];
+  if(!['partial','full'].includes(scope))throw new Error('Unknown installer reporting scope.');
+  if(scope==='full'&&!fullScopeConfirmed)throw new Error('Explicitly confirm that all installers are covered before marking a full snapshot.');
+  const next=clone(state);next.installers??=emptyInstallers();
+  const d=next.installers,id=uid(),timestamp=new Date().toISOString(),changes=[],created=[],coverageChanges=[];
+  d.coverage??={};
   for(const incoming of validation.sources){
     let source=d.sources[incoming.key];
     if(!source){const accountId=uid();d.accounts[accountId]={id:accountId,name:incoming.label,notes:''};source=d.sources[incoming.key]={key:incoming.key,label:incoming.label,accountId,months:{}};created.push(incoming.key);}
@@ -77,19 +102,39 @@ export function commitInstallerImport(state,validation){
       const before=source.months[month]??null;
       // Preserve provenance on an exact repeated value/source-cell snapshot.
       const evidence={filename:validation.filename,sheet:validation.sheet,cells:clone(r.cells)};
-      if(before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence))continue;
+      // Re-affirmed full reports and previously omitted source rows need a new
+      // import position even when their quantities/evidence match older data.
+      if(scope!=='full'&&before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence)&&
+         installerEffectiveRecord(next,source,month)!==null)continue;
       const after={quantity:r.quantity,source:evidence,importId:id};changes.push({key:incoming.key,month,before,after});source.months[month]=after;
     }
   }
-  // Check aggregate overflow too (different aliases may have been merged).
+  // A full snapshot is an explicit, per-month declaration about the complete
+  // tracked installer population. Later partial corrections preserve it.
+  if(scope==='full')for(const month of validation.months){
+    const before=d.coverage[month]??null;
+    const after={mode:'full',month,filename:validation.filename,sheet:validation.sheet,importId:id,timestamp};
+    coverageChanges.push({month,before,after});d.coverage[month]=after;
+  }
+  d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,scope,created,changes,coverageChanges,undone:false});
+  // The new import must be in history before precedence / totals are resolved.
   for(const account of Object.values(d.accounts))installerMonthly(next,account.id);
-  d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,created,changes,undone:false});next.updatedAt=timestamp;return next;
+  next.updatedAt=timestamp;return next;
 }
 export function installerMonthly(state,accountId){
-  const result={};
-  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId)for(const [month,r]of Object.entries(source.months)){
-    const sum=(result[month]??0)+r.quantity;if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');result[month]=sum;
+  const result={},order=installerImportOrder(state);
+  let hasSources=false;
+  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId){
+    hasSources=true;
+    for(const month of Object.keys(source.months)){
+      const record=installerEffectiveRecord(state,source,month,order);
+      if(!record)continue;
+      const sum=(result[month]??0)+record.quantity;
+      if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');
+      result[month]=sum;
+    }
   }
+  if(hasSources)for(const month of Object.keys(state.installers?.coverage??{}))result[month]??=0;
   return result;
 }
 export function installerRows(state,start,end){
@@ -133,8 +178,11 @@ export function undoInstallerMerge(state,id){
 export function undoInstallerImport(state,id){
   const next=clone(state),d=next.installers,h=d.imports.find(i=>i.id===id);
   if(!h||h.undone)throw new Error('This import is not available to undo.');
-  if(h.changes.some(c=>JSON.stringify(d.sources[c.key]?.months[c.month]??null)!==JSON.stringify(c.after)))throw new Error('Later imports overlap these values. Undo later imports first.');
+  if(h.changes.some(c=>JSON.stringify(d.sources[c.key]?.months[c.month]??null)!==JSON.stringify(c.after))||
+    (h.coverageChanges??[]).some(c=>JSON.stringify(d.coverage?.[c.month]??null)!==JSON.stringify(c.after)))
+      throw new Error('Later imports overlap these values or reporting scope. Undo later imports first.');
   for(const c of h.changes){if(c.before)d.sources[c.key].months[c.month]=c.before;else delete d.sources[c.key].months[c.month];}
+  for(const c of h.coverageChanges??[]){if(c.before)d.coverage[c.month]=c.before;else delete d.coverage[c.month];}
   // Keep identities and aliases: later merges and notes may depend on them.
   h.undone=true;next.updatedAt=new Date().toISOString();return next;
 }
@@ -143,13 +191,22 @@ export function validateInstallerState(d){
   const validId=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(x)&&!['__proto__','constructor','prototype'].includes(x);
   const account=a=>object(a)&&validId(a.id)&&typeof a.name==='string'&&!!a.name.trim()&&a.name.length<=200&&typeof a.notes==='string';
   const record=r=>object(r)&&Number.isSafeInteger(r.quantity)&&r.quantity>=0&&typeof r.source?.filename==='string'&&!!r.source.filename&&typeof r.source?.sheet==='string'&&!!r.source.sheet&&Array.isArray(r.source.cells)&&r.source.cells.length>0&&r.source.cells.every(c=>typeof c.cell==='string'&&typeof c.label==='string'&&Number.isSafeInteger(c.quantity)&&c.quantity>=0)&&r.source.cells.reduce((sum,c)=>sum+c.quantity,0)===r.quantity;
-  if(!object(d)||!object(d.accounts)||!object(d.sources)||!Array.isArray(d.imports)||!Array.isArray(d.merges))throw new Error('Invalid installer data.');
+  const validCoverage=(c,month)=>object(c)&&c.mode==='full'&&c.month===month&&monthValue(month)===month&&
+    typeof c.filename==='string'&&!!c.filename&&typeof c.sheet==='string'&&!!c.sheet&&
+    validId(c.importId)&&typeof c.timestamp==='string'&&!!c.timestamp;
+  if(!object(d)||!object(d.accounts)||!object(d.sources)||!object(d.coverage)||!Array.isArray(d.imports)||!Array.isArray(d.merges))throw new Error('Invalid installer data.');
+  for(const [month,c]of Object.entries(d.coverage))if(!validCoverage(c,month))throw new Error('Invalid installer reporting coverage.');
   for(const [id,a] of Object.entries(d.accounts))if(!account(a)||a.id!==id)throw new Error('Invalid installer account.');
   for(const [key,s]of Object.entries(d.sources)){
     if(!object(s)||s.key!==key||typeof s.label!=='string'||!s.label.trim()||key!==installerSourceKey(s.label)||!Object.hasOwn(d.accounts,s.accountId)||!object(s.months))throw new Error('Invalid installer source or account reference.');
     for(const [month,r]of Object.entries(s.months))if(!monthValue(month)||!record(r))throw new Error('Invalid installer monthly record.');
   }
-  for(const h of d.imports)if(!object(h)||!validId(h.id)||!Array.isArray(h.changes)||!Array.isArray(h.created)||!Array.isArray(h.months)||h.months.some(m=>!monthValue(m))||h.changes.some(c=>!object(c)||!Object.hasOwn(d.sources,c.key)||!monthValue(c.month)||!record(c.after)||(c.before!==null&&!record(c.before))))throw new Error('Invalid installer import history.');
+  for(const h of d.imports)if(!object(h)||!validId(h.id)||!Array.isArray(h.changes)||!Array.isArray(h.created)||!Array.isArray(h.months)||h.months.some(m=>!monthValue(m))||
+    (h.scope!==undefined&&!['partial','full'].includes(h.scope))||
+    h.changes.some(c=>!object(c)||!Object.hasOwn(d.sources,c.key)||!monthValue(c.month)||!record(c.after)||(c.before!==null&&!record(c.before)))||
+    !Array.isArray(h.coverageChanges??[])||
+    (h.coverageChanges??[]).some(c=>!object(c)||!validCoverage(c.after,c.month)||(c.before!==null&&!validCoverage(c.before,c.month))||c.after.importId!==h.id||!h.months.includes(c.month)))
+      throw new Error('Invalid installer import history.');
   for(const h of d.merges)if(!object(h)||!validId(h.id)||!Array.isArray(h.before)||h.before.length<2||!object(h.assignments)||!account(h.after)||h.after.id!==h.target||!h.before.some(a=>a.id===h.target)||h.before.some(a=>!account(a))||Object.entries(h.assignments).some(([key,id])=>!Object.hasOwn(d.sources,key)||!h.before.some(a=>a.id===id)))throw new Error('Invalid installer merge history.');
   for(const a of Object.values(d.accounts))installerMonthly({installers:d},a.id);
   return d;

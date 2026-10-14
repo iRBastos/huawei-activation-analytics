@@ -60,3 +60,41 @@ test('missing standard model power and phase are backfilled when restoring',()=>
  assert.equal(merged[model].powerKw,5);
  assert.equal(merged[model].phase,'Single-phase');
 });
+
+test('F3: installer reporting choices never change the equipment period',()=>{
+ const s=D.freshState(),equipment=structuredClone(s.preferences);
+ s.installerPreferences={...s.installerPreferences,start:'2025-01',end:'2025-04',aggregation:'quarter'};
+ assert.deepEqual(s.preferences,equipment);
+ assert.equal(D.installerFilters(s).start,'2025-01');
+ assert.notStrictEqual(s.installerPreferences,s.preferences);
+ assert.doesNotThrow(()=>D.validateBackup(s));
+});
+test('F3: older schema-2 backup migrates installer dates without touching product filters',()=>{
+ const s=D.freshState();
+ Object.assign(s.preferences,{start:'2024-01',end:'2024-12',aggregation:'half',compareStart:'2023-01',compareEnd:'2023-12'});
+ delete s.installerPreferences;
+ const before=structuredClone(s),migrated=D.validateBackup(s);
+ assert.deepEqual(s,before);
+ assert.equal(migrated.installerPreferences.start,'2024-01');
+ assert.equal(migrated.installerPreferences.end,'2024-12');
+ assert.equal(migrated.installerPreferences.aggregation,'month');
+ assert.equal(migrated.preferences.aggregation,'half');
+ migrated.preferences.start='2024-03';
+ assert.equal(migrated.installerPreferences.start,'2024-01');
+ assert.deepEqual(D.validateBackup(migrated).installerPreferences,migrated.installerPreferences);
+});
+test('F3: schema-1 backups get standalone installer preferences',()=>{
+ const original=legacyBackup();
+ original.preferences.start='2024-07';original.preferences.end='2024-08';
+ const migrated=D.validateBackup(original);
+ assert.deepEqual(migrated.installerPreferences,D.installerPreferenceDefaults(migrated.preferences));
+ assert.equal(migrated.schemaVersion,2);
+});
+test('F3: bad saved installer filters are rejected',()=>{
+ for(const mutate of [
+   p=>p.start='2025-13',p=>p.end='2023-01',p=>p.compareStart='2026-12',p=>p.aggregation='bad',p=>p.comparison='bad'
+ ]){
+  const s=D.freshState();mutate(s.installerPreferences);
+  assert.throws(()=>D.validateBackup(s),/Invalid installer reporting preferences/);
+ }
+});

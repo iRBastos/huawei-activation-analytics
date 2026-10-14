@@ -89,7 +89,7 @@ Excel template images were rendered and visually reviewed. Browser automation wa
 2. This is browser-local single-user storage. There is no cross-device sync, shared database, live source refresh or multi-tab concurrency coordination. Use one editing tab and backups.
 3. XLSX only supports the rectangular monthly matrix described in the brief. Encrypted workbooks, legacy .xls, macros, external-link recalculation, pivot refresh and arbitrary Excel formula evaluation are not implemented. Saved numeric formula results are required.
 4. Import bounds: 30 MB compressed workbook, 120 MB declared expanded ZIP size, 10,000 ZIP entries, 100,000 worksheet rows and 2,001 columns. Report windows are limited to 100 years for responsiveness.
-5. Equipment matrices have no installer field or linked equipment IDs. The separate Installers import supports monthly inverter totals by company and name consolidation. It does not identify equipment models per installer, market share, product pairings, PV-only sites, attachment rates, sales or revenue. Installer growth KPIs and commercial actions are planned next.
+5. Equipment matrices have no installer field or linked equipment IDs. **Data → Installer imports** supports monthly inverter totals by company and name consolidation. The Installers workspace provides tracked-portfolio growth KPIs. None of these data identifies equipment models per installer, market share, product pairings, PV-only sites, attachment rates, sales or revenue. Commercial insights remain future work.
 6. Findings are deterministic, explicitly rule-based summaries. No AI integration, forecasts, confidence intervals or causal attribution are simulated.
 7. Export is CSV and browser Print / Save as PDF. Editable slide export and server-generated PDF files are not included. The optional base-100 growth index is not implemented.
 8. Category changes for already recorded models are deliberately blocked. Undo affected imports before reclassifying their category. Other catalogue changes have impact previews and audit history.
@@ -107,8 +107,10 @@ Run `python3 tools/build-offline.py` before `python3 tools/build-release.py --te
 
 ## Installer import foundation
 
-Open **Installers** for the separate installer matrix import and account consolidation.
+Open **Data → Installer imports** for source import, validation and import history. Open **Installers** for analytics and account consolidation.
 Blank monthly cells mean zero in this importer; repeated names are summed; the trailing
 Total column is ignored. This does not change equipment blank-cell handling.
+Use **Installers → Installer profile** to inspect one consolidated account and **Installers → Compare 2–6** for side-by-side volume and indexed trends. A valid indexed baseline requires complete, positive first-period observations for every selected company. Exports preserve unknown values.
+Open **Installers → Insights & priorities** for verified inactivity/reactivation, meaningful growth/decline and accounts needing a reporting-coverage check. Adjust the saved minimum change thresholds and export a source-backed CSV; see [Insight rules](docs/INSTALLER-INSIGHTS.md).
 See [Installer import guide](docs/INSTALLER-IMPORT.md) for snapshot replacement, aliases,
 undo, schema-2 backup compatibility and current limitations.

@@ -40,6 +40,37 @@
 .installer-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0}.installer-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:20px}.installer-kpi>span{color:#596575;font-size:13px}.installer-kpi strong{display:block;font-size:30px;line-height:1.3;margin:10px 0;color:#192333}.installer-kpi p{font-size:12px;color:#667085;margin:0}.installer-analysis-panel{padding:20px;margin:20px 0;min-width:0}.installer-measures{display:grid;grid-template-columns:1fr auto;gap:14px;font-size:13px}.installer-measures dd{margin:0;font-weight:600}.installer-heatmap th:first-child{position:sticky;left:0;background:#fff;z-index:1;min-width:180px}.heat-cell{min-width:60px;border:0;border-radius:5px;padding:10px;cursor:pointer;font-variant-numeric:tabular-nums}.heat-missing{background:#f2f4f7;color:#667085}.heat-zero{background:#fff;color:#475467;box-shadow:inset 0 0 0 1px #ddd}.heat-1{background:#fce6e9;color:#6c1223}.heat-2{background:#f6bdc6;color:#6c1223}.heat-3{background:#ea8b9a;color:#4b0c18}.heat-4{background:#cf4059;color:white}.heat-5{background:#9f1730;color:white}.heat-partial{background-image:repeating-linear-gradient(135deg,transparent,transparent 5px,#ffffff55 5px,#ffffff55 8px)}.heat-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;font-size:12px}.heat-legend span{padding:6px 10px;border-radius:4px}.installer-analysis-summary{margin-top:20px}.installer-heatmap td{padding:5px}.installer-analysis-panel .bar-track{position:relative}.installer-analysis-panel .bar-track i{position:absolute;height:100%}
 @media(max-width:1000px){.installer-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.installer-kpis{grid-template-columns:1fr}.installer-measures{grid-template-columns:1fr}.installer-analysis-panel{padding:12px}}
 
+.installer-section-tabs{margin:14px 0 22px}
+.installer-profile-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 10px}
+.installer-profile-heading h2{font-size:21px;margin:0}
+.installer-profile-heading .panel-actions{margin-left:auto}
+.installer-profile-link{display:inline-block;margin-left:10px;color:#ae1530;font-size:11px}
+.installer-compare-chips{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0}
+.installer-compare-chips button{background:#fdf2f3;border:1px solid #efc7cf;color:#952037;border-radius:5px;padding:7px 11px;font-size:12px}
+.installer-compare-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:6px;max-height:290px;overflow:auto;padding:6px 2px}
+.installer-compare-picker button{border:1px solid #e0e5eb;border-radius:5px;background:#fff;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;gap:14px;text-align:left;min-width:0;font-size:12px}
+.installer-compare-picker button span{overflow-wrap:anywhere}
+.installer-compare-picker button strong{font-size:10px;color:#667085}
+.installer-compare-picker button[aria-pressed=true]{background:#fff5f6;border-color:#cf4059}
+.installer-compare-picker button[aria-pressed=true] strong{color:#ae1530}
+.installer-compare-picker button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:560px){.installer-compare-picker{grid-template-columns:1fr}.installer-profile-heading .panel-actions{margin-left:0}}
+
+.installer-insight-header{margin:16px 0 8px}
+.installer-insight-header h2{font-size:23px;letter-spacing:-.4px;margin-bottom:5px}
+.installer-insight-header p{color:#647083;font-size:12px}
+.insight-priority{display:inline-block;background:#f0f2f5;color:#394455;padding:5px 9px;border-radius:5px;font-size:11px;white-space:nowrap}
+.insight-priority.insight-high{background:#fcf0f2;color:#9b1830;font-weight:600}
+.insight-pagination{align-items:center;justify-content:flex-end;margin-top:15px}
+.installer-insight-header+ .installer-kpis{margin-top:15px}
+
+/* Four installer workspaces stay visible without horizontal tab hunting on phones. */
+@media(max-width:560px){
+ .installer-section-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;overflow:visible;border:0}
+ .installer-section-tabs button{white-space:normal;min-width:0;min-height:45px;padding:9px 7px;text-align:center;border:1px solid #e0e5eb;border-radius:5px;font-size:11px}
+ .installer-section-tabs button.active{border:1px solid #c71932;border-bottom:2px solid #c71932;background:#fff4f6}
+}
+
 </style>
   
   
@@ -269,9 +300,20 @@ const totalLabel=x=>/^(total|grand\s*total|sum|总计|合计)$/i.test(String(x??
 const isBlank=x=>x===null||x===undefined||typeof x==='string'&&x.trim()==='';
 const cellValue=c=>c && typeof c==='object' && ('v' in c || 'type' in c || 'f' in c) ? c.v : c;
 function columnName(i) {let s=''; for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;}
+// Installer reporting has its own dates and comparisons, not product filters.
+function installerPreferenceDefaults(preferences){
+  return {start:preferences.start,end:preferences.end,
+    aggregation:preferences.aggregation==='half'?'month':preferences.aggregation,
+    comparison:preferences.comparison,compareStart:preferences.compareStart,compareEnd:preferences.compareEnd,
+    insightMinVolume:5,insightThresholdPct:20};
+}
+function installerFilters(state){
+  return state.installerPreferences??installerPreferenceDefaults(state.preferences);
+}
 function freshState() {
   const end=closedMonth();
-  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[]},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences:{start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)},updatedAt:null};
+  const preferences={start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)};
+  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[],coverage:{}},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences,installerPreferences:installerPreferenceDefaults(preferences),updatedAt:null};
 }
 function suggestHeader(rows) {
   let index=0,score=0,ties=0;
@@ -280,7 +322,7 @@ function suggestHeader(rows) {
 }
 function selectModels(state,{category='All',model='All',family='All'}={}) {return Object.values(state.catalog).filter(p=>(category==='All'||p.category===category)&&(model==='All'||p.model===model)&&(family==='All'||p.family===family));}
 
-return Object.assign({},{CATEGORIES,INITIAL_CATALOG,clone,canonical,keyOf,uid,monthValue,shiftMonth,monthsBetween,currentDublinMonth,closedMonth,applicable,totalLabel,isBlank,cellValue,columnName,freshState,suggestHeader,selectModels});
+return Object.assign({},{CATEGORIES,INITIAL_CATALOG,clone,canonical,keyOf,uid,monthValue,shiftMonth,monthsBetween,currentDublinMonth,closedMonth,applicable,totalLabel,isBlank,cellValue,columnName,installerPreferenceDefaults,installerFilters,freshState,suggestHeader,selectModels});
 })();
 
 // MODULE: validation.js
@@ -576,10 +618,10 @@ return Object.assign({},{targetKey,saveTarget,targetSummary});
 
 // MODULE: installers.js
 __modules["installers.js"]=(()=>{
-const {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween}=__modules["model.js"];
+const {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween,totalLabel}=__modules["model.js"];
 // Source-name snapshots survive account merges. Reimports replace a source/month,
 // never the already consolidated account total. Equipment records stay separate.
-function emptyInstallers(){return {accounts:{},sources:{},imports:[],merges:[]};}
+function emptyInstallers(){return {accounts:{},sources:{},imports:[],merges:[],coverage:{}};}
 function installerSourceKey(name){return 'name:'+String(name).trim().replace(/\s+/g,' ').toLocaleLowerCase('en-IE');}
 function installerMonth(value){
   const direct=monthValue(value);if(direct)return direct;
@@ -617,9 +659,16 @@ function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameColumn=0})
   let duplicates=0,blankZeros=0;
   for(let r=headerRow+1;r<rows.length;r++){
     const row=rows[r]??[];if(row.every(c=>isBlank(cellValue(c))))continue;
+    const nameCell=row[nameColumn];
+    // An Excel formula error in a name cell must not become an invented account.
+    // Some spreadsheet tools interpret === 总计 === as a formula unless stored as text.
+    if(nameCell?.type==='e'||nameCell?.f){
+      errors.push(`Excel error or formula in installer name at ${nameCell?.ref??`${columnName(nameColumn)}${r+1}`}. Convert the name to text and save the workbook.`);
+      continue;
+    }
     const raw=cellValue(row[nameColumn]),label=String(raw??'').trim().replace(/\s+/g,' ');
     if(!label){if(columns.some(({c})=>!isBlank(cellValue(row[c]))))errors.push(`Missing installer name on row ${r+1}.`);continue;}
-    if(/^(?:grand\s*)?total$/i.test(label)){warnings.push(`Ignored summary row ${r+1}.`);continue;}
+    if(totalLabel(label)){warnings.push(`Ignored summary row ${r+1}: ${label}.`);continue;}
     if(label.length>200){errors.push(`Installer name on row ${r+1} exceeds 200 characters.`);continue;}
     const key=installerSourceKey(label);
     if(Object.hasOwn(sources,key))duplicates++;else sources[key]={key,label,months:{}};
@@ -637,16 +686,34 @@ function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameColumn=0})
   if(!ignoredTotal)warnings.push('No trailing Total column detected. Only monthly columns will be imported.');
   return {filename,sheet,months:[...new Set(months)].sort(),sources:Object.values(sources),errors:[...new Set(errors)],warnings,duplicates,blankZeros,ignoredTotal};
 }
+// Full imports establish a source-month boundary, not a destructive deletion.
+// Older omitted source snapshots stay available for audit and undo.
+function installerImportOrder(state){
+  return new Map((state.installers?.imports??[]).map((h,i)=>[h.id,i]));
+}
+function installerEffectiveRecord(state,source,month,order=installerImportOrder(state)){
+  const record=source?.months?.[month]??null;
+  if(!record)return null;
+  const full=state.installers?.coverage?.[month];
+  if(full?.mode!=='full')return record;
+  const boundary=order.get(full.importId);
+  return boundary!==undefined&&(order.get(record.importId)??-1)>=boundary?record:null;
+}
 function installerImportPreview(state,validation){
   const data=state.installers??emptyInstallers();
   return validation.sources.flatMap(s=>Object.entries(s.months).map(([month,r])=>{
-    const old=data.sources[s.key],previous=old?.months[month]?.quantity??null;
+    const old=data.sources[s.key],active=installerEffectiveRecord(state,old,month);
+    const previous=active?.quantity??(data.coverage?.[month]?.mode==='full'?0:null);
     return {key:s.key,label:s.label,account:old?data.accounts[old.accountId].name:s.label,month,previous,quantity:r.quantity,action:previous===null?'New':previous===r.quantity?'Unchanged':'Replace'};
   }));
 }
-function commitInstallerImport(state,validation){
+function commitInstallerImport(state,validation,{scope='partial',fullScopeConfirmed=false}={}){
   if(validation.errors.length)throw new Error('Resolve import errors first.');
-  const next=clone(state);next.installers??=emptyInstallers();const d=next.installers,id=uid(),timestamp=new Date().toISOString(),changes=[],created=[];
+  if(!['partial','full'].includes(scope))throw new Error('Unknown installer reporting scope.');
+  if(scope==='full'&&!fullScopeConfirmed)throw new Error('Explicitly confirm that all installers are covered before marking a full snapshot.');
+  const next=clone(state);next.installers??=emptyInstallers();
+  const d=next.installers,id=uid(),timestamp=new Date().toISOString(),changes=[],created=[],coverageChanges=[];
+  d.coverage??={};
   for(const incoming of validation.sources){
     let source=d.sources[incoming.key];
     if(!source){const accountId=uid();d.accounts[accountId]={id:accountId,name:incoming.label,notes:''};source=d.sources[incoming.key]={key:incoming.key,label:incoming.label,accountId,months:{}};created.push(incoming.key);}
@@ -654,19 +721,39 @@ function commitInstallerImport(state,validation){
       const before=source.months[month]??null;
       // Preserve provenance on an exact repeated value/source-cell snapshot.
       const evidence={filename:validation.filename,sheet:validation.sheet,cells:clone(r.cells)};
-      if(before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence))continue;
+      // Re-affirmed full reports and previously omitted source rows need a new
+      // import position even when their quantities/evidence match older data.
+      if(scope!=='full'&&before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence)&&
+         installerEffectiveRecord(next,source,month)!==null)continue;
       const after={quantity:r.quantity,source:evidence,importId:id};changes.push({key:incoming.key,month,before,after});source.months[month]=after;
     }
   }
-  // Check aggregate overflow too (different aliases may have been merged).
+  // A full snapshot is an explicit, per-month declaration about the complete
+  // tracked installer population. Later partial corrections preserve it.
+  if(scope==='full')for(const month of validation.months){
+    const before=d.coverage[month]??null;
+    const after={mode:'full',month,filename:validation.filename,sheet:validation.sheet,importId:id,timestamp};
+    coverageChanges.push({month,before,after});d.coverage[month]=after;
+  }
+  d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,scope,created,changes,coverageChanges,undone:false});
+  // The new import must be in history before precedence / totals are resolved.
   for(const account of Object.values(d.accounts))installerMonthly(next,account.id);
-  d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,created,changes,undone:false});next.updatedAt=timestamp;return next;
+  next.updatedAt=timestamp;return next;
 }
 function installerMonthly(state,accountId){
-  const result={};
-  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId)for(const [month,r]of Object.entries(source.months)){
-    const sum=(result[month]??0)+r.quantity;if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');result[month]=sum;
+  const result={},order=installerImportOrder(state);
+  let hasSources=false;
+  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId){
+    hasSources=true;
+    for(const month of Object.keys(source.months)){
+      const record=installerEffectiveRecord(state,source,month,order);
+      if(!record)continue;
+      const sum=(result[month]??0)+record.quantity;
+      if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');
+      result[month]=sum;
+    }
   }
+  if(hasSources)for(const month of Object.keys(state.installers?.coverage??{}))result[month]??=0;
   return result;
 }
 function installerRows(state,start,end){
@@ -710,8 +797,11 @@ function undoInstallerMerge(state,id){
 function undoInstallerImport(state,id){
   const next=clone(state),d=next.installers,h=d.imports.find(i=>i.id===id);
   if(!h||h.undone)throw new Error('This import is not available to undo.');
-  if(h.changes.some(c=>JSON.stringify(d.sources[c.key]?.months[c.month]??null)!==JSON.stringify(c.after)))throw new Error('Later imports overlap these values. Undo later imports first.');
+  if(h.changes.some(c=>JSON.stringify(d.sources[c.key]?.months[c.month]??null)!==JSON.stringify(c.after))||
+    (h.coverageChanges??[]).some(c=>JSON.stringify(d.coverage?.[c.month]??null)!==JSON.stringify(c.after)))
+      throw new Error('Later imports overlap these values or reporting scope. Undo later imports first.');
   for(const c of h.changes){if(c.before)d.sources[c.key].months[c.month]=c.before;else delete d.sources[c.key].months[c.month];}
+  for(const c of h.coverageChanges??[]){if(c.before)d.coverage[c.month]=c.before;else delete d.coverage[c.month];}
   // Keep identities and aliases: later merges and notes may depend on them.
   h.undone=true;next.updatedAt=new Date().toISOString();return next;
 }
@@ -720,25 +810,34 @@ function validateInstallerState(d){
   const validId=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(x)&&!['__proto__','constructor','prototype'].includes(x);
   const account=a=>object(a)&&validId(a.id)&&typeof a.name==='string'&&!!a.name.trim()&&a.name.length<=200&&typeof a.notes==='string';
   const record=r=>object(r)&&Number.isSafeInteger(r.quantity)&&r.quantity>=0&&typeof r.source?.filename==='string'&&!!r.source.filename&&typeof r.source?.sheet==='string'&&!!r.source.sheet&&Array.isArray(r.source.cells)&&r.source.cells.length>0&&r.source.cells.every(c=>typeof c.cell==='string'&&typeof c.label==='string'&&Number.isSafeInteger(c.quantity)&&c.quantity>=0)&&r.source.cells.reduce((sum,c)=>sum+c.quantity,0)===r.quantity;
-  if(!object(d)||!object(d.accounts)||!object(d.sources)||!Array.isArray(d.imports)||!Array.isArray(d.merges))throw new Error('Invalid installer data.');
+  const validCoverage=(c,month)=>object(c)&&c.mode==='full'&&c.month===month&&monthValue(month)===month&&
+    typeof c.filename==='string'&&!!c.filename&&typeof c.sheet==='string'&&!!c.sheet&&
+    validId(c.importId)&&typeof c.timestamp==='string'&&!!c.timestamp;
+  if(!object(d)||!object(d.accounts)||!object(d.sources)||!object(d.coverage)||!Array.isArray(d.imports)||!Array.isArray(d.merges))throw new Error('Invalid installer data.');
+  for(const [month,c]of Object.entries(d.coverage))if(!validCoverage(c,month))throw new Error('Invalid installer reporting coverage.');
   for(const [id,a] of Object.entries(d.accounts))if(!account(a)||a.id!==id)throw new Error('Invalid installer account.');
   for(const [key,s]of Object.entries(d.sources)){
     if(!object(s)||s.key!==key||typeof s.label!=='string'||!s.label.trim()||key!==installerSourceKey(s.label)||!Object.hasOwn(d.accounts,s.accountId)||!object(s.months))throw new Error('Invalid installer source or account reference.');
     for(const [month,r]of Object.entries(s.months))if(!monthValue(month)||!record(r))throw new Error('Invalid installer monthly record.');
   }
-  for(const h of d.imports)if(!object(h)||!validId(h.id)||!Array.isArray(h.changes)||!Array.isArray(h.created)||!Array.isArray(h.months)||h.months.some(m=>!monthValue(m))||h.changes.some(c=>!object(c)||!Object.hasOwn(d.sources,c.key)||!monthValue(c.month)||!record(c.after)||(c.before!==null&&!record(c.before))))throw new Error('Invalid installer import history.');
+  for(const h of d.imports)if(!object(h)||!validId(h.id)||!Array.isArray(h.changes)||!Array.isArray(h.created)||!Array.isArray(h.months)||h.months.some(m=>!monthValue(m))||
+    (h.scope!==undefined&&!['partial','full'].includes(h.scope))||
+    h.changes.some(c=>!object(c)||!Object.hasOwn(d.sources,c.key)||!monthValue(c.month)||!record(c.after)||(c.before!==null&&!record(c.before)))||
+    !Array.isArray(h.coverageChanges??[])||
+    (h.coverageChanges??[]).some(c=>!object(c)||!validCoverage(c.after,c.month)||(c.before!==null&&!validCoverage(c.before,c.month))||c.after.importId!==h.id||!h.months.includes(c.month)))
+      throw new Error('Invalid installer import history.');
   for(const h of d.merges)if(!object(h)||!validId(h.id)||!Array.isArray(h.before)||h.before.length<2||!object(h.assignments)||!account(h.after)||h.after.id!==h.target||!h.before.some(a=>a.id===h.target)||h.before.some(a=>!account(a))||Object.entries(h.assignments).some(([key,id])=>!Object.hasOwn(d.sources,key)||!h.before.some(a=>a.id===id)))throw new Error('Invalid installer merge history.');
   for(const a of Object.values(d.accounts))installerMonthly({installers:d},a.id);
   return d;
 }
 
-return Object.assign({},{emptyInstallers,installerSourceKey,installerMonth,suggestInstallerHeader,validateInstallerMatrix,installerImportPreview,commitInstallerImport,installerMonthly,installerRows,installerSuggestions,mergeInstallers,undoInstallerMerge,undoInstallerImport,validateInstallerState});
+return Object.assign({},{emptyInstallers,installerSourceKey,installerMonth,suggestInstallerHeader,validateInstallerMatrix,installerImportOrder,installerEffectiveRecord,installerImportPreview,commitInstallerImport,installerMonthly,installerRows,installerSuggestions,mergeInstallers,undoInstallerMerge,undoInstallerImport,validateInstallerState});
 })();
 
 // MODULE: backup.js
 __modules["backup.js"]=(()=>{
 const {emptyInstallers,validateInstallerState}=__modules["installers.js"];
-const {CATEGORIES,clone,canonical,monthValue,keyOf,freshState}=__modules["model.js"];
+const {CATEGORIES,clone,canonical,monthValue,keyOf,freshState,installerPreferenceDefaults}=__modules["model.js"];
 const {validateProduct}=__modules["validation.js"];
 const {targetKey}=__modules["targets.js"];
 function validateBackup(input) {
@@ -749,7 +848,21 @@ function validateBackup(input) {
   for(const [k,t]of Object.entries(input.targets)){if(k!==targetKey(t.month,t.scope)||!monthValue(t.month)||!Number.isSafeInteger(t.value)||t.value<0||!(CATEGORIES.includes(t.scope)||input.catalog[t.scope]))throw new Error('Invalid target.');}
   for(const h of input.history){if(!h.id||!Array.isArray(h.changes)||!Array.isArray(h.coverageChanges??[])||!Array.isArray(h.catalogChanges??[]))throw new Error('Invalid import history.');}
   for(const e of input.events)if(!e.id||!/^\d{4}-\d{2}-\d{2}$/.test(e.date)||typeof e.title!=='string')throw new Error('Invalid timeline event.');
-  const next=clone(input);if(input.schemaVersion===1){next.installers=emptyInstallers();}validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');return next;
+  const next=clone(input);if(input.schemaVersion===1){next.installers=emptyInstallers();}
+  // Schema-2 backups created before the V2 scope ledger had no coverage field.
+  if(next.installers&&next.installers.coverage===undefined)next.installers.coverage={};
+  validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};
+  if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');
+  const defaults=installerPreferenceDefaults(next.preferences),saved=input.schemaVersion===1?undefined:input.installerPreferences;
+  if(saved!==undefined&&(saved===null||typeof saved!=='object'||Array.isArray(saved)))throw new Error('Invalid installer reporting preferences.');
+  next.installerPreferences={...defaults,...(saved??{})};
+  const p=next.installerPreferences;
+  if(!monthValue(p.start)||!monthValue(p.end)||p.start>p.end||
+    !monthValue(p.compareStart)||!monthValue(p.compareEnd)||p.compareStart>p.compareEnd||
+    !['month','quarter','year'].includes(p.aggregation)||!['year','previous','custom'].includes(p.comparison)||
+    ![1,5,10,25].includes(p.insightMinVolume)||![10,20,30,50].includes(p.insightThresholdPct))
+    throw new Error('Invalid installer reporting preferences.');
+  return next;
 }
 
 return Object.assign({},{validateBackup});
@@ -758,15 +871,20 @@ return Object.assign({},{validateBackup});
 // MODULE: installer-analytics.js
 __modules["installer-analytics.js"]=(()=>{
 const {monthsBetween,shiftMonth,closedMonth}=__modules["model.js"];
+const {installerEffectiveRecord,installerImportOrder}=__modules["installers.js"];
 const {comparisonPeriod,aggregationKey,difference}=__modules["calculations.js"];
 // Build once per render. Source aliases retain independent coverage after a union.
 function installerIndex(state){
-  const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,sourceCount:0,aliases:[],cells:{}}]));
+  const coverage=state.installers.coverage??{};
+  const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,coverage,sourceCount:0,aliases:[],cells:{}}]));
+  const order=installerImportOrder(state);
   for(const source of Object.values(state.installers.sources)){
     if(!Object.keys(source.months).length)continue; // An undone import is not a zero-volume account.
     const account=grouped.get(source.accountId);if(!account)continue;
     account.sourceCount++;account.aliases.push(source.label);
-    for(const [month,r]of Object.entries(source.months)){
+    for(const month of Object.keys(source.months)){
+      const r=installerEffectiveRecord(state,source,month,order);
+      if(!r)continue;
       const cell=account.cells[month]??{value:0,observed:0};cell.value+=r.quantity;cell.observed++;
       if(!Number.isSafeInteger(cell.value))throw new Error('Installer monthly total exceeds the safe numeric limit.');
       account.cells[month]=cell;
@@ -775,16 +893,43 @@ function installerIndex(state){
   return [...grouped.values()].filter(a=>a.sourceCount>0);
 }
 function installerMeasure(accounts,start,end,now=new Date()){
-  const months=monthsBetween(start,end);let value=0,observed=0;
-  const expected=accounts.reduce((n,a)=>n+a.sourceCount,0)*months.length;
-  for(const a of accounts)for(const month of months){const cell=a.cells[month];if(cell){value+=cell.value;observed+=cell.observed;}}
+  const months=monthsBetween(start,end);let value=0,observed=0,expected=0,fullScopeMonths=0;
+  for(const a of accounts)for(const month of months){
+    const cell=a.cells[month],full=a.coverage?.[month]?.mode==='full';
+    if(full){
+      // One verified account-month, even when a company changes source labels
+      // or was absent in an explicitly confirmed full-population snapshot.
+      expected++;observed++;fullScopeMonths++;
+      value+=cell?.value??0;
+    }else{
+      // Older / partial imports remain conservative: each source alias needs
+      // its own observation; unknown must never become an inferred zero.
+      expected+=a.sourceCount;
+      if(cell){observed+=cell.observed;value+=cell.value;}
+    }
+  }
   if(!Number.isSafeInteger(value))throw new Error('Installer period total exceeds the safe numeric limit.');
   const complete=expected>0&&observed===expected&&end<=closedMonth(now);
   const status=!months.length?'Invalid period':!expected?'No tracked data':end>closedMonth(now)?'Provisional — open/future month':observed!==expected?'Partial — missing source months':'Complete';
-  return {value:observed?value:null,complete,status,observed,expected,months:months.length};
+  return {value:observed?value:null,complete,status,observed,expected,months:months.length,fullScopeMonths};
+}
+
+// One period-bucketing selector for portfolio, account detail and comparison
+// screens. Every number ultimately comes from installerMeasure.
+function installerSeries(accounts,start,end,{aggregation='month',now=new Date()}={}){
+  const groups=new Map();
+  for(const month of monthsBetween(start,end)){
+    const key=aggregationKey(month,aggregation);
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(month);
+  }
+  return [...groups].map(([label,months])=>({
+    label,start:months[0],end:months.at(-1),
+    ...installerMeasure(accounts,months[0],months.at(-1),now)
+  }));
 }
 function latestInstallerMonth(state,now=new Date()){
-  const index=installerIndex(state),months=[...new Set(index.flatMap(a=>Object.keys(a.cells)))].sort().reverse();
+  const index=installerIndex(state),months=[...new Set([...Object.keys(state.installers.coverage??{}),...index.flatMap(a=>Object.keys(a.cells))])].sort().reverse();
   return months.find(m=>installerMeasure(index,m,m,now).complete)??null;
 }
 function installerAnalysis(state,f,{cohort='all',now=new Date()}={}){
@@ -807,10 +952,107 @@ function installerAnalysis(state,f,{cohort='all',now=new Date()}={}){
   const retention=current.complete&&previous.complete&&equalDuration&&previousActive>0?retained/previousActive*100:null;
   const top5=current.complete&&current.value>0?rows.slice(0,5).reduce((n,r)=>n+r.current.value,0)/current.value*100:null;
   const hhi=current.complete&&current.value>0?rows.reduce((n,r)=>n+(r.current.value/current.value)**2,0)*10000:null;
-  const groups=new Map();for(const m of monthsBetween(f.start,f.end)){const key=aggregationKey(m,f.aggregation??'month');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
-  const trend=[...groups].map(([label,ms])=>({label,start:ms[0],end:ms.at(-1),...measure(accounts,ms[0],ms.at(-1))}));
+  const trend=installerSeries(accounts,f.start,f.end,{aggregation:f.aggregation??'month',now});
+  const comparisonOffset=(+comparison.start.slice(0,4)-+f.start.slice(0,4))*12+(+comparison.start.slice(5)-+f.start.slice(5));
+  const comparisonTrend=equalDuration?trend.map(point=>{
+    const start=shiftMonth(point.start,comparisonOffset),end=shiftMonth(point.end,comparisonOffset);
+    return {...point,start,end,...measure(accounts,start,end)};
+  }):[];
   const ytdStart=f.end.slice(0,4)+'-01',ytd=measure(accounts,ytdStart,f.end),priorYtd=measure(accounts,shiftMonth(ytdStart,-12),shiftMonth(f.end,-12));
-  return {rows,accounts,allCount:all.length,eligibleCount:eligible.length,cohort,comparison,equalDuration,current,previous,change:change(current,previous),active,observedActive,previousActive,retained,retention,top5,hhi,trend,ytd,priorYtd,ytdChange:difference(ytd,priorYtd),current3Start,prior3Start,prior3End};
+  return {rows,accounts,allAccounts:all,now,allCount:all.length,eligibleCount:eligible.length,cohort,comparison,equalDuration,current,previous,change:change(current,previous),active,observedActive,previousActive,retained,retention,top5,hhi,trend,comparisonTrend,ytd,priorYtd,ytdChange:difference(ytd,priorYtd),current3Start,prior3Start,prior3End};
+}
+
+/** Shared account detail selector: status, chart, KPI and CSV use the same measure. */
+function installerAccountAnalysis(state,f,id,{cohort='all',now=new Date(),analysis=null}={}){
+  const report=analysis??installerAnalysis(state,f,{cohort,now});
+  const account=report.allAccounts.find(a=>a.id===id);
+  if(!account)return null;
+  const row=report.rows.find(r=>r.id===id)??null;
+  const current=row?.current??installerMeasure([account],f.start,f.end,report.now);
+  const previous=row?.previous??installerMeasure([account],report.comparison.start,report.comparison.end,report.now);
+  const change=report.equalDuration?difference(current,previous):{delta:null,pct:null,label:'Use equal-length periods'};
+  const recent3=row?.recent3??installerMeasure([account],report.current3Start,f.end,report.now);
+  const prior3=row?.prior3??installerMeasure([account],report.prior3Start,report.prior3End,report.now);
+  const points=installerSeries([account],f.start,f.end,{now:report.now});
+  return {id,account,row,report,current,previous,change,recent3,prior3,momentum:difference(recent3,prior3),points,share:row?.share??null};
+}
+
+/** One headless, 2–6 account selector to power the future comparison page.
+ * Missing months stay unknown; a confirmed full reporting month makes them zero.
+ */
+function installerComparison(state,f,ids,{now=new Date()}={}){
+  if(!Array.isArray(ids)||ids.length<2||ids.length>6||new Set(ids).size!==ids.length)
+    throw new Error('Select between 2 and 6 distinct installers for comparison.');
+  const index=installerIndex(state),byId=new Map(index.map(a=>[a.id,a]));
+  if(ids.some(id=>typeof id!=='string'||!byId.has(id)))
+    throw new Error('Select existing installers with recorded activation history.');
+  const selected=ids.map(id=>byId.get(id)),comparison=comparisonPeriod(f);
+  const equalDuration=monthsBetween(f.start,f.end).length===monthsBetween(comparison.start,comparison.end).length;
+  const current=installerMeasure(selected,f.start,f.end,now),previous=installerMeasure(selected,comparison.start,comparison.end,now);
+  const change=equalDuration?difference(current,previous):{delta:null,pct:null,label:'Use equal-length periods'};
+  const rows=selected.map(account=>{
+    const oneCurrent=installerMeasure([account],f.start,f.end,now);
+    const onePrevious=installerMeasure([account],comparison.start,comparison.end,now);
+    return {
+      id:account.id,name:account.name,aliases:account.aliases,
+      current:oneCurrent,previous:onePrevious,
+      change:equalDuration?difference(oneCurrent,onePrevious):{delta:null,pct:null,label:'Use equal-length periods'},
+      share:current.complete&&oneCurrent.complete&&current.value>0?oneCurrent.value/current.value*100:null,
+      trend:installerSeries([account],f.start,f.end,{aggregation:f.aggregation??'month',now})
+    };
+  });
+  return {ids:[...ids],rows,current,previous,change,comparison,equalDuration,
+    trend:installerSeries(selected,f.start,f.end,{aggregation:f.aggregation??'month',now}),now};
+}
+
+/** A common first displayed, complete, positive bucket is required for all series.
+ * A zero or unknown baseline never becomes an invented growth index.
+ */
+function installerIndexedComparison(comparison){
+  const baseline=comparison.rows.map(r=>r.trend[0]);
+  const eligible=baseline.length>0&&baseline.every(p=>p?.complete&&p.value>0);
+  return {eligible,baseline:eligible?baseline.map(p=>p.value):null,
+    rows:comparison.rows.map((r,i)=>({
+      ...r,indexed:r.trend.map(p=>({
+        ...p,rawValue:p.value,
+        value:eligible&&p.complete?100*p.value/baseline[i].value:null,
+        status:eligible?(p.complete?p.status:'Unavailable — incomplete reporting'):'Index unavailable — first bucket must be complete and positive for every installer'
+      }))
+    }))};
+}
+/** Historical trend and facts for a single consolidated installer account. */
+function installerAccountHistory(state,id,{aggregation='month',now=new Date(),end=null}={}){
+  const account=installerIndex(state).find(a=>a.id===id);
+  if(!account)return null;
+  const months=Object.keys(account.cells).sort();
+  if(!months.length)return {account,points:[],peak:null,firstActive:null,lastActive:null,total:null};
+  const start=months[0],last=end??months.at(-1);
+  const points=start<=last?installerSeries([account],start,last,{aggregation,now}):[];
+  const monthly=start<=last?installerSeries([account],start,last,{aggregation:'month',now}):[];
+  const positives=monthly.filter(p=>p.value>0);
+  const verified=monthly.filter(p=>p.complete);
+  const peak=verified.length?[...verified].sort((a,b)=>b.value-a.value||a.start.localeCompare(b.start))[0]:null;
+  const total=installerMeasure([account],start,last,now);
+  return {account,start,end:last,points,monthly,peak,total,
+    firstActive:positives[0]?.start??null,lastActive:positives.at(-1)?.start??null,
+    lastConfirmed:verified.at(-1)?.start??null};
+}
+/** Comparison CSV shares all values with the comparison UI. */
+function installerComparisonCsv(comparison){
+  const labels=comparison.trend.map(x=>x.label);
+  return [['Installer','Current','Current status','Previous','Previous status','Difference','Growth %','Share of selected %',...labels],
+    ...comparison.rows.map(r=>[r.name,r.current.value,r.current.status,r.previous.value,r.previous.status,
+      r.change.delta,r.change.pct,r.share,...r.trend.map(p=>p.value)])];
+}
+/** Consistent monthly CSV source for the installer table, profiles and future comparisons. */
+function installerMonthlyCsv(analysis,f){
+  const months=monthsBetween(f.start,f.end);
+  const byId=new Map(analysis.accounts.map(a=>[a.id,a]));
+  return [['Installer',...months,'Reported total','Reporting status'],...analysis.rows.map(row=>{
+    const account=byId.get(row.id);
+    return [row.name,...months.map(month=>installerMeasure([account],month,month,analysis.now).value),
+      row.current.value,row.current.status];
+  })];
 }
 function sortInstallerRanking(rows,sort='volume'){
   const val=r=>sort==='change'?r.delta:sort==='growth'?r.pct:sort==='momentum'?r.momentum.pct:r.current.value;
@@ -820,7 +1062,118 @@ function installerAnalyticsCsv(analysis,f){
   return [['Installer','From','To','Comparison from','Comparison to','Cohort','Current activations','Current status','Previous activations','Previous status','Change units','Change %','Share %','Rank by reported volume','3M change %','Last active month'],...analysis.rows.map(r=>[r.name,f.start,f.end,analysis.comparison.start,analysis.comparison.end,analysis.cohort,r.current.value,r.current.status,r.previous.value,r.previous.status,r.delta,r.pct,r.share,r.rank,r.momentum.pct,r.lastActive])];
 }
 
-return Object.assign({},{installerIndex,installerMeasure,latestInstallerMonth,installerAnalysis,sortInstallerRanking,installerAnalyticsCsv});
+return Object.assign({},{installerIndex,installerMeasure,installerSeries,latestInstallerMonth,installerAnalysis,installerAccountAnalysis,installerComparison,installerIndexedComparison,installerAccountHistory,installerComparisonCsv,installerMonthlyCsv,sortInstallerRanking,installerAnalyticsCsv});
+})();
+
+// MODULE: installer-insights.js
+__modules["installer-insights.js"]=(()=>{
+const {closedMonth,shiftMonth}=__modules["model.js"];
+const {installerAnalysis,installerMeasure}=__modules["installer-analytics.js"];
+// Rule-based signals only: no predicted revenue, inferred cause or market share.
+const INSIGHT_MIN_VOLUMES=[1,5,10,25];
+const INSIGHT_CHANGE_THRESHOLDS=[10,20,30,50];
+const lastThree=end=>[shiftMonth(end,-2),shiftMonth(end,-1),end];
+const priorThree=end=>[shiftMonth(end,-3),shiftMonth(end,-2),shiftMonth(end,-1)];
+const measureMonths=(account,months,now)=>months.map(month=>({month,...installerMeasure([account],month,month,now)}));
+const allZero=points=>points.length===3&&points.every(p=>p.complete&&p.value===0);
+const hasPriorPositive=(account,before)=>Object.entries(account.cells).some(([month,cell])=>month<before&&cell.value>0);
+const TYPES={
+ reactivated:{label:'Reactivated',weight:45,action:'Reconnect with the installer to understand the new activity and discuss upcoming work.'},
+ inactive:{label:'Inactive — 3 confirmed zero months',weight:45,action:'Contact the installer to understand the inactivity and whether support is needed.'},
+ declining:{label:'Declining activations',weight:35,action:'Arrange an account review to understand the decline and offer relevant support.'},
+ growing:{label:'Growing activations',weight:25,action:'Discuss installer capacity and upcoming plans; explore how to support further activity.'},
+ first:{label:'First recorded activity after confirmed zeros',weight:20,action:'Welcome the recorded activity and discuss future opportunities.'},
+ zeroBase:{label:'Activity after zero comparison baseline',weight:20,action:'Review the activity with the installer; percentage growth is unavailable from a zero baseline.'},
+ steady:{label:'No significant movement',weight:10,action:'Monitor the account at the next reporting cycle.'},
+ zero:{label:'No recorded activity in selected periods',weight:10,action:'Keep the account on the watchlist; no selected-period activations are evidenced.'},
+ coverage:{label:'Verify reporting coverage',weight:null,action:'Confirm missing or open reporting months before interpreting the trend.'}
+};
+const priority=score=>score===null?'Data check':score>=60?'High':score>=30?'Medium':'Low';
+function classify(account,row,report,f,now,minVolume,thresholdPct){
+ const last=f.end,closed=last<=closedMonth(now);
+ const recent=measureMonths(account,lastThree(last),now);
+ const previous3=measureMonths(account,priorThree(last),now);
+ const latest=recent.at(-1);
+ const priorPositive=hasPriorPositive(account,shiftMonth(last,-2));
+ const earlierPositive=hasPriorPositive(account,shiftMonth(last,-3));
+ const inactive=closed&&allZero(recent)&&priorPositive;
+ const precedingZeros=closed&&allZero(previous3);
+ const reactivated=precedingZeros&&latest.complete&&latest.value>0&&earlierPositive;
+ const first=precedingZeros&&latest.complete&&latest.value>0&&!earlierPositive;
+ const usable=report.equalDuration&&row.current.complete&&row.previous.complete;
+ const base=row.previous.value,units=row.delta,relative=row.pct;
+ const substantial=usable&&base>=minVolume&&Math.abs(units)>=minVolume&&Math.abs(relative)>=thresholdPct;
+ let type='coverage';
+ if(reactivated)type='reactivated';
+ else if(inactive)type='inactive';
+ else if(first)type='first';
+ else if(substantial&&units<0)type='declining';
+ else if(substantial&&units>0)type='growing';
+ else if(usable&&base===0&&row.current.value>0)type='zeroBase';
+ else if(usable&&row.current.value===0&&base===0)type='zero';
+ else if(usable)type='steady';
+ const rule=TYPES[type],recentHistory=Object.entries(account.cells)
+   .filter(([month])=>month<=last&&month>=shiftMonth(last,-12))
+   .reduce((sum,[,cell])=>sum+cell.value,0);
+ const scale=type==='inactive'||type==='reactivated'
+   ?Math.max(row.current.value??0,base??0,recentHistory)
+   :Math.max(row.current.value??0,base??0);
+ const magnitude=Math.abs(units??0);
+ const score=rule.weight===null?null:Math.min(100,rule.weight+
+   (scale>=minVolume*4?20:scale>=minVolume?10:0)+
+   (magnitude>=minVolume*4?20:magnitude>=minVolume?10:0));
+ let evidence;
+ if(type==='reactivated'||type==='first')
+   evidence='Previous 3 months '+previous3[0].month+'–'+previous3[2].month+': confirmed zero; '+last+': '+latest.value+' activations.';
+ else if(type==='inactive')
+   evidence=recent[0].month+'–'+last+': 3 consecutive fully reported zero months; earlier positive activation recorded.';
+ else if(type==='coverage')
+   evidence='Current: '+row.current.status+'; comparison: '+row.previous.status+'; equal length: '+(report.equalDuration?'yes':'no')+'.';
+ else
+   evidence='Selected: '+row.current.value+' ('+row.current.status+'); previous: '+base+' ('+row.previous.status+'); difference: '+(units??'unavailable')+' activations.';
+ return {id:row.id,name:row.name,type,label:rule.label,action:rule.action,priority:priority(score),score,
+  evidence,current:row.current,previous:row.previous,delta:row.delta,growthPct:row.pct,
+  lastActive:row.lastActive,currentMonth:latest,recent,previous3,minVolume,thresholdPct,
+  completeComparison:usable,periodStart:f.start,periodEnd:f.end};
+}
+/** Compute an account's signal from a precomputed profile; no second portfolio scan. */
+function installerAccountSignal(profile,f,{now=profile?.report.now,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
+ if(!profile)return null;
+ if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
+   throw new Error('Unsupported installer insight thresholds.');
+ const row=profile.row??{id:profile.id,name:profile.account.name,current:profile.current,
+  previous:profile.previous,delta:profile.change.delta,pct:profile.change.pct,lastActive:null};
+ return classify(profile.account,row,profile.report,f,now,minVolume,thresholdPct);
+}
+/** Always score all tracked accounts, even if UI uses a comparable subset. */
+function installerInsights(state,f,{now=new Date(),report=null,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
+ if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
+   throw new Error('Unsupported installer insight thresholds.');
+ const analysis=report??installerAnalysis(state,f,{now,cohort:'all'});
+ const actual=analysis.cohort==='all'?analysis:installerAnalysis(state,f,{now,cohort:'all'});
+ const byId=new Map(actual.allAccounts.map(a=>[a.id,a]));
+ const rows=actual.rows.map(r=>classify(byId.get(r.id),r,actual,f,now,minVolume,thresholdPct));
+ const weights={High:3,Medium:2,Low:1,'Data check':0};
+ rows.sort((a,b)=>(weights[b.priority]-weights[a.priority])||
+   (b.score??0)-(a.score??0)||
+   Math.max(b.current.value??0,b.previous.value??0)-Math.max(a.current.value??0,a.previous.value??0)||
+   a.name.localeCompare(b.name,'en-IE'));
+ const counts=Object.fromEntries(Object.keys(TYPES).map(type=>[type,rows.filter(r=>r.type===type).length]));
+ const priorities=Object.fromEntries(['High','Medium','Low','Data check'].map(p=>[p,rows.filter(r=>r.priority===p).length]));
+ return {rows,counts,priorities,total:rows.length,minVolume,thresholdPct,
+   periodStart:f.start,periodEnd:f.end,comparison:actual.comparison,now};
+}
+/** CSV and UI consume exactly the same computed rows and evidence. */
+function installerInsightsCsv(result){
+ return [['Installer','Signal','Priority','Rule score','Current activations','Current status',
+  'Previous activations','Previous status','Difference','Growth %','Last recorded active month',
+  'Evidence','Suggested next action','Minimum volume','Minimum change %'],
+  ...result.rows.map(r=>[r.name,r.label,r.priority,r.score,r.current.value,r.current.status,
+   r.previous.value,r.previous.status,r.delta,r.growthPct,r.lastActive,r.evidence,r.action,
+   result.minVolume,result.thresholdPct])];
+}
+
+return Object.assign({},{INSIGHT_MIN_VOLUMES,INSIGHT_CHANGE_THRESHOLDS,installerAccountSignal,installerInsights,installerInsightsCsv});
 })();
 
 // MODULE: domain.js
@@ -835,7 +1188,8 @@ __modules["domain.js"]=(()=>{
 
 
 
-return Object.assign({},__modules["inverter-catalog.js"],__modules["model.js"],__modules["validation.js"],__modules["imports.js"],__modules["calculations.js"],__modules["targets.js"],__modules["backup.js"],__modules["installers.js"],__modules["installer-analytics.js"],{});
+
+return Object.assign({},__modules["inverter-catalog.js"],__modules["model.js"],__modules["validation.js"],__modules["imports.js"],__modules["calculations.js"],__modules["targets.js"],__modules["backup.js"],__modules["installers.js"],__modules["installer-analytics.js"],__modules["installer-insights.js"],{});
 })();
 
 // MODULE: exports.js
@@ -944,21 +1298,21 @@ const pct=v=>v==null?'—':n(v,1)+'%';
 const card=(title,value,note)=>`<article class="installer-kpi"><span>${e(title)}</span><strong>${e(value)}</strong><p>${e(note)}</p></article>`;
 const panel=(title,body)=>`<section class="panel installer-analysis-panel"><div class="panel-head"><h2>${e(title)}</h2></div>${body}</section>`;
 function installerAnalyticsFilters(state,ui){
-  const f=state.preferences,opt=(v,t,current)=>`<option value="${v}" ${current===v?'selected':''}>${t}</option>`;
-  return `<div class="filter-main"><label class="field">Period<select id="installer-period"><option value="custom">Custom period</option><option value="month">Latest complete month</option><option value="3">Last 3 months</option><option value="12">Last 12 months</option><option value="ytd">Year to date</option></select></label><label class="field">From<input type="month" data-filter="start" value="${e(f.start)}"></label><label class="field">To<input type="month" data-filter="end" value="${e(f.end)}"></label><label class="field">Chart view<select data-filter="aggregation">${[['month','Monthly'],['quarter','Quarterly'],['year','Annual']].map(([v,t])=>opt(v,t,f.aggregation)).join('')}</select></label><label class="field">Compare with<select data-filter="comparison">${[['year','Same months last year'],['previous','Previous equal interval'],['custom','Custom interval']].map(([v,t])=>opt(v,t,f.comparison)).join('')}</select></label><label class="field">Account base<select id="installer-cohort">${opt('all','All tracked installers',ui.installerCohort??'all')}${opt('comparable','Same comparable installers',ui.installerCohort)}</select></label></div>${f.comparison==='custom'?`<div class="filter-extra"><label class="field">Comparison from<input type="month" data-filter="compareStart" value="${e(f.compareStart)}"></label><label class="field">Comparison to<input type="month" data-filter="compareEnd" value="${e(f.compareEnd)}"></label></div>`:''}<p class="table-note">Installer inverter activations only. Product filters do not apply. Blank imported cells = zero; missing source/month records remain unavailable. Search changes the table and heatmap, not portfolio KPI denominators.</p>`;
+  const f=D.installerFilters(state),opt=(v,t,current)=>`<option value="${v}" ${current===v?'selected':''}>${t}</option>`;
+  return `<div class="filter-main"><label class="field">Period<select id="installer-period"><option value="custom">Custom period</option><option value="month">Latest complete month</option><option value="3">Last 3 months</option><option value="12">Last 12 months</option><option value="ytd">Year to date</option></select></label><label class="field">From<input type="month" data-filter="start" value="${e(f.start)}"></label><label class="field">To<input type="month" data-filter="end" value="${e(f.end)}"></label><label class="field">Chart view<select data-filter="aggregation">${[['month','Monthly'],['quarter','Quarterly'],['year','Annual']].map(([v,t])=>opt(v,t,f.aggregation)).join('')}</select></label><label class="field">Compare with<select data-filter="comparison">${[['year','Same months last year'],['previous','Previous equal interval'],['custom','Custom interval']].map(([v,t])=>opt(v,t,f.comparison)).join('')}</select></label><label class="field">Account base<select id="installer-cohort">${opt('all','All tracked installers',ui.installerCohort??'all')}${opt('comparable','Same comparable installers',ui.installerCohort)}</select></label></div>${f.comparison==='custom'?`<div class="filter-extra"><label class="field">Comparison from<input type="month" data-filter="compareStart" value="${e(f.compareStart)}"></label><label class="field">Comparison to<input type="month" data-filter="compareEnd" value="${e(f.compareEnd)}"></label></div>`:''}<p class="table-note">Installer inverter activations only. Product filters do not apply. Blank imported cells = zero. Full-population snapshots confirm absent accounts as zero; otherwise missing source/month records remain unavailable. Search changes the table and heatmap, not portfolio KPI denominators.</p>`;
 }
 function installerDashboard(state,ui,report){
   if(!report.allCount)return '<div class="notice"><p>Import installer activations to see trends, rankings and monthly activity.</p></div>';
-  const f=state.preferences,r=report,series=[{name:'Selected period',color:'#c71932',points:r.trend}];
-  if(r.equalDuration){const monthOffset=(+r.comparison.start.slice(0,4)-+f.start.slice(0,4))*12+(+r.comparison.start.slice(5)-+f.start.slice(5));
-    series.push({name:'Comparison period',color:'#237687',points:r.trend.map(p=>{const start=D.shiftMonth(p.start,monthOffset),end=D.shiftMonth(p.end,monthOffset);return {...p,start,end,...D.installerMeasure(r.accounts,start,end),status:`${start}–${end} · ${D.installerMeasure(r.accounts,start,end).status}`};})});
+  const f=D.installerFilters(state),r=report,series=[{name:'Selected period',color:'#c71932',points:r.trend}];
+  if(r.equalDuration){
+    series.push({name:'Comparison period',color:'#237687',points:r.comparisonTrend.map(p=>({...p,status:`${p.start}–${p.end} · ${p.status}`}))});
   }
   const comparisonText=`${f.start}–${f.end} vs ${r.comparison.start}–${r.comparison.end}`;
   const cards=`<div class="installer-kpis">${card('Inverter activations',n(r.current.value),r.current.status)}${card('Change vs comparison',r.change.pct==null?'—':signed(r.change.pct,1)+'%',r.change.delta==null?r.change.label:signed(r.change.delta)+' activations')}${card('Active installers',n(r.active),r.active===null?`${r.observedActive} observed active; incomplete period`:'Distinct accounts with activations > 0')}${card('Top 5 concentration',pct(r.top5),'Share of tracked activations in this account base')}</div>`;
   const contributions=r.current.complete&&r.previous.complete&&r.equalDuration?r.rows.filter(row=>row.delta!==null&&row.delta!==0).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)).slice(0,10):[];
   const max=Math.max(1,...contributions.map(row=>Math.abs(row.delta)));
   const bars=contributions.length?`<div class="bars">${contributions.map(row=>`<button class="bar-row" data-installer-detail="${e(row.id)}"><span class="bar-label">${e(row.name)}</span><span class="bar-track signed"><i style="${row.delta<0?'right:50%':'left:50%'};width:${Math.abs(row.delta)/max*48}%;background:${row.delta<0?'#9f4e3c':'#286c56'}"></i></span><strong>${signed(row.delta)}</strong></button>`).join('')}</div>`:`<p class="table-note">${r.current.complete&&r.previous.complete&&r.equalDuration?'No change in account activations.':'Complete equal-length periods are required to attribute the portfolio change.'}</p>`;
-  return `<div class="installer-analysis-summary"><p><strong>${e(comparisonText)}</strong> · ${r.accounts.length} / ${r.allCount} tracked accounts included</p><p class="table-note">${r.cohort==='comparable'?`Same-base comparison: ${r.allCount-r.eligibleCount} accounts excluded because source/month coverage is incomplete in one of the two periods.`:'All tracked accounts. A new or incompletely reported source can make comparisons unavailable; use the same comparable installers option to inspect the common base.'}</p>${!r.equalDuration?'<p class="notice">The selected intervals have different lengths. Growth and contribution are withheld. Use equal-length intervals for comparison.</p>':''}</div>${cards}${panel('Installer activation trend',`<div class="chart-scroll">${lineChart(series,{id:'installer-trend',title:'Installer inverter activations',hidden:ui.hiddenSeries,installer:true,scale:'zero'})}</div><details><summary>Underlying trend values</summary><div class="table-wrap"><table><thead><tr><th>Selected period</th><th>Activations</th><th>Status</th><th>Comparison dates</th><th>Comparison activations</th></tr></thead><tbody>${r.trend.map((p,i)=>`<tr><td>${e(p.start)}–${e(p.end)}</td><td>${n(p.value)}</td><td>${e(p.status)}</td><td>${series[1]?e(series[1].points[i].start)+'–'+e(series[1].points[i].end):'—'}</td><td>${n(series[1]?.points[i].value)}</td></tr>`).join('')}</tbody></table></div></details>`)}<div class="grid-equal">${panel('Largest contributions to change',`<p class="table-note">Top 10 by absolute impact · signed activation changes · net portfolio change: ${signed(r.change.delta)}</p>${bars}`)}${panel('Portfolio measures',`<dl class="installer-measures"><dt>Active-account retention</dt><dd>${pct(r.retention)}</dd><dt>Retained / previously active</dt><dd>${r.retention===null?'—':`${r.retained} / ${r.previousActive}`}</dd><dt>HHI concentration (0–10,000)</dt><dd>${n(r.hhi)}</dd><dt>YTD activations (${e(f.end.slice(0,4))})</dt><dd>${n(r.ytd.value)}${r.ytd.complete?'':' *'}</dd><dt>YTD change vs same months last year</dt><dd>${r.ytdChange.pct==null?'—':signed(r.ytdChange.pct,1)+'%'}</dd><dt>Reported / expected source-month cells</dt><dd>${r.current.observed} / ${r.current.expected}</dd></dl><p class="table-note">YTD ends at ${e(f.end)}. * Partial subtotal. HHI uses squared account shares. These are Huawei activations tracked here, not Irish market share.</p>`)}</div>`;
+  return `<div class="installer-analysis-summary"><p><strong>${e(comparisonText)}</strong> · ${r.accounts.length} / ${r.allCount} tracked accounts included</p><p class="table-note">${r.cohort==='comparable'?`Same-base comparison: ${r.allCount-r.eligibleCount} accounts excluded because source/month coverage is incomplete in one of the two periods.`:'All tracked accounts. A new or incompletely reported source can make comparisons unavailable; use the same comparable installers option to inspect the common base.'}</p>${!r.equalDuration?'<p class="notice">The selected intervals have different lengths. Growth and contribution are withheld. Use equal-length intervals for comparison.</p>':''}</div>${cards}${panel('Installer activation trend',`<div class="chart-scroll">${lineChart(series,{id:'installer-trend',title:'Installer inverter activations',hidden:ui.hiddenSeries,installer:true,scale:'zero'})}</div><details><summary>Underlying trend values</summary><div class="table-wrap"><table><thead><tr><th>Selected period</th><th>Activations</th><th>Status</th><th>Comparison dates</th><th>Comparison activations</th></tr></thead><tbody>${r.trend.map((p,i)=>`<tr><td>${e(p.start)}–${e(p.end)}</td><td>${n(p.value)}</td><td>${e(p.status)}</td><td>${series[1]?e(series[1].points[i].start)+'–'+e(series[1].points[i].end):'—'}</td><td>${n(series[1]?.points[i].value)}</td></tr>`).join('')}</tbody></table></div></details>`)}<div class="grid-equal">${panel('Largest contributions to change',`<p class="table-note">Top 10 by absolute impact · signed activation changes · net portfolio change: ${signed(r.change.delta)}</p>${bars}`)}${panel('Portfolio measures',`<dl class="installer-measures"><dt>Active-account retention</dt><dd>${pct(r.retention)}</dd><dt>Retained / previously active</dt><dd>${r.retention===null?'—':`${r.retained} / ${r.previousActive}`}</dd><dt>HHI concentration (0–10,000)</dt><dd>${n(r.hhi)}</dd><dt>YTD activations (${e(f.end.slice(0,4))})</dt><dd>${n(r.ytd.value)}${r.ytd.complete?'':' *'}</dd><dt>YTD change vs same months last year</dt><dd>${r.ytdChange.pct==null?'—':signed(r.ytdChange.pct,1)+'%'}</dd><dt>Confirmed / expected coverage units</dt><dd>${r.current.observed} / ${r.current.expected}</dd></dl><p class="table-note">YTD ends at ${e(f.end)}. * Partial subtotal. HHI uses squared account shares. These are Huawei activations tracked here, not Irish market share.</p>`)}</div>`;
 }
 function installerHeatmap(rows,f,report){
   const months=D.monthsBetween(f.start,f.end),max=report.rows.reduce((max,r)=>months.reduce((max,m)=>Math.max(max,r.cells[m]?.value??0),max),1);
@@ -966,41 +1320,158 @@ function installerHeatmap(rows,f,report){
   return panel('Monthly activity heatmap',`<p class="table-note">Same accounts and order as the table page. One shared scale for activation counts. 0 = confirmed zero; — = no record; striped cells = partial/open period. Select a cell for evidence.</p><div class="table-wrap installer-heatmap"><table><thead><tr><th>Installer</th>${months.map(m=>`<th>${e(m)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr><th><button class="quiet" data-installer-detail="${e(r.id)}">${e(r.name)}</button></th>${months.map(m=>{const a=report.accounts.find(a=>a.id===r.id),metric=D.installerMeasure([a],m,m),v=metric.value,level=v==null?'missing':v===0?'zero':String(Math.max(1,Math.ceil(Math.sqrt(v/max)*5)));return `<td><button class="heat-cell heat-${level}${v!==null&&!metric.complete?' heat-partial':''}" data-installer-point="${e(r.id)}" data-month="${m}" data-end="${m}" aria-label="${e(r.name+' '+m+': '+n(v)+' activations, '+metric.status)}" title="${e(metric.status)}">${n(v)}${v!==null&&!metric.complete?'*':''}</button></td>`;}).join('')}</tr>`).join('')||`<tr><td colspan="${months.length+1}">No matching installers.</td></tr>`}</tbody></table></div><div class="heat-legend"><span class="heat-missing">— No record</span><span class="heat-zero">0 Zero</span><span class="heat-1">Low</span><span class="heat-3">Medium</span><span class="heat-5">${n(max)} Max</span></div>`);
 }
 function installerProfile(state,id,ui){
-  const f=state.preferences,report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}),row=report.rows.find(r=>r.id===id),account=D.installerIndex(state).find(a=>a.id===id);
-  if(!account)return '<p>No activation records for this account.</p>';
-  const measure=D.installerMeasure([account],f.start,f.end),prev=D.installerMeasure([account],report.comparison.start,report.comparison.end),change=report.equalDuration?D.difference(measure,prev):{delta:null,pct:null};
-  const momentum=D.difference(D.installerMeasure([account],D.shiftMonth(f.end,-2),f.end),D.installerMeasure([account],D.shiftMonth(f.end,-5),D.shiftMonth(f.end,-3)));
-  const points=D.monthsBetween(f.start,f.end).map(m=>({label:m,start:m,end:m,...D.installerMeasure([account],m,m)}));
-  return `<div class="installer-kpis">${card('Activations',n(measure.value),measure.status)}${card('Change',change.pct==null?'—':signed(change.pct,1)+'%',signed(change.delta)+' activations')}${card('Share of selected account base',pct(row?.share),'Tracked Huawei activations only')}${card('3-month momentum',momentum.pct==null?'—':signed(momentum.pct,1)+'%',`${D.shiftMonth(f.end,-2)}–${f.end} vs ${D.shiftMonth(f.end,-5)}–${D.shiftMonth(f.end,-3)}`)}</div><p class="table-note">${e(f.start)}–${e(f.end)} versus ${e(report.comparison.start)}–${e(report.comparison.end)}. Volume rank: ${n(row?.rank)}${measure.complete?'':' (provisional)'}. Base: ${report.cohort==='comparable'?'same comparable accounts':'all tracked accounts'}.</p><div class="chart-scroll">${lineChart([{name:account.name,accountId:id,points}],{showLegend:false,id:'installer-profile',title:account.name+' monthly activations',installer:true,scale:'zero'})}</div>`;
+  const f=D.installerFilters(state),profile=D.installerAccountAnalysis(state,f,id,{cohort:ui.installerCohort??'all'});
+  if(!profile)return '<p>No activation records for this account.</p>';
+  const {account,row,report,current,change,momentum,points,share}=profile;
+  return `<div class="installer-kpis">${card('Activations',n(current.value),current.status)}${card('Change',change.pct==null?'—':signed(change.pct,1)+'%',signed(change.delta)+' activations')}${card('Share of selected account base',pct(share),'Tracked Huawei activations only')}${card('3-month momentum',momentum.pct==null?'—':signed(momentum.pct,1)+'%',`${report.current3Start}–${f.end} vs ${report.prior3Start}–${report.prior3End}`)}</div><p class="table-note">${e(f.start)}–${e(f.end)} versus ${e(report.comparison.start)}–${e(report.comparison.end)}. Volume rank: ${n(row?.rank)}${current.complete?'':' (provisional)'}. Base: ${report.cohort==='comparable'?'same comparable accounts':'all tracked accounts'}.</p><div class="chart-scroll">${lineChart([{name:account.name,accountId:id,points}],{showLegend:false,id:'installer-profile',title:account.name+' monthly activations',installer:true,scale:'zero'})}</div>`;
 }
 function installerPointEvidence(state,id,start,end,ui){
-  const report=D.installerAnalysis(state,state.preferences,{cohort:ui.installerCohort??'all'}),accounts=id==='portfolio'?report.accounts:D.installerIndex(state).filter(a=>a.id===id),metric=D.installerMeasure(accounts,start,end);
+  const report=D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),accounts=id==='portfolio'?report.accounts:D.installerIndex(state).filter(a=>a.id===id),metric=D.installerMeasure(accounts,start,end);
   const monthSet=new Set(D.monthsBetween(start,end)),accountIds=new Set(accounts.map(a=>a.id));
   const sources=Object.values(state.installers.sources).filter(s=>accountIds.has(s.accountId)&&Object.keys(s.months).length);
-  return `<p><strong>${e(start)}–${e(end)}: ${n(metric.value)} inverter activations</strong></p><p>${e(metric.status)} · ${metric.observed} / ${metric.expected} source-month cells reported.</p><p class="table-note">${id==='portfolio'?'Portfolio evidence uses the selected account base.':'Installer source evidence.'} Blank cells in the imported matrix are zero. Missing source/month entries stay unavailable.</p><div class="table-wrap"><table><thead><tr><th>Source name</th><th>Month</th><th>Activations</th><th>Evidence</th></tr></thead><tbody>${sources.flatMap(s=>[...monthSet].map(m=>{const r=s.months[m];return `<tr><td>${e(s.label)}</td><td>${e(m)}</td><td>${n(r?.quantity)}</td><td>${r?`${e(r.source.filename)} / ${e(r.source.sheet)} / ${r.source.cells.map(c=>e(c.cell)+': '+n(c.quantity)+(c.blank?' (blank → 0)':'')).join(', ')}`:'No source record'}</td></tr>`;})).join('')}</tbody></table></div>`;
+  return `<p><strong>${e(start)}–${e(end)}: ${n(metric.value)} inverter activations</strong></p><p>${e(metric.status)} · ${metric.observed} / ${metric.expected} reporting coverage units confirmed.</p><p class="table-note">${id==='portfolio'?'Portfolio evidence uses the selected account base.':'Installer source evidence.'} Blank imported cells are zero. Months declared as full-population snapshots confirm zero for absent companies; partial months without source evidence remain unknown.</p><div class="table-wrap"><table><thead><tr><th>Source name</th><th>Month</th><th>Activations</th><th>Evidence</th></tr></thead><tbody>${sources.flatMap(s=>[...monthSet].map(m=>{const r=s.months[m],active=D.installerEffectiveRecord(state,s,m),full=state.installers.coverage?.[m]?.mode==='full',superseded=!!r&&!active;return `<tr><td>${e(s.label)}</td><td>${e(m)}</td><td>${n(active?.quantity??(full?0:null))}</td><td>${active?`${e(active.source.filename)} / ${e(active.source.sheet)} / ${active.source.cells.map(c=>e(c.cell)+': '+n(c.quantity)+(c.blank?' (blank → 0)':'')).join(', ')}`:superseded?`Historical ${n(r.quantity)} superseded by full snapshot · ${e(r.source.filename)} / ${e(r.source.sheet)}`:full?'Confirmed zero by full-population snapshot':'No source record (unknown)'}</td></tr>`;})).join('')}</tbody></table></div>`;
 }
 
 return Object.assign({},{installerAnalyticsFilters,installerDashboard,installerHeatmap,installerProfile,installerPointEvidence});
 })();
 
+// MODULE: installer-experiences.js
+__modules["installer-experiences.js"]=(()=>{
+const D=__modules["domain.js"];
+const {escapeHtml:e}=__modules["exports.js"];
+const {lineChart}=__modules["charts.js"];
+const n=(v,d=0)=>v==null?'—':v.toLocaleString('en-IE',{maximumFractionDigits:d});
+const pct=v=>v==null?'—':n(v,1)+'%';
+const signed=v=>v==null?'—':(v>0?'+':'')+n(v);
+const panel=(title,body)=>`<section class="panel installer-analysis-panel"><div class="panel-head"><h2>${e(title)}</h2></div>${body}</section>`;
+const kpi=(title,value,note)=>`<article class="installer-kpi"><span>${e(title)}</span><strong>${e(value)}</strong><p>${e(note)}</p></article>`;
+const chart=(name,points,id,accountId)=>lineChart([{name,accountId,points}],{installer:true,id,title:name+' inverter activations',scale:'zero',showLegend:false});
+const order=(a,b)=>a.name.localeCompare(b.name,'en-IE');
+function installerTabNav(active='overview'){
+ const options=[['overview','Installer overview'],['profile','Installer profile'],['compare','Compare 2–6'],['insights','Insights & priorities']];
+ return `<div class="tabs installer-section-tabs editing" role="tablist" aria-label="Installer analytics views">${options.map(([id,title])=>`<button role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-installer-tab="${id}">${title}</button>`).join('')}</div>`;
+}
+function installerProfilePage(state,ui){
+ const f=D.installerFilters(state),accounts=D.installerIndex(state).sort(order),term=(ui.installerProfileSearch??'').trim().toLocaleLowerCase('en-IE');
+ if(!accounts.length)return '<div class="notice">Import installer records in Data first.</div>';
+ const id=accounts.some(a=>a.id===ui.installerProfileId)?ui.installerProfileId:accounts[0].id;
+ // All accounts remain available. Search includes aliases and retains the current selection.
+ const subset=accounts.filter(a=>a.id===id||!term||[a.name,...a.aliases].some(v=>v.toLocaleLowerCase('en-IE').includes(term)));
+ const select=`<section class="panel installer-analysis-panel"><div class="panel-head"><h2>Choose one installer</h2><button data-action="installer-open-import">Manage installer data</button></div><div class="form-row"><label class="field">Search account or original name<input id="installer-profile-search" type="search" value="${e(ui.installerProfileSearch??'')}" placeholder="Search all tracked installers"></label><label class="field">Installer account<select id="installer-profile-picker">${subset.map(a=>`<option value="${e(a.id)}" ${id===a.id?'selected':''}>${e(a.name)}</option>`).join('')}</select></label></div><p class="table-note">${subset.length} available of ${accounts.length} tracked accounts · use search to narrow the selector. Original imported aliases are consolidated only after manual confirmation.</p></section>`;
+ const profile=D.installerAccountAnalysis(state,f,id,{cohort:ui.installerCohort??'all'}),history=D.installerAccountHistory(state,id,{now:profile.report.now,end:f.end});
+ if(!history?.points.length)return select+'<p>No historical values in the selected interval.</p>';
+ const quarterly=D.installerSeries([history.account],history.start,history.end,{aggregation:'quarter',now:profile.report.now});
+ const yearly=D.installerSeries([history.account],history.start,history.end,{aggregation:'year',now:profile.report.now});
+ const rank=profile.row?.rank,note=profile.current.complete?'Complete selected period':'Incomplete reporting; figures are observed subtotals only';
+ const signal=D.installerAccountSignal(profile,f);
+ const signalPanel=panel('Evidence-based account insight',
+  '<p><strong>'+e(signal.label)+'</strong> · '+e(signal.priority)+
+  (signal.score===null?'':' · Rule score '+n(signal.score))+'</p>'+
+  '<p class="table-note"><strong>Evidence:</strong> '+e(signal.evidence)+'</p>'+
+  '<p class="table-note"><strong>Suggested next action:</strong> '+e(signal.action)+'</p>'+
+  '<div class="panel-actions"><button data-installer-tab="insights">See all account priorities</button></div>');
+ const kpis=`<div class="installer-kpis">${kpi('Selected activations',n(profile.current.value),profile.current.status)}${kpi('Compared with previous',pct(profile.change.pct),profile.change.delta==null?'Complete equal-length periods required':signed(profile.change.delta)+' activations')}${kpi('Peak confirmed month',history.peak?n(history.peak.value):'—',history.peak?.start??'No confirmed month')}${kpi('Last recorded activity',history.lastActive??'—','Latest observed month with activations > 0')}</div>`;
+ const lines=`<div class="grid-equal">${panel('Monthly history',`<div class="chart-scroll">${chart(profile.account.name,history.monthly,'installer-history-month',id)}</div>`)}${panel('Quarterly history',`<div class="chart-scroll">${chart(profile.account.name,quarterly,'installer-history-quarter',id)}</div>`)}</div>${panel('Annual history',`<div class="chart-scroll">${chart(profile.account.name,yearly,'installer-history-year',id)}</div>`)}`;
+ const rows=history.monthly.map(p=>`<tr><td><button class="quiet" data-installer-point="${e(id)}" data-month="${e(p.start)}" data-end="${e(p.end)}">${e(p.label)}</button></td><td class="num">${n(p.value)}</td><td>${e(p.status)}</td><td>${p.observed} / ${p.expected}</td></tr>`).join('');
+ return select+`<section class="installer-profile-heading"><h2>${e(profile.account.name)}</h2><p class="table-note">${profile.account.aliases.map(e).join(' · ')} · Rank in selected account base: ${n(rank)} · ${e(note)}</p><div class="panel-actions"><button data-action="installer-profile-export">Export monthly history CSV</button><button data-action="installer-profile-compare">Compare this installer</button></div></section>`+kpis+signalPanel+
+ `<div class="grid-equal">${panel('Account history',`<dl class="installer-measures"><dt>First recorded activity</dt><dd>${history.firstActive??'—'}</dd><dt>Last recorded activity</dt><dd>${history.lastActive??'—'}</dd><dt>Historical reported volume</dt><dd>${n(history.total.value)}${history.total.complete?'':' *'}</dd><dt>Historical period</dt><dd>${e(history.start)}–${e(history.end)}</dd><dt>3-month momentum</dt><dd>${pct(profile.momentum.pct)}</dd><dt>Share of selected tracked base</dt><dd>${pct(profile.share)}</dd></dl><p class="table-note">* Historical volume may be a partial subtotal. Missing months are never assumed to be zero.</p>`)}${panel('Coverage & identity',`<p class="table-note">This account includes ${profile.account.sourceCount} original source name(s). Chart points show reported observations. A complete snapshot can confirm zeros; missing partial snapshots remain unknown.</p><p class="table-note">Latest confirmed month: ${history.lastConfirmed??'None'}</p><p class="table-note">Product models, site count and revenue cannot be attributed from this installer dataset.</p>`)}</div>`+
+ lines+panel('Historical monthly evidence',`<div class="table-wrap"><table><thead><tr><th>Month</th><th>Activations</th><th>Reporting status</th><th>Coverage units</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+function installerComparisonPage(state,ui){
+ const f=D.installerFilters(state),accounts=D.installerIndex(state).sort(order),byId=new Map(accounts.map(a=>[a.id,a]));
+ const ids=(ui.installerCompareIds??[]).filter((id,i,all)=>byId.has(id)&&all.indexOf(id)===i).slice(0,6);
+ const term=(ui.installerCompareSearch??'').trim().toLocaleLowerCase('en-IE');
+ // The picker itself scrolls. All matching accounts are reachable, without an artificial limit.
+ const results=accounts.filter(a=>[a.name,...a.aliases].some(v=>v.toLocaleLowerCase('en-IE').includes(term)));
+ const choices=panel('Select 2–6 installers',
+ `<label class="field">Find installers<input id="installer-compare-search" type="search" value="${e(ui.installerCompareSearch??'')}" placeholder="Search installer or source name"></label><p class="table-note">${ids.length} of 6 selected. Click a name to add/remove; accounts are consolidated only via confirmed unions. ${results.length} options shown from ${accounts.length} tracked accounts.</p><div class="installer-compare-chips">${ids.map(id=>`<button data-installer-compare-pick="${e(id)}" aria-label="Remove ${e(byId.get(id).name)}">× ${e(byId.get(id).name)}</button>`).join('')}</div><div class="installer-compare-picker">${results.map(a=>`<button aria-pressed="${ids.includes(a.id)}" data-installer-compare-pick="${e(a.id)}" ${ids.length>=6&&!ids.includes(a.id)?'disabled':''}><span>${e(a.name)}</span><strong>${ids.includes(a.id)?'Selected':'Add'}</strong></button>`).join('')||'<p class="table-note">No accounts match that search.</p>'}</div>`);
+ if(ids.length<2)return choices+'<div class="notice">Select at least two installers to compare volume, growth and trends. Maximum six.</div>';
+ const c=D.installerComparison(state,f,ids),indexed=D.installerIndexedComparison(c);
+ const palette=['#c71932','#237687','#7550a7','#ae6a20','#278066','#657187'];
+ const volume=c.rows.map((r,i)=>({name:r.name,accountId:r.id,color:palette[i],points:r.trend}));
+ const indexedSeries=indexed.rows.map((r,i)=>({name:r.name,accountId:r.id,color:palette[i],points:r.indexed}));
+ const table=panel('Account-by-account comparison',`<div class="table-wrap"><table><thead><tr><th>Installer</th><th>Selected activations</th><th>Previous</th><th>Difference</th><th>Growth</th><th>Share of selected volume</th><th>Coverage</th></tr></thead><tbody>${c.rows.map((r,i)=>`<tr><th><button data-installer-fullprofile="${e(r.id)}">${e(r.name)}</button></th><td class="num">${n(r.current.value)}</td><td class="num">${n(r.previous.value)}</td><td class="num">${signed(r.change.delta)}</td><td>${pct(r.change.pct)}</td><td>${pct(r.share)}</td><td>${e(r.current.status)}</td></tr>`).join('')}</tbody></table></div>`);
+ const bucketRows=c.trend.map((point,i)=>`<tr><td>${e(point.label)}</td>${c.rows.map(r=>`<td class="num">${n(r.trend[i]?.value)}</td>`).join('')}<td class="num">${n(point.value)}</td><td>${e(point.status)}</td></tr>`).join('');
+ const bottom=panel('Underlying period values',`<div class="table-wrap"><table><thead><tr><th>Period</th>${c.rows.map(r=>`<th>${e(r.name)}</th>`).join('')}<th>Selected total</th><th>Coverage</th></tr></thead><tbody>${bucketRows}</tbody></table></div>`);
+ const notice=!c.equalDuration?'<p class="notice">Period lengths differ. Growth percentages and contribution changes are withheld.</p>':'';
+ const chartNote=indexed.eligible?'Index starts at 100 for every installer using the same first complete and positive reporting bucket.':'Indexed comparison unavailable: the first reporting bucket must be complete and positive for every selected installer. Absolute volumes remain visible.';
+ return choices+`<section class="installer-profile-heading"><h2>Installer comparison</h2><p class="table-note">${e(f.start)}–${e(f.end)} vs ${e(c.comparison.start)}–${e(c.comparison.end)} · tracked Huawei inverter activations, not Irish market share.</p><button data-action="installer-compare-export">Export comparison CSV</button></section>`+
+ `<div class="installer-kpis">${kpi('Selected activations',n(c.current.value),c.current.status)}${kpi('Previous interval',n(c.previous.value),c.previous.status)}${kpi('Net change',signed(c.change.delta),c.change.pct==null?c.change.label:pct(c.change.pct))}${kpi('Installers compared',String(ids.length),'Distinct consolidated accounts')}</div>`+notice+
+ panel('Absolute activation trends',`<div class="chart-scroll">${lineChart(volume,{id:'installer-compare-volume',title:'Compared installer activation volumes',installer:true,scale:'zero'})}</div>`)+
+ panel('Indexed trend · baseline 100',`<p class="table-note">${e(chartNote)}</p>${indexed.eligible?`<div class="chart-scroll">${lineChart(indexedSeries,{id:'installer-compare-index',title:'Indexed installer activation comparison',installer:true,unit:'index',scale:'auto'})}</div>`:''}`)+table+bottom;
+}
+
+
+function installerInsightsPage(state,ui){
+ const f=D.installerFilters(state),data=D.installerInsights(state,f);
+ const typeNames=[
+  ['reactivated','Reactivated'],['inactive','Inactive · 3 confirmed zeros'],
+  ['declining','Declining'],['growing','Growing'],['first','First recorded activity'],
+  ['zeroBase','Activity after zero baseline'],['steady','No significant movement'],
+  ['zero','No recorded activity'],['coverage','Verify data']];
+ const currentPriority=ui.installerInsightPriority??'All';
+ const currentType=ui.installerInsightType??'All';
+ const query=(ui.installerInsightSearch??'').trim().toLocaleLowerCase('en-IE');
+ const selected=data.rows.filter(row=>(currentPriority==='All'||row.priority===currentPriority)&&
+   (currentType==='All'||row.type===currentType)&&
+   (!query||row.name.toLocaleLowerCase('en-IE').includes(query)));
+ const maxPage=Math.max(0,Math.ceil(selected.length/50)-1),page=Math.min(ui.installerInsightPage??0,maxPage);
+ const shown=selected.slice(page*50,(page+1)*50);
+ const selectOption=(value,label,selectedValue)=>`<option value="${e(value)}" ${value===selectedValue?'selected':''}>${e(label)}</option>`;
+ const filters=`<section class="panel installer-analysis-panel"><div class="panel-head"><h2>Evidence thresholds</h2><button data-action="installer-insights-export">Export all insights CSV</button></div><div class="form-row"><label class="field">Minimum relevant change (activations)<select id="installer-insight-volume">${D.INSIGHT_MIN_VOLUMES.map(x=>selectOption(String(x),String(x),String(data.minVolume))).join('')}</select></label><label class="field">Minimum percentage change<select id="installer-insight-pct">${D.INSIGHT_CHANGE_THRESHOLDS.map(x=>selectOption(String(x),x+'%',String(data.thresholdPct))).join('')}</select></label></div><p class="table-note">Growth and decline require complete, equal-length selected/comparison periods; the previous volume must meet the minimum, the absolute change must meet the minimum, and the percentage change must meet the threshold. The selected interval is ${e(data.periodStart)}–${e(data.periodEnd)}. The thresholds are saved with your offline backup.</p><p class="table-note">A month is only considered inactive after three consecutive <strong>fully confirmed zero</strong> months and evidence of earlier positive activity. A reactivation needs a new positive closed month after three confirmed zero months and previously recorded activity. No company is declared permanently lost, and no cause of changes is inferred.</p></section>`;
+ const totals=`<div class="installer-kpis">${kpi('High priority',n(data.priorities.High),'Evidence-backed outreach candidates')}${kpi('Declining',n(data.counts.declining),'Significant equal-period decline')}${kpi('Inactive',n(data.counts.inactive),'Three confirmed zero months')}${kpi('Coverage checks',n(data.priorities['Data check']),'No commercial inference without evidence')}</div>`;
+ const priorityFilter=`<label class="field">Priority<select id="installer-insight-priority">${['All','High','Medium','Low','Data check'].map(x=>selectOption(x,x,currentPriority)).join('')}</select></label>`;
+ const typeFilter=`<label class="field">Activity signal<select id="installer-insight-type">${selectOption('All','All signals',currentType)}${typeNames.map(([id,label])=>selectOption(id,label+' ('+(data.counts[id]??0)+')',currentType)).join('')}</select></label>`;
+ const search=`<label class="field">Search installer<input id="installer-insight-search" type="search" placeholder="Search consolidated account" value="${e(ui.installerInsightSearch??'')}"></label>`;
+ const rows=shown.map(row=>`<tr><th><button class="quiet" data-installer-fullprofile="${e(row.id)}">${e(row.name)}</button></th><td><span class="insight-priority ${row.priority==='High'?'insight-high':''}">${e(row.priority)}</span></td><td>${e(row.label)}</td><td class="num">${n(row.current.value)}</td><td class="num">${n(row.previous.value)}</td><td class="num">${row.growthPct===null?'—':pct(row.growthPct)}</td><td class="wrap">${e(row.evidence)}</td><td class="wrap">${e(row.action)}</td><td class="num">${n(row.score)}</td></tr>`).join('');
+ const table=panel('Account priorities ('+selected.length+' shown from '+data.total+')',
+ `<div class="form-row">${priorityFilter}${typeFilter}${search}</div><div class="table-wrap"><table><thead><tr><th>Installer</th><th>Priority</th><th>Evidence-based signal</th><th class="num">Current</th><th class="num">Previous</th><th class="num">Growth</th><th>Recorded evidence</th><th>Suggested next action</th><th class="num">Score</th></tr></thead><tbody>${rows||'<tr><td colspan="9">No accounts match these filters.</td></tr>'}</tbody></table></div><div class="panel-actions insight-pagination"><button data-installer-insight-page="${page-1}" ${page===0?'disabled':''}>Previous</button><span>Page ${page+1} / ${maxPage+1}</span><button data-installer-insight-page="${page+1}" ${page===maxPage?'disabled':''}>Next</button></div>`);
+ const policy=panel('How prioritisation works',`<p class="table-note">Rule score = signal weight (inactive/reactivated 45; decline 35; growth 25; first/zero-baseline 20; stable/no activity 10) + volume band (0/10/20) + change band (0/10/20), capped at 100. For inactive/reactivated accounts, recent historical activity contributes to the volume band. High = 60+, Medium = 30–59, Low = below 30. Accounts needing verification have no commercial score and appear as Data check.</p><p class="table-note">All tracked installer accounts are evaluated, including those excluded from an optional comparable-cohort view. Full-month coverage is an explicit declaration made during import. Numbers represent Huawei inverter activations tracked in this file, not Irish market share, inverter model installation, revenue or the cause of changes. Suggested actions are review prompts, not predictions.</p>`);
+ return `<div class="installer-insight-header"><h2>Account insights & priorities</h2><p>Rules derived from verified reporting coverage and tracked activations. Every suggestion includes its evidence.</p></div>`+totals+filters+table+policy;
+}
+
+return Object.assign({},{installerTabNav,installerProfilePage,installerComparisonPage,installerInsightsPage});
+})();
+
 // MODULE: installer-views.js
 __modules["installer-views.js"]=(()=>{
 const A=__modules["installer-analytics-views.js"];
+const X=__modules["installer-experiences.js"];
 const D=__modules["domain.js"];
 const {escapeHtml:e}=__modules["exports.js"];
 const n=x=>x==null?'—':x.toLocaleString('en-IE');
+// Recent history stays visible. Older records are expandable, not discarded.
+const historyList=(items,label,format)=>{
+ const reversed=[...items].reverse(),recent=reversed.slice(0,10),older=reversed.slice(10);
+ return recent.map(format).join('')+(older.length?`<details class="installer-history-older"><summary>Show ${older.length} older ${label}</summary>${older.map(format).join('')}</details>`:'');
+};
+const unionHistoryLine=h=>`<p>${e(h.before.map(a=>a.name).join(' + '))} → <strong>${e(h.after.name)}</strong> · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-unmerge="${e(h.id)}">Undo union</button>`}</p>`;
+const importHistoryLine=h=>`<p>${e(h.filename)} · ${h.changes.length} changed monthly values · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-undo-import="${e(h.id)}">Undo import</button>`}</p>`;
+
 function installerView(state,ui){
-  const d=state.installers,f=state.preferences,report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}),rows=D.sortInstallerRanking(report.rows,ui.installerSort??'volume').map(r=>({...r,total:r.current.value,observed:r.current.observed,expected:r.current.expected})),query=(ui.installerSearch??'').toLowerCase(),filtered=rows.filter(r=>r.name.toLowerCase().includes(query)||r.aliases.some(a=>a.toLowerCase().includes(query))),page=Math.min(ui.installerPage??0,Math.max(0,Math.ceil(filtered.length/50)-1)),shown=filtered.slice(page*50,page*50+50),selected=ui.installerSelected??new Set(),suggestions=D.installerSuggestions(state),pending=ui.installerPending;
-  const table=`<div class="table-wrap"><table><thead><tr><th>Select</th><th>Installer</th><th class="num">Reported activations</th><th>Previous</th><th>Change</th><th>Growth</th><th>Share</th><th>Rank</th><th>3M momentum</th><th>Source-month cells</th><th>Source names</th></tr></thead><tbody>${shown.map(r=>`<tr><td><input type="checkbox" data-installer-select="${e(r.id)}" aria-label="Select ${e(r.name)}" ${selected.has(r.id)?'checked':''}></td><td><button class="quiet" data-installer-detail="${e(r.id)}">${e(r.name)}</button></td><td class="num">${n(r.total)}</td><td>${n(r.previous.value)}</td><td>${n(r.delta)}</td><td>${r.pct==null?'—':n(Math.round(r.pct*10)/10)+'%'}</td><td>${r.share==null?'—':n(Math.round(r.share*10)/10)+'%'}</td><td>${n(r.rank)}</td><td>${r.momentum.pct==null?'—':n(Math.round(r.momentum.pct*10)/10)+'%'}</td><td>${r.observed} / ${r.expected}${r.current.complete?'':' *'}</td><td>${r.aliases.map(e).join('<br>')}</td></tr>`).join('')||'<tr><td colspan="11">No installers in this view. Import a monthly matrix to start.</td></tr>'}</tbody></table></div>`;
-  return `<div class="page-title"><div><div class="eyebrow">Ireland · Digital Power</div><h1>Installers</h1><p>Track activity, compare performance and inspect the accounts behind the change.</p></div><div class="panel-actions"><button data-action="installer-analytics-export">Export KPI table</button><button data-action="installer-export">Export monthly totals</button></div></div>
-${A.installerDashboard(state,ui,report)}<section class="panel"><details ${!rows.length||pending||ui.installerLoading||ui.installerError?'open':''}><summary>Import installer activations</summary><p class="table-note">One installer per row, monthly columns and an optional trailing Total column (ignored). Blank monthly cells = zero. Repeated names are summed within the file. Reimported source/month values replace the previous snapshot.</p><label class="field">Excel or CSV file<input id="installer-file" type="file" accept=".xlsx,.csv" ${ui.demo||ui.installerLoading?'disabled':''}></label>${ui.installerLoading?'<p role="status">Reading worksheet…</p>':''}${ui.installerError?`<p class="notice error" role="alert">${e(ui.installerError)}</p>`:''}${pending?installerPreview(state,pending):''}</details></section>
-<section class="panel"><div class="panel-head"><h2>Installer ranking (${rows.length})</h2><button class="primary" data-action="installer-merge" ${selected.size<2?'disabled':''}>Unify selected (${selected.size})</button></div><label class="field">Search installer or source name<input id="installer-search" type="search" value="${e(ui.installerSearch??'')}" placeholder="e.g. Bord Gáis"></label><label class="field">Sort ranking<select id="installer-sort">${[['volume','Activations'],['change','Change in units'],['growth','Growth %'],['momentum','3M momentum'],['name','Name']].map(([v,t])=>`<option value="${v}" ${(ui.installerSort??'volume')===v?'selected':''}>${t}</option>`).join('')}</select></label>${table}<div class="panel-actions"><button data-installer-page="${page-1}" ${page===0?'disabled':''}>Previous</button><span>${filtered.length} matches · page ${page+1} of ${Math.max(1,Math.ceil(filtered.length/50))}</span><button data-installer-page="${page+1}" ${(page+1)*50>=filtered.length?'disabled':''}>Next</button></div><p class="table-note">Select two or more accounts to sum their monthly activations. Click an installer to inspect its source values. Rank uses reported volume, with tied values sharing a rank. * Incomplete source coverage or open period. Shares require a complete selected base. 3M momentum compares the last three months ending at the selected end with the previous three.</p></section>
+ const tab=ui.installerTab??'overview';
+ if(tab==='profile'||tab==='compare'||tab==='insights')return `<div class="page-title"><div><div class="eyebrow">Ireland · Digital Power</div><h1>Installers</h1><p>Explore individual accounts and compare tracked activity.</p></div></div>${X.installerTabNav(tab)}${tab==='profile'?X.installerProfilePage(state,ui):tab==='compare'?X.installerComparisonPage(state,ui):X.installerInsightsPage(state,ui)}`;
+  const d=state.installers,f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}),rows=D.sortInstallerRanking(report.rows,ui.installerSort??'volume').map(r=>({...r,total:r.current.value,observed:r.current.observed,expected:r.current.expected})),query=(ui.installerSearch??'').toLowerCase(),filtered=rows.filter(r=>r.name.toLowerCase().includes(query)||r.aliases.some(a=>a.toLowerCase().includes(query))),page=Math.min(ui.installerPage??0,Math.max(0,Math.ceil(filtered.length/50)-1)),shown=filtered.slice(page*50,page*50+50),selected=ui.installerSelected??new Set(),suggestions=D.installerSuggestions(state);
+  const table=`<div class="table-wrap"><table><thead><tr><th>Select</th><th>Installer</th><th class="num">Reported activations</th><th>Previous</th><th>Change</th><th>Growth</th><th>Share</th><th>Rank</th><th>3M momentum</th><th>Reporting coverage</th><th>Source names</th></tr></thead><tbody>${shown.map(r=>`<tr><td><input type="checkbox" data-installer-select="${e(r.id)}" aria-label="Select ${e(r.name)}" ${selected.has(r.id)?'checked':''}></td><td><button class="quiet" data-installer-detail="${e(r.id)}">${e(r.name)}</button><button class="quiet installer-profile-link" data-installer-fullprofile="${e(r.id)}" aria-label="Open full profile for ${e(r.name)}">Full profile</button></td><td class="num">${n(r.total)}</td><td>${n(r.previous.value)}</td><td>${n(r.delta)}</td><td>${r.pct==null?'—':n(Math.round(r.pct*10)/10)+'%'}</td><td>${r.share==null?'—':n(Math.round(r.share*10)/10)+'%'}</td><td>${n(r.rank)}</td><td>${r.momentum.pct==null?'—':n(Math.round(r.momentum.pct*10)/10)+'%'}</td><td>${r.observed} / ${r.expected}${r.current.complete?'':' *'}</td><td>${r.aliases.map(e).join('<br>')}</td></tr>`).join('')||'<tr><td colspan="11">No installers in this view. Use Data → Installer imports to start.</td></tr>'}</tbody></table></div>`;
+  return `<div class="page-title"><div><div class="eyebrow">Ireland · Digital Power</div><h1>Installers</h1><p>Track activity, compare performance and inspect the accounts behind the change.</p></div><div class="panel-actions"><button class="primary" data-action="installer-open-import">Import installer data</button><button data-action="installer-analytics-export">Export KPI table</button><button data-action="installer-export">Export monthly totals</button></div></div>
+${X.installerTabNav('overview')}${A.installerDashboard(state,ui,report)}
+<section class="panel"><div class="panel-head"><h2>Installer ranking (${rows.length})</h2><button data-action="installer-compare-from-selected" ${selected.size<2||selected.size>6?'disabled':''}>Compare selected (${selected.size})</button><button class="primary" data-action="installer-merge" ${selected.size<2?'disabled':''}>Unify selected (${selected.size})</button></div><label class="field">Search installer or source name<input id="installer-search" type="search" value="${e(ui.installerSearch??'')}" placeholder="e.g. Bord Gáis"></label><label class="field">Sort ranking<select id="installer-sort">${[['volume','Activations'],['change','Change in units'],['growth','Growth %'],['momentum','3M momentum'],['name','Name']].map(([v,t])=>`<option value="${v}" ${(ui.installerSort??'volume')===v?'selected':''}>${t}</option>`).join('')}</select></label>${table}<div class="panel-actions"><button data-installer-page="${page-1}" ${page===0?'disabled':''}>Previous</button><span>${filtered.length} matches · page ${page+1} of ${Math.max(1,Math.ceil(filtered.length/50))}</span><button data-installer-page="${page+1}" ${(page+1)*50>=filtered.length?'disabled':''}>Next</button></div><p class="table-note">Select two or more accounts to sum their monthly activations. Click an installer to inspect its source values. Rank uses reported volume, with tied values sharing a rank. * Incomplete source coverage or open period. Shares require a complete selected base. 3M momentum compares the last three months ending at the selected end with the previous three.</p></section>
 ${A.installerHeatmap(shown,f,report)}<section class="panel"><div class="panel-head"><h2>Suggested matches</h2></div><p class="table-note">Spelling suggestions only. Confirm which names belong to the same installer. All confirmed matches are summed.</p>${suggestions.map(s=>`<div class="installer-suggestion"><div><strong>${s.names.map(e).join(' + ')}</strong><p class="table-note">${e(s.reason)}</p></div><button data-installer-suggest="${e(s.ids.join(','))}">Review union</button></div>`).join('')||'<p>No similar names awaiting review.</p>'}${suggestions.length===20?'<p class="table-note">Showing the first 20 suggestions. More may appear after these are resolved.</p>':''}</section>
-<section class="panel"><div class="panel-head"><h2>Installer history</h2></div>${[...d.merges].reverse().slice(0,10).map(h=>`<p>${e(h.before.map(a=>a.name).join(' + '))} → <strong>${e(h.after.name)}</strong> · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-unmerge="${e(h.id)}">Undo union</button>`}</p>`).join('')}${[...d.imports].reverse().slice(0,10).map(h=>`<p>${e(h.filename)} · ${h.changes.length} changed monthly values · ${e(h.timestamp)} ${h.undone?'(undone)':`<button class="small" data-installer-undo-import="${e(h.id)}">Undo import</button>`}</p>`).join('')||'<p class="table-note">No installer imports yet.</p>'}</section>`;
+<section class="panel"><div class="panel-head"><h2>Account union history</h2></div>${historyList(d.merges,'account unions',unionHistoryLine)}</section>`;
 }
+
+// The same importer and preview formerly shown in Installers are now owned by Data.
+// No import calculation or validation is duplicated.
+function installerImportView(state,ui){
+  const d=state.installers,pending=ui.installerPending;
+  return `<div class="page-title"><div><div class="eyebrow">Data workspace</div><h2>Installer activation imports</h2><p>Import, review and audit installer monthly snapshots. Analysis stays in the Installers workspace.</p></div><div class="panel-actions"><button data-nav="installers">Open Installer Analytics</button></div></div>
+<section class="panel"><details open><summary>Import installer activations</summary><p class="table-note">One installer per row, monthly columns and an optional trailing Total column (ignored). Blank monthly cells = zero. Repeated names are summed. Summary rows such as === 总计 === are ignored. Reimporting replaces source/month snapshots. Full reporting scope requires explicit confirmation; partial imports never infer zero from absent companies.</p><label class="field">Excel or CSV file<input id="installer-file" type="file" accept=".xlsx,.csv" ${ui.demo||ui.installerLoading?'disabled':''}></label>${ui.installerLoading?'<p role="status">Reading worksheet…</p>':''}${ui.installerError?`<p class="notice error" role="alert">${e(ui.installerError)}</p>`:''}${pending?installerPreview(state,pending):''}</details></section>
+<section class="panel"><div class="panel-head"><h2>Installer import history</h2></div>${historyList(d.imports,'installer imports',importHistoryLine)||'<p class="table-note">No installer imports yet.</p>'}</section>`;
+}
+
 function installerPreview(state,p){
   const v=p.validation,preview=D.installerImportPreview(state,v),changes=preview.filter(r=>r.action!=='Unchanged');
-  return `<div class="form-row"><label class="field">Worksheet<select id="installer-sheet">${p.workbook.names.map(name=>`<option ${name===p.sheet?'selected':''}>${e(name)}</option>`).join('')}</select></label><label class="field">Header row<input id="installer-header" type="number" min="1" max="${p.rows.length}" value="${p.headerRow+1}"></label><label class="field">Installer-name column<select id="installer-name-column">${(p.rows[p.headerRow]??[]).map((c,i)=>`<option value="${i}" ${i===p.nameColumn?'selected':''}>${D.columnName(i)}: ${e(D.cellValue(c)??'')}</option>`).join('')}</select></label></div><p>${v.sources.length} source names · ${v.months.length} months · ${v.duplicates} repeated rows summed · ${v.blankZeros} blanks converted to zero · ${changes.length} changed values</p><p>${v.ignoredTotal?'Trailing Total column ignored.':''}</p>${v.errors.length?`<div class="notice error"><ul>${v.errors.slice(0,20).map(x=>`<li>${e(x)}</li>`).join('')}</ul><p>${v.errors.length} errors; nothing has been saved.</p></div>`:''}${v.warnings.map(w=>`<p class="table-note">${e(w)}</p>`).join('')}<details><summary>Review monthly changes (${changes.length})</summary><div class="table-wrap"><table><thead><tr><th>Source → Account</th><th>Month</th><th>Previous</th><th>Incoming</th><th>Action</th></tr></thead><tbody>${changes.slice(0,200).map(r=>`<tr><td>${e(r.label)} → ${e(r.account)}</td><td>${e(r.month)}</td><td>${n(r.previous)}</td><td>${n(r.quantity)}</td><td>${e(r.action)}</td></tr>`).join('')}</tbody></table></div>${changes.length>200?'<p>First 200 changes shown. Download the full preview to review every value.</p>':''}</details><button data-action="installer-preview-export">Download full preview CSV</button><form data-form="installer-import"><label><input type="checkbox" name="approved" required> I reviewed the import. Blank monthly cells replace previous values with zero; repeated names are summed.</label><div class="dialog-actions"><button type="button" data-action="installer-cancel">Cancel</button><button type="submit" class="primary" ${v.errors.length?'disabled':''}>Confirm installer import</button></div></form>`;
+  return `<div class="form-row"><label class="field">Worksheet<select id="installer-sheet">${p.workbook.names.map(name=>`<option ${name===p.sheet?'selected':''}>${e(name)}</option>`).join('')}</select></label><label class="field">Header row<input id="installer-header" type="number" min="1" max="${p.rows.length}" value="${p.headerRow+1}"></label><label class="field">Installer-name column<select id="installer-name-column">${(p.rows[p.headerRow]??[]).map((c,i)=>`<option value="${i}" ${i===p.nameColumn?'selected':''}>${D.columnName(i)}: ${e(D.cellValue(c)??'')}</option>`).join('')}</select></label></div><p>${v.sources.length} source names · ${v.months.length} months · ${v.duplicates} repeated rows summed · ${v.blankZeros} blanks converted to zero · ${changes.length} changed values</p><p>${v.ignoredTotal?'Trailing Total column ignored.':''}</p>${v.errors.length?`<div class="notice error"><ul>${v.errors.slice(0,20).map(x=>`<li>${e(x)}</li>`).join('')}</ul><p>${v.errors.length} errors; nothing has been saved.</p></div>`:''}${v.warnings.map(w=>`<p class="table-note">${e(w)}</p>`).join('')}<details><summary>Review monthly changes (${changes.length})</summary><div class="table-wrap"><table><thead><tr><th>Source → Account</th><th>Month</th><th>Previous</th><th>Incoming</th><th>Action</th></tr></thead><tbody>${changes.slice(0,200).map(r=>`<tr><td>${e(r.label)} → ${e(r.account)}</td><td>${e(r.month)}</td><td>${n(r.previous)}</td><td>${n(r.quantity)}</td><td>${e(r.action)}</td></tr>`).join('')}</tbody></table></div>${changes.length>200?'<p>First 200 changes shown. Download the full preview to review every value.</p>':''}</details><button data-action="installer-preview-export">Download full preview CSV</button><form data-form="installer-import"><label class="field">Reporting coverage<select name="scope" required><option value="partial">Partial update / coverage not confirmed (default)</option><option value="full">Full installer population for all imported months</option></select></label><p class="table-note">Only select Full when every installer in the reporting population is represented, and absent installers genuinely have zero activations for each imported month. Full scope can make previously missing aliases interpretable; this affects growth and retention.</p><label><input type="checkbox" name="fullScopeConfirmed"> If selecting Full, I confirm the file covers the full installer population and absent companies had zero activations in those months.</label><label><input type="checkbox" name="approved" required> I reviewed the import. Blank monthly cells replace previous values with zero; repeated names are summed.</label><div class="dialog-actions"><button type="button" data-action="installer-cancel">Cancel</button><button type="submit" class="primary" ${v.errors.length?'disabled':''}>Confirm installer import</button></div></form>`;
 }
 function installerMergePreview(state,ids){
   const accounts=ids.map(id=>state.installers.accounts[id]).filter(Boolean),months=[...new Set(accounts.flatMap(a=>Object.keys(D.installerMonthly(state,a.id))))].sort();
@@ -1008,15 +1479,16 @@ function installerMergePreview(state,ids){
 }
 function installerDetail(state,id){
   const sources=Object.values(state.installers.sources).filter(s=>s.accountId===id),monthly=D.installerMonthly(state,id);
-  return `<p>All available months. Original source quantities are preserved.</p><div class="table-wrap"><table><thead><tr><th>Month</th>${sources.map(s=>`<th>${e(s.label)}</th>`).join('')}<th>Consolidated</th></tr></thead><tbody>${Object.keys(monthly).sort().map(month=>`<tr><td>${e(month)}</td>${sources.map(s=>{const r=s.months[month];return `<td>${n(r?.quantity)}${r?`<details><summary>Source</summary>${e(r.source.filename)} · ${e(r.source.sheet)}<br>${r.source.cells.map(c=>`${e(c.cell)}: ${n(c.quantity)}${c.blank?' (blank → zero)':''}`).join('<br>')}</details>`:''}</td>`;}).join('')}<td>${n(monthly[month])}</td></tr>`).join('')}</tbody></table></div>`;
+  return `<p>All available months. Original source quantities are preserved.</p><div class="table-wrap"><table><thead><tr><th>Month</th>${sources.map(s=>`<th>${e(s.label)}</th>`).join('')}<th>Consolidated</th></tr></thead><tbody>${Object.keys(monthly).sort().map(month=>`<tr><td>${e(month)}</td>${sources.map(s=>{const r=s.months[month],active=D.installerEffectiveRecord(state,s,month),superseded=!!r&&!active;return `<td>${n(active?.quantity??(state.installers.coverage?.[month]?.mode==='full'?0:null))}${r?`<details><summary>${superseded?'Historical — superseded':'Source'}</summary>${e(r.source.filename)} · ${e(r.source.sheet)}<br>${r.source.cells.map(c=>`${e(c.cell)}: ${n(c.quantity)}${c.blank?' (blank → zero)':''}`).join('<br>')}</details>`:''}</td>`;}).join('')}<td>${n(monthly[month])}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
-return Object.assign({},{installerView,installerPreview,installerMergePreview,installerDetail});
+return Object.assign({},{installerView,installerImportView,installerPreview,installerMergePreview,installerDetail});
 })();
 
 // MODULE: views.js
 __modules["views.js"]=(()=>{
 const D=__modules["domain.js"];
+const IV=__modules["installer-views.js"];
 const {escapeHtml:e}=__modules["exports.js"];
 const {lineChart,indexedSeries,barChart,stackedMix,color}=__modules["charts.js"];
 const NAV=['Overview','Inverters','Batteries & BMS','Comparisons','Targets','Data','Installers'];
@@ -1149,8 +1621,8 @@ panel('Target attainment',`${rangeLabel(f.start,f.end)} · activations · applie
 panel('Add or replace a monthly target','A value of zero is allowed and has no attainment percentage.',`<form data-form="target" class="editing"><div class="form-row"><label class="field">Month<input type="month" name="month" value="${f.end}" required></label><label class="field">Category or model<select name="scope">${D.CATEGORIES.map(c=>option(c,c,'')).join('')}${Object.values(state.catalog).map(p=>option(p.model,p.model,'')).join('')}</select></label><label class="field">Target activations<input name="value" type="number" min="0" step="1" required placeholder="Enter target"></label><button class="primary" type="submit">Review target</button></div></form>`)+
 panel('Saved monthly targets','Selected period and scope',`<div class="table-wrap"><table><thead><tr><th>Month</th><th>Scope</th><th class="num">Target</th><th>Hierarchy</th><th class="editing">Action</th></tr></thead><tbody>${ts.map(t=>{const parent=state.targets[D.targetKey(t.month,t.category)];return `<tr><td>${labelMonth(t.month)}</td><td>${e(t.scope)}</td><td class="num">${number(t.value)}</td><td>${D.CATEGORIES.includes(t.scope)?'Category override':parent?'Model target; category override also exists':'Model target'}</td><td class="editing"><button class="small" data-delete-target="${e(D.targetKey(t.month,t.scope))}">Remove</button></td></tr>`;}).join('')||'<tr><td colspan="5">No targets in this period. Add your first monthly target above.</td></tr>'}</tbody></table></div>`);}
 
-const DATA_TABS=[['import','Import centre'],['records','Recorded data'],['coverage','Coverage'],['catalogue','Product catalogue'],['history','History'],['backup','Backup & guide']];
-function dataView(state,ui){const bodies={import:importView,records:recordsView,coverage:coverageView,catalogue:catalogueView,history:historyView,backup:backupView};return heading(state,'Data workspace','Import snapshots, confirm reporting scope and inspect your evidence.')+`<div class="tabs editing" role="tablist" aria-label="Data workspace">${DATA_TABS.map(([v,t])=>`<button role="tab" aria-selected="${ui.dataTab===v}" class="${ui.dataTab===v?'active':''}" data-data-tab="${v}">${t}</button>`).join('')}</div>`+(bodies[ui.dataTab]??importView)(state,ui);}
+const DATA_TABS=[['import','Equipment imports'],['installer-import','Installer imports'],['records','Recorded data'],['coverage','Coverage'],['catalogue','Product catalogue'],['history','History'],['backup','Backup & guide']];
+function dataView(state,ui){const bodies={import:importView,'installer-import':IV.installerImportView,records:recordsView,coverage:coverageView,catalogue:catalogueView,history:historyView,backup:backupView};return heading(state,'Data workspace','Import snapshots, confirm reporting scope and inspect your evidence.')+`<div class="tabs editing" role="tablist" aria-label="Data workspace">${DATA_TABS.map(([v,t])=>`<button role="tab" aria-selected="${ui.dataTab===v}" class="${ui.dataTab===v?'active':''}" data-data-tab="${v}">${t}</button>`).join('')}</div>`+(bodies[ui.dataTab]??importView)(state,ui);}
 function importView(state,ui){const p=ui.pending,v=p?.validation,preview=v?D.importPreview(state,v):[],counts={};preview.forEach(r=>counts[r.action]=(counts[r.action]??0)+1);return `<div class="import-progress"><span class="${!p?'active':''}">1 · Choose dataset & file</span><span class="${p&&!v?'active':''}">2 · Confirm worksheet</span><span class="${v?'active':''}">3 · Validate & review</span><span>4 · Confirm import</span></div><div class="import-grid"><section class="panel"><div class="panel-head"><div><h2>Import a monthly snapshot</h2><p>Excel .xlsx or CSV · models in rows, YYYYMM months in columns</p></div></div><div class="form-row"><label class="field">Dataset<select id="dataset">${option('unified','Unified — all equipment',ui.dataset)}${option('inverters','Inverters only (legacy)',ui.dataset)}${option('batteries','Battery modules & BMS (legacy)',ui.dataset)}</select></label></div><label class="dropzone" id="dropzone"><strong>Drop your workbook here</strong><span>Or choose a file from your device · maximum 30 MB</span><input id="import-file" type="file" accept=".xlsx,.csv" aria-label="Choose activation workbook" ${ui.loading?'disabled':''}></label>${ui.loading?'<div class="notice info" style="margin-top:16px">Reading and validating your workbook…</div>':''}${ui.importError?`<div class="notice error" style="margin-top:16px">${e(ui.importError)}</div>`:''}<p class="table-note">Files stay in your browser. One confirmed import updates all included categories together. Identical reimports do not duplicate quantities. Blank incoming cells retain previously recorded values.</p></section><section class="panel"><div class="panel-head"><div><h2>Expected structure</h2><p>Unified uses one worksheet with inverter, battery module and BMS rows.</p></div></div><div class="table-wrap"><table><thead><tr><th>index</th><th>202601</th><th>202602</th></tr></thead><tbody><tr><td>Product model</td><td>Quantity</td><td>Quantity</td></tr><tr><td>=== 总计 ===</td><td>Total</td><td>Total</td></tr></tbody></table></div><p class="table-note">Unified: list all three equipment categories in any order, using exact model codes. Add at most one grand Total row combining all products. Totals are controls, never activations. Blank means missing; 0 means confirmed zero. Formulas need saved numeric results.</p><div class="panel-actions"><a class="download-link" href="templates/Inverter_Import_Template.xlsx" download>Inverter .xlsx template</a><a class="download-link" href="templates/Battery_BMS_Import_Template.xlsx" download>Battery & BMS .xlsx template</a></div><p class="table-note"><button class="text-button" data-action="template-unified">Download Unified CSV (opens in Excel)</button> · <button class="text-button" data-action="template-inverters">Inverter CSV</button> · <button class="text-button" data-action="template-batteries">Battery & BMS CSV</button></p></section></div>`+
 (p?panel('Confirm the source table',`${e(p.filename)} · ${e(p.sheet)}`,`<div class="form-row"><label class="field">Worksheet<select id="worksheet">${p.workbook.names.map(n=>option(n,n,p.sheet)).join('')}</select></label><label class="field">Header row (Excel row number)<input id="header-row" type="number" min="1" max="${Math.max(1,p.rows.length)}" value="${p.headerRow+1}"></label><button data-action="revalidate">Validate table</button></div>${p.headerUncertain?'<div class="notice">Header detection is uncertain. Confirm the correct row above.</div>':''}<div class="table-wrap import-review"><table><thead><tr><th>Excel row</th>${(p.rows[p.headerRow]??[]).map((x,i)=>`<th>${e(D.columnName(i))}: ${e(D.cellValue(x))}</th>`).join('')}</tr></thead><tbody>${p.rows.slice(p.headerRow+1,p.headerRow+9).map((r,i)=>`<tr><th>${p.headerRow+i+2}</th>${Array.from({length:p.rows[p.headerRow]?.length??0},(_,j)=>`<td>${e(D.cellValue(r[j])??'Missing')}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="table-note">Preview: first 8 product rows. Validation reads the full selected worksheet.</p>`):'')+
 (v?panel('Validation & proposed changes','No data is saved until you confirm the import.',`<div class="preview-stats"><span><strong>${v.months.length}</strong>months</span><span><strong>${v.models.length}</strong>models</span>${D.CATEGORIES.map(cat=>`<span><strong>${v.models.filter(m=>({...state.catalog,...p.classifications})[m]?.category===cat).length}</strong>${e(cat)}</span>`).join("")}<span><strong>${counts.New??0}</strong>new values</span><span><strong>${counts.Replace??0}</strong>replacements</span><span><strong>${counts.Unchanged??0}</strong>unchanged</span><span><strong>${v.records.filter(r=>r.quantity===null).length}</strong>missing cells</span></div>
@@ -1373,6 +1845,22 @@ document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
     if(ui.demo&&['print','export-records','export-summary','backup'].includes(el.dataset.action)){toast('Exports are disabled for fictional data. Return to your real workspace to report actual values.',true);return;}
+    if(el.dataset.installerInsightPage!==undefined){
+      ui.installerInsightPage=Math.max(0,Number(el.dataset.installerInsightPage)||0);render();return;
+    }
+    if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerComparePick){
+      const previousScroll=document.querySelector('.installer-compare-picker')?.scrollTop??0;
+      const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
+      if(!D.installerIndex(state).some(a=>a.id===id))throw new Error('Unknown installer account.');
+      if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
+      else if(ids.length<6)ui.installerCompareIds=[...ids,id];
+      else throw new Error('Compare a maximum of six installers.');
+      ui.hiddenSeries.clear();render();
+      const picker=document.querySelector('.installer-compare-picker');if(picker)picker.scrollTop=previousScroll;
+      return;
+    }
     if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IA.installerProfile(state,id,ui)+'<details><summary>All original monthly source values</summary>'+IV.installerDetail(state,id)+'</details>');return;}
     if(el.dataset.installerSuggest){reviewInstallerMerge(el.dataset.installerSuggest.split(','));return;}
     if(el.dataset.installerPage){ui.installerPage=Number(el.dataset.installerPage);render();return;}
@@ -1409,11 +1897,41 @@ document.addEventListener('click',async event=>{
     if(el.dataset.deleteTarget){const key=el.dataset.deleteTarget,t=state.targets[key];openModal('Remove monthly target?',`<p>${e(t.month)} · ${e(t.scope)} · ${V.number(t.value)} activations</p>`,async()=>{const next=D.clone(state);delete next.targets[key];next.updatedAt=new Date().toISOString();await commit(next,'Target removed.');});return;}
     if(el.dataset.undo){const id=el.dataset.undo,h=state.history.find(x=>x.id===id),conflicts=D.undoConflicts(state,id);openModal('Review import undo',`<p>${e(h.filename)} · ${e(h.sheet)}</p><p class="table-note">This import changed ${h.changes.length} records and ${h.coverageChanges?.length??0} coverage declarations.</p>${conflicts.length?`<div class="notice"><p><strong>${conflicts.length} overlapping later changes will be retained.</strong> Only non-conflicting changes can be reversed. This undo is marked complete afterward.</p></div><ul class="validation-list">${conflicts.map(x=>`<li>${e(x.type)}: ${e(x.key)}</li>`).join('')}</ul>`:'<p class="table-note">No overlapping later edits. Previous values and coverage will be restored.</p>'}`,async()=>commit(D.undoImport(state,id,conflicts.length>0),'Import undo saved.'),conflicts.length?'Undo non-conflicting changes':'Undo import');return;}
     switch(el.dataset.action){
+      case 'installer-open-import':navigate('data','installer-import');break;
+      case 'installer-compare-from-selected':{
+        const ids=[...(ui.installerSelected??[])];
+        if(ids.length<2||ids.length>6)throw new Error('Select 2 to 6 installers first.');
+        ui.installerCompareIds=ids;ui.installerTab='compare';ui.hiddenSeries.clear();render();break;
+      }
+      case 'installer-profile-compare':{
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const ids=ui.installerCompareIds??[];
+        ui.installerCompareIds=ids.includes(id)?ids:ids.length<6?[...ids,id]:ids;
+        ui.installerTab='compare';render();break;
+      }
+      case 'installer-profile-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const h=D.installerAccountHistory(state,id,{end:D.installerFilters(state).end});
+        if(!h)throw new Error('Select an installer first.');
+        download(toCsv([['Month','Inverter activations','Status','Observed','Expected'],...h.monthly.map(p=>[p.start,p.value,p.status,p.observed,p.expected])]),'installer-profile-history.csv','text/csv;charset=utf-8');break;
+      }
+      case 'installer-insights-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const result=D.installerInsights(state,D.installerFilters(state));
+        download(toCsv(D.installerInsightsCsv(result)),'installer-insights.csv','text/csv;charset=utf-8');
+        break;
+      }
+      case 'installer-compare-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const c=D.installerComparison(state,D.installerFilters(state),ui.installerCompareIds??[]);
+        download(toCsv(D.installerComparisonCsv(c)),'installer-comparison.csv','text/csv;charset=utf-8');break;
+      }
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
-      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,state.preferences,{cohort:ui.installerCohort??'all'}),state.preferences)),'installer-kpis.csv','text/csv;charset=utf-8');break;}
-      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=state.preferences,months=D.monthsBetween(f.start,f.end);download(toCsv([['Installer',...months,'Reported total'],...D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}).rows.map(r=>[r.name,...months.map(m=>r.cells[m]?.value??null),r.current.value])]),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
+      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),D.installerFilters(state))),'installer-kpis.csv','text/csv;charset=utf-8');break;}
+      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
       case 'import':navigate('data','import');break;
       case 'demo':if(!ui.demo){realState=state;state=makeDemo();ui.demo=true;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
@@ -1444,11 +1962,30 @@ document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key==
 
 document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
-  if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
+  if(el.dataset.filter){const next=D.clone(state),f=ui.page==='installers'?next.installerPreferences:next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
+    case 'installer-insight-volume':
+    case 'installer-insight-pct':{
+      const v=Number(el.value),allowed=el.id==='installer-insight-volume'?D.INSIGHT_MIN_VOLUMES:D.INSIGHT_CHANGE_THRESHOLDS;
+      if(!allowed.includes(v))throw new Error('Invalid commercial insight threshold.');
+      const next=D.clone(state),key=el.id==='installer-insight-volume'?'insightMinVolume':'insightThresholdPct';
+      next.installerPreferences[key]=v;ui.installerInsightPage=0;await commit(next);break;
+    }
+    case 'installer-insight-priority':{
+      if(!['All','High','Medium','Low','Data check'].includes(el.value))throw new Error('Invalid priority filter.');
+      ui.installerInsightPriority=el.value;ui.installerInsightPage=0;render();break;
+    }
+    case 'installer-insight-type':{
+      if(!['All','inactive','reactivated','declining','growing','first','zeroBase','steady','zero','coverage'].includes(el.value))throw new Error('Invalid signal filter.');
+      ui.installerInsightType=el.value;ui.installerInsightPage=0;render();break;
+    }
+    case 'installer-profile-picker':{
+      if(!D.installerIndex(state).some(a=>a.id===el.value))throw new Error('Unknown installer account.');
+      ui.installerProfileId=el.value;render();break;
+    }
     case 'installer-cohort':ui.installerCohort=el.value;ui.installerPage=0;ui.installerSelected=new Set();render();break;
     case 'installer-sort':ui.installerSort=el.value;ui.installerPage=0;render();break;
-    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.preferences,{start,end});await commit(next);break;}
+    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.installerPreferences,{start,end});await commit(next);break;}
     case 'installer-file':await importInstallerFile(el.files[0]);break;
     case 'installer-sheet':await chooseInstallerSheet(el.value);render();break;
     case 'installer-header':{const p=ui.installerPending;if(!p||!Number.isInteger(+el.value)||+el.value<1||+el.value>p.rows.length)throw new Error('Select a valid header row.');p.headerRow=+el.value-1;validateInstallerPending();render();break;}
@@ -1470,7 +2007,17 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
+document.addEventListener('input',event=>{const el=event.target;
+  if(el.id==='installer-insight-search'){
+    const cursor=el.selectionStart;ui.installerInsightSearch=el.value;ui.installerInsightPage=0;render();
+    const input=$('#installer-insight-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
+  if(el.id==='installer-profile-search'||el.id==='installer-compare-search'){
+    const field=el.id==='installer-profile-search'?'installerProfileSearch':'installerCompareSearch';
+    const cursor=el.selectionStart;ui[field]=el.value;render();
+    const input=$('#'+el.id);input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
+  if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
     ui.inverterModelSearch=el.value;
     const cursor=el.selectionStart;
     render();
@@ -1486,7 +2033,8 @@ document.addEventListener('drop',async event=>{if(event.target.closest('#dropzon
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
-    case 'installer-import':{if(ui.demo)throw new Error('Exit demo before importing.');if(!data.has('approved'))throw new Error('Review and approve the import.');validateInstallerPending();const p=ui.installerPending;if(!p)throw new Error('Select a file.');const next=D.commitInstallerImport(state,p.validation);Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
+    case 'installer-import':{if(ui.demo)throw new Error('Exit demo before importing.');if(!data.has('approved'))throw new Error('Review and approve the import.');validateInstallerPending();const p=ui.installerPending;if(!p)throw new Error('Select a file.');const scope=String(data.get('scope')??'partial'),fullScopeConfirmed=data.has('fullScopeConfirmed');
+    const next=D.commitInstallerImport(state,p.validation,{scope,fullScopeConfirmed});Object.assign(next.installerPreferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
     case 'installer-merge':{await commit(D.mergeInstallers(state,ui.installerMergeIds,data.get('name')),'Installers unified. Monthly values were summed.');ui.installerSelected=new Set();$('#modal').close();render();break;}
     case 'classify':{
       const p=ui.pending,classes={...p.classifications};

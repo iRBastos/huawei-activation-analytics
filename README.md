@@ -46,12 +46,13 @@ JSZip is bundled locally and its licence is included in `documentacao/JSZip-LICE
 
 ## Installer activations
 
-The Installers tab imports monthly inverter totals by company, sums repeated names,
-ignores the trailing Total column, and supports confirmed name consolidation and undo.
-See [the installer guide](codigo-fonte/docs/INSTALLER-IMPORT.md). Advanced installer KPIs
-and the commercial Action Centre are separate planned deliveries.
+Data → Installer imports handles monthly inverter totals by company, sums repeated names,
+excludes Chinese grand-total rows, ignores the trailing Total column and tracks import history.
+Installers provides rankings, growth KPIs, alias consolidation and undo, with independent
+reporting date filters. See [the installer guide](codigo-fonte/docs/INSTALLER-IMPORT.md).
+The Installer Profile and 2–6 Installer Comparison are available as dedicated tabs under Installers, with historical monthly/quarterly/annual charts, coverage-aware growth, indexed trends and CSV exports. The Insights & priorities tab offers evidence-backed account signals, configurable significance thresholds and exportable follow-up suggestions.
 
-### Installer analytics preview
+### Installer analytics workspaces
 The installer branch adds monthly trends, comparison KPIs, ranking, concentration, retention,
-three-month momentum, account profiles and a clickable activity heatmap. Import and confirmed
-unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules.
+three-month momentum, a dedicated account profile with all recorded history, a 2–6 company comparative chart/table and a clickable activity heatmap. Import and confirmed
+unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules and [the commercial insights guide](codigo-fonte/docs/INSTALLER-INSIGHTS.md) for prioritisation methodology.

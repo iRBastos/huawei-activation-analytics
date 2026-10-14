@@ -1,13 +1,14 @@
 # Installer import foundation
 
-This release adds the Installers workspace to the existing equipment dashboard.
-Installer values mean inverter activations during each month, without model detail.
-It does not implement installer growth KPIs, rankings by growth, completeness declarations,
-commercial actions, forecasts or device-to-installer joins yet.
+Installer values mean inverter activations by company and month, without model detail.
+The **Data → Installer imports** tab owns workbook import, previews and the import audit.
+The **Installers** workspace owns rankings, trends, account unions, and source evidence.
+The individual profile and interactive 2–6 installer comparison screen are future V2 work.
+No device-to-installer association, revenue or Irish market share can be inferred.
 
 ## Import
 
-1. Open Installers and choose an XLSX or comma-separated CSV file.
+1. Open **Data → Installer imports** (or use **Installers → Import installer data**) and choose an XLSX or comma-separated CSV file.
 2. Choose the worksheet, header row and installer-name column. The other populated
    columns must be months, apart from an optional trailing Total column.
 3. Supported month headers: YYYYMM, YYYY-MM, ISO dates, English month + four-digit year,
@@ -15,14 +16,23 @@ commercial actions, forecasts or device-to-installer joins yet.
    with YYYYMM headers. The exact production workbook has not yet been supplied.
 4. Review the changes. Download the full preview CSV when the on-screen 200-row preview
    is insufficient. The final Total column is ignored even if it contains an error.
-5. Confirm the import. Blank monthly input cells are confirmed zero, including when
+5. Before confirmation select the reporting scope: **Partial update** (default, no assumption for omitted installers) or **Full installer population** (explicit checkbox confirmation required). A Full declaration applies to each imported month, and missing installers are treated as confirmed zero for those months. An old partial month stays unknown.
+6. Confirm the import. Blank monthly input cells are confirmed zero, including when
    replacing an earlier nonzero value. A missing monthly column is not zero.
    Error/formula-without-cache cells are rejected, not converted to zero.
 
 Source names are matched case-insensitively after trimming/collapsing spaces.
+Rows marked `Total`, `Grand Total`, `=== 总计 ===`, or `合计` are summary rows and never become installer records or add to activation counts. Any numeric totals in these rows are ignored for installer data.
 Repeated source names in one file are summed month by month. Each file is a snapshot
 of the named sources and months it supplies, not an incremental batch.
 Reimporting replaces those source/month snapshots. Omitted sources and months remain.
+
+## Independent reporting filters
+
+Equipment and installer analysis retain separate date ranges, aggregation and comparison settings.
+Importing an installer workbook updates only the installer reporting period; equipment charts do not
+move to the imported date range. Existing schema-1 and schema-2 backups without installer preferences
+are migrated using their previous saved equipment date settings once; thereafter both stay independent.
 
 ## Unify accounts
 
@@ -42,9 +52,18 @@ Undo union restores account identities while retaining any subsequently correcte
 Overlapping later unions must be undone first. Undo import restores source values only;
 identities and unions remain, protecting later history. Later overlapping imports block undo.
 
+## V2 full-coverage declarations
+
+- Full is an explicit human-confirmed declaration about the complete tracked installer population **per imported month**. A newer full file supersedes earlier source/month records for omitted names; older values remain for audit and undo but no longer contribute to active totals until reintroduced by a later partial correction. Effective source observations remain additive across distinct labels. If a company is absent from a confirmed full month it contributes **zero**, not unknown; missing aliases inside the same account no longer falsely mark that month incomplete.
+- Partial is the default and preserves conservative source/month coverage. Old files and old schema-2 backups do not gain artificial completeness. A partial correction of a previously full month preserves its full-scope declaration.
+- Declared months retain source filename, worksheet, import ID and timestamp. Undo a full-scope import restores the preceding scope, or deletes it if no earlier declaration existed. Overlapping later scope changes block unsafe undo.
+- In analytics a confirmed full month counts one reporting unit per account, not one per label; partial months retain the prior per-source observation check. Charts, profiles, rankings and exports use the common measure function.
+- Full scope should **only** be confirmed where the user has evidence of a complete population for all covered months. Do not mark a filtered report or partial extract as Full.
+- Schema-2 backups predating the ledger migrate by adding an empty `installers.coverage` map, while keeping the schema version and all original records.
+
 ## Storage and migration
 
-Schema 2 adds `installers.accounts`, `sources`, `imports` and `merges`. Equipment
+Schema 2 adds `installers.accounts`, `sources`, `imports`, `merges`, and an optional backward-compatible `coverage` map. Equipment
 records, product coverage, targets and history remain separate. Schema-1 backups migrate
 in memory to empty installer collections. The existing IndexedDB name and object store
 are unchanged. New backups contain both datasets and their histories. Older releases
@@ -93,3 +112,17 @@ three selected months with the preceding three, independent of comparison select
 
 The user confirmed the first-stage import/union flow worked. Production XLSX contents have
 not been inspected in this workspace. Stage 2 needs user acceptance on the actual dataset.
+
+## Dedicated installer analytics pages (V2)
+
+Open **Installers** and select the **Installer overview**, **Installer profile**, or **Compare 2–6** tab. The overview retains ranking, existing quick detail dialogs, manually confirmed name unions and monthly heatmaps. Use **Full profile** beside an installer name for its dedicated page.
+
+The profile offers a searchable account picker, selected-period KPI and growth, three historical trend charts (monthly/quarterly/yearly), latest observed activity, confirmed historical peak, original source aliases, clickable month evidence, and CSV export. An account can have older observed records and missing periods; its lifetime volume may be a *partial subtotal*. Do not mistake an observed zero for an unknown interval.
+
+On Compare 2–6, search and choose distinct accounts. Selected chips remove accounts; additional choices are disabled at the six-account limit. Volumes and growth come from the same domain calculations as the portfolio ranking. The volume chart is always available for reported data. **Indexed comparisons use 100 for the same first displayed reporting bucket, but only if every selected installer has a complete, positive baseline**. Otherwise the indexed chart is withheld. All account figures and chart periods are exportable as CSV, while missing values stay unknown.
+
+These figures represent tracked Huawei inverter activations by consolidated account only: they cannot establish site counts, battery attachment, installation of specific equipment per installer, Irish-wide market shares, revenue or causal impacts.
+
+## Commercial insights
+
+Open **Installers → Insights & priorities** for coverage-aware action suggestions and risk flags. The same signal and supporting evidence appear in a single installer profile. The thresholds are saved in the full offline backup, not synchronized to a cloud server. See [Insight methodology](INSTALLER-INSIGHTS.md) for how signals and rule-based priority bands are calculated.

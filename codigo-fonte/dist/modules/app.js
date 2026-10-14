@@ -59,6 +59,22 @@ document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
     if(ui.demo&&['print','export-records','export-summary','backup'].includes(el.dataset.action)){toast('Exports are disabled for fictional data. Return to your real workspace to report actual values.',true);return;}
+    if(el.dataset.installerInsightPage!==undefined){
+      ui.installerInsightPage=Math.max(0,Number(el.dataset.installerInsightPage)||0);render();return;
+    }
+    if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerComparePick){
+      const previousScroll=document.querySelector('.installer-compare-picker')?.scrollTop??0;
+      const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
+      if(!D.installerIndex(state).some(a=>a.id===id))throw new Error('Unknown installer account.');
+      if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
+      else if(ids.length<6)ui.installerCompareIds=[...ids,id];
+      else throw new Error('Compare a maximum of six installers.');
+      ui.hiddenSeries.clear();render();
+      const picker=document.querySelector('.installer-compare-picker');if(picker)picker.scrollTop=previousScroll;
+      return;
+    }
     if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IA.installerProfile(state,id,ui)+'<details><summary>All original monthly source values</summary>'+IV.installerDetail(state,id)+'</details>');return;}
     if(el.dataset.installerSuggest){reviewInstallerMerge(el.dataset.installerSuggest.split(','));return;}
     if(el.dataset.installerPage){ui.installerPage=Number(el.dataset.installerPage);render();return;}
@@ -95,11 +111,41 @@ document.addEventListener('click',async event=>{
     if(el.dataset.deleteTarget){const key=el.dataset.deleteTarget,t=state.targets[key];openModal('Remove monthly target?',`<p>${e(t.month)} · ${e(t.scope)} · ${V.number(t.value)} activations</p>`,async()=>{const next=D.clone(state);delete next.targets[key];next.updatedAt=new Date().toISOString();await commit(next,'Target removed.');});return;}
     if(el.dataset.undo){const id=el.dataset.undo,h=state.history.find(x=>x.id===id),conflicts=D.undoConflicts(state,id);openModal('Review import undo',`<p>${e(h.filename)} · ${e(h.sheet)}</p><p class="table-note">This import changed ${h.changes.length} records and ${h.coverageChanges?.length??0} coverage declarations.</p>${conflicts.length?`<div class="notice"><p><strong>${conflicts.length} overlapping later changes will be retained.</strong> Only non-conflicting changes can be reversed. This undo is marked complete afterward.</p></div><ul class="validation-list">${conflicts.map(x=>`<li>${e(x.type)}: ${e(x.key)}</li>`).join('')}</ul>`:'<p class="table-note">No overlapping later edits. Previous values and coverage will be restored.</p>'}`,async()=>commit(D.undoImport(state,id,conflicts.length>0),'Import undo saved.'),conflicts.length?'Undo non-conflicting changes':'Undo import');return;}
     switch(el.dataset.action){
+      case 'installer-open-import':navigate('data','installer-import');break;
+      case 'installer-compare-from-selected':{
+        const ids=[...(ui.installerSelected??[])];
+        if(ids.length<2||ids.length>6)throw new Error('Select 2 to 6 installers first.');
+        ui.installerCompareIds=ids;ui.installerTab='compare';ui.hiddenSeries.clear();render();break;
+      }
+      case 'installer-profile-compare':{
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const ids=ui.installerCompareIds??[];
+        ui.installerCompareIds=ids.includes(id)?ids:ids.length<6?[...ids,id]:ids;
+        ui.installerTab='compare';render();break;
+      }
+      case 'installer-profile-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const h=D.installerAccountHistory(state,id,{end:D.installerFilters(state).end});
+        if(!h)throw new Error('Select an installer first.');
+        download(toCsv([['Month','Inverter activations','Status','Observed','Expected'],...h.monthly.map(p=>[p.start,p.value,p.status,p.observed,p.expected])]),'installer-profile-history.csv','text/csv;charset=utf-8');break;
+      }
+      case 'installer-insights-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const result=D.installerInsights(state,D.installerFilters(state));
+        download(toCsv(D.installerInsightsCsv(result)),'installer-insights.csv','text/csv;charset=utf-8');
+        break;
+      }
+      case 'installer-compare-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const c=D.installerComparison(state,D.installerFilters(state),ui.installerCompareIds??[]);
+        download(toCsv(D.installerComparisonCsv(c)),'installer-comparison.csv','text/csv;charset=utf-8');break;
+      }
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
-      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,state.preferences,{cohort:ui.installerCohort??'all'}),state.preferences)),'installer-kpis.csv','text/csv;charset=utf-8');break;}
-      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=state.preferences,months=D.monthsBetween(f.start,f.end);download(toCsv([['Installer',...months,'Reported total'],...D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'}).rows.map(r=>[r.name,...months.map(m=>r.cells[m]?.value??null),r.current.value])]),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
+      case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),D.installerFilters(state))),'installer-kpis.csv','text/csv;charset=utf-8');break;}
+      case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
       case 'import':navigate('data','import');break;
       case 'demo':if(!ui.demo){realState=state;state=makeDemo();ui.demo=true;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
       case 'exit-demo':if(ui.demo){state=realState;realState=null;ui.demo=false;ui.pending=null;ui.installerPending=null;ui.installerSelected=new Set();navigate('overview');}break;
@@ -130,11 +176,30 @@ document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key==
 
 document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
-  if(el.dataset.filter){const next=D.clone(state),f=next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
+  if(el.dataset.filter){const next=D.clone(state),f=ui.page==='installers'?next.installerPreferences:next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
+    case 'installer-insight-volume':
+    case 'installer-insight-pct':{
+      const v=Number(el.value),allowed=el.id==='installer-insight-volume'?D.INSIGHT_MIN_VOLUMES:D.INSIGHT_CHANGE_THRESHOLDS;
+      if(!allowed.includes(v))throw new Error('Invalid commercial insight threshold.');
+      const next=D.clone(state),key=el.id==='installer-insight-volume'?'insightMinVolume':'insightThresholdPct';
+      next.installerPreferences[key]=v;ui.installerInsightPage=0;await commit(next);break;
+    }
+    case 'installer-insight-priority':{
+      if(!['All','High','Medium','Low','Data check'].includes(el.value))throw new Error('Invalid priority filter.');
+      ui.installerInsightPriority=el.value;ui.installerInsightPage=0;render();break;
+    }
+    case 'installer-insight-type':{
+      if(!['All','inactive','reactivated','declining','growing','first','zeroBase','steady','zero','coverage'].includes(el.value))throw new Error('Invalid signal filter.');
+      ui.installerInsightType=el.value;ui.installerInsightPage=0;render();break;
+    }
+    case 'installer-profile-picker':{
+      if(!D.installerIndex(state).some(a=>a.id===el.value))throw new Error('Unknown installer account.');
+      ui.installerProfileId=el.value;render();break;
+    }
     case 'installer-cohort':ui.installerCohort=el.value;ui.installerPage=0;ui.installerSelected=new Set();render();break;
     case 'installer-sort':ui.installerSort=el.value;ui.installerPage=0;render();break;
-    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.preferences,{start,end});await commit(next);break;}
+    case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.installerPreferences,{start,end});await commit(next);break;}
     case 'installer-file':await importInstallerFile(el.files[0]);break;
     case 'installer-sheet':await chooseInstallerSheet(el.value);render();break;
     case 'installer-header':{const p=ui.installerPending;if(!p||!Number.isInteger(+el.value)||+el.value<1||+el.value>p.rows.length)throw new Error('Select a valid header row.');p.headerRow=+el.value-1;validateInstallerPending();render();break;}
@@ -156,7 +221,17 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
+document.addEventListener('input',event=>{const el=event.target;
+  if(el.id==='installer-insight-search'){
+    const cursor=el.selectionStart;ui.installerInsightSearch=el.value;ui.installerInsightPage=0;render();
+    const input=$('#installer-insight-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
+  if(el.id==='installer-profile-search'||el.id==='installer-compare-search'){
+    const field=el.id==='installer-profile-search'?'installerProfileSearch':'installerCompareSearch';
+    const cursor=el.selectionStart;ui[field]=el.value;render();
+    const input=$('#'+el.id);input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
+  if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
     ui.inverterModelSearch=el.value;
     const cursor=el.selectionStart;
     render();
@@ -172,7 +247,8 @@ document.addEventListener('drop',async event=>{if(event.target.closest('#dropzon
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.form)return;event.preventDefault();const data=new FormData(form);const button=form.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{switch(form.dataset.form){
-    case 'installer-import':{if(ui.demo)throw new Error('Exit demo before importing.');if(!data.has('approved'))throw new Error('Review and approve the import.');validateInstallerPending();const p=ui.installerPending;if(!p)throw new Error('Select a file.');const next=D.commitInstallerImport(state,p.validation);Object.assign(next.preferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
+    case 'installer-import':{if(ui.demo)throw new Error('Exit demo before importing.');if(!data.has('approved'))throw new Error('Review and approve the import.');validateInstallerPending();const p=ui.installerPending;if(!p)throw new Error('Select a file.');const scope=String(data.get('scope')??'partial'),fullScopeConfirmed=data.has('fullScopeConfirmed');
+    const next=D.commitInstallerImport(state,p.validation,{scope,fullScopeConfirmed});Object.assign(next.installerPreferences,{start:p.validation.months[0],end:p.validation.months.at(-1)});await commit(next,'Installer activations imported. Repeated names were summed.');ui.installerPending=null;render();break;}
     case 'installer-merge':{await commit(D.mergeInstallers(state,ui.installerMergeIds,data.get('name')),'Installers unified. Monthly values were summed.');ui.installerSelected=new Set();$('#modal').close();render();break;}
     case 'classify':{
       const p=ui.pending,classes={...p.classifications};
