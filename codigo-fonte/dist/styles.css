@@ -138,3 +138,15 @@
 .installer-heatmap{max-width:100%;overflow:auto;overscroll-behavior-x:contain}
 @media(max-width:560px){.installer-account-management>summary{align-items:flex-start}.installer-compare-mode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.installer-compare-mode button{min-width:0;white-space:normal}}
 @media print{.installer-account-management,.installer-compare-edit>summary,.installer-compare-mode{display:none!important}}
+
+/* F4 — Market intelligence: four headline measures, then findings, then supplementary ratios. */
+.kpi-grid-primary{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi-grid-secondary{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:22px}
+.secondary-metrics-heading{margin-top:16px}
+.market-mix-grid{align-items:start}
+.market-mix-grid>.panel{min-width:0}
+@media(min-width:1800px){.kpi-grid-primary{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1200px){.kpi-grid-primary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.market-mix-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.kpi-grid-primary,.kpi-grid-secondary{grid-template-columns:1fr}.secondary-metrics-heading{flex-wrap:wrap}}
+@media print{.kpi-grid-primary{grid-template-columns:repeat(4,minmax(0,1fr))}.kpi-grid-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}

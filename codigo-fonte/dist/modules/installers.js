@@ -118,13 +118,21 @@ export function commitInstallerImport(state,validation,{scope='partial',fullScop
   }
   d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,scope,created,changes,coverageChanges,undone:false});
   // The new import must be in history before precedence / totals are resolved.
-  for(const account of Object.values(d.accounts))installerMonthly(next,account.id);
+  // Index sources and the import-precedence map once. This preserves exactly the
+  // same overflow and full-vs-partial coverage validation, without an O(A×S)
+  // scan/rebuild for A accounts and S source aliases on large monthly imports.
+  const order=installerImportOrder(next),sourcesByAccount=new Map();
+  for(const source of Object.values(d.sources)){
+    if(!sourcesByAccount.has(source.accountId))sourcesByAccount.set(source.accountId,[]);
+    sourcesByAccount.get(source.accountId).push(source);
+  }
+  for(const account of Object.values(d.accounts))installerMonthly(next,account.id,order,sourcesByAccount.get(account.id)??[]);
   next.updatedAt=timestamp;return next;
 }
-export function installerMonthly(state,accountId){
-  const result={},order=installerImportOrder(state);
+export function installerMonthly(state,accountId,order=installerImportOrder(state),sources=Object.values(state.installers?.sources??{})){
+  const result={};
   let hasSources=false;
-  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId){
+  for(const source of sources)if(source.accountId===accountId){
     hasSources=true;
     for(const month of Object.keys(source.months)){
       const record=installerEffectiveRecord(state,source,month,order);
