@@ -62,3 +62,16 @@
  .installer-section-tabs button{white-space:normal;min-width:0;min-height:45px;padding:9px 7px;text-align:center;border:1px solid #e0e5eb;border-radius:5px;font-size:11px}
  .installer-section-tabs button.active{border:1px solid #c71932;border-bottom:2px solid #c71932;background:#fff4f6}
 }
+
+/* UX V2.1 pilot: compact, responsive installer account selector. */
+.installer-profile-pickerbar{display:flex;align-items:flex-end;gap:16px;justify-content:space-between;margin:10px 0 16px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:9px;min-width:0}
+.installer-profile-pickercontrols{display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,1.2fr);gap:12px;flex:1;min-width:0}
+.installer-profile-pickercontrols .field{min-width:0;gap:5px}
+.installer-profile-pickercontrols input,.installer-profile-pickercontrols select{width:100%;height:39px;min-width:0}
+.installer-profile-picker-meta{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;max-width:290px;min-width:140px}
+.installer-profile-picker-meta span{font-size:11px;color:var(--muted);text-align:right}
+.installer-profile-picker-meta button{white-space:nowrap}
+.installer-profile-pickerbar+.installer-profile-heading{margin-top:12px}
+@media(max-width:1150px){.installer-profile-pickerbar{align-items:stretch;flex-direction:column}.installer-profile-pickercontrols{width:100%}.installer-profile-picker-meta{max-width:none;width:100%;justify-content:space-between}}
+@media(max-width:560px){.installer-profile-pickerbar{padding:12px;gap:12px}.installer-profile-pickercontrols{grid-template-columns:1fr;gap:10px}.installer-profile-picker-meta{align-items:flex-start}.installer-profile-picker-meta span{text-align:left}}
+@media print{.installer-profile-pickerbar{display:none!important}}
