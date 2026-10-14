@@ -120,3 +120,51 @@ test('F2: all six selected companies reconcile with the same tracked portfolio',
  assert.deepEqual(selected.trend.map(point=>point.value),portfolio.trend.map(point=>point.value));
  assert.ok(Math.abs(selected.rows.reduce((n,row)=>n+row.share,0)-100)<1e-9);
 });
+
+test('F4: indexed comparison requires a common confirmed positive first bucket',()=>{
+ const s=seed(),c=D.installerComparison(s,f,['Alpha','Beta','Gamma'],{now});
+ const first=D.installerIndexedComparison(c);
+ assert.equal(first.eligible,false,'Gamma first month is zero');
+ assert.ok(first.rows.every(r=>r.indexed.every(p=>p.value===null)));
+ const two=D.installerComparison(s,f,['Alpha','Beta'],{now}),indexed=D.installerIndexedComparison(two);
+ assert.equal(indexed.eligible,false,'Beta first month is zero');
+ const good=D.installerComparison(s,f,['Alpha','Gamma'],{now});
+ assert.equal(D.installerIndexedComparison(good).eligible,true);
+ assert.equal(D.installerIndexedComparison(good).rows[0].indexed[0].value,100);
+ assert.equal(D.installerIndexedComparison(good).rows[1].indexed[0].value,100);
+ const missing=seed();delete missing.installers.sources.Alpha.months['2025-01'];
+ assert.equal(D.installerIndexedComparison(D.installerComparison(missing,f,['Alpha','Gamma'],{now})).eligible,false);
+});
+test('F4: indexed comparison retains real units and withholds incomplete points',()=>{
+ const s=seed();
+ const c=D.installerComparison(s,f,['Alpha','Gamma'],{now});
+ const normalized=D.installerIndexedComparison(c);
+ assert.equal(normalized.eligible,true);
+ assert.deepEqual(normalized.rows.map(r=>r.indexed.map(p=>p.value)),[[100,100],[100,100]]);
+ assert.equal(normalized.rows[0].indexed[0].rawValue,20);
+ assert.equal(normalized.rows[1].indexed[0].rawValue,10);
+ const altered=seed();delete altered.installers.sources.Gamma.months['2025-02'];
+ const missing=D.installerIndexedComparison(D.installerComparison(altered,f,['Alpha','Gamma'],{now}));
+ assert.equal(missing.eligible,true);
+ assert.equal(missing.rows[1].indexed[1].value,null);
+});
+test('F4: history computes confirmed peak, last activity, total and grouping from one selector',()=>{
+ const s=seed(),history=D.installerAccountHistory(s,'Alpha',{now,aggregation:'quarter',end:'2025-02'});
+ assert.deepEqual(history.points.map(x=>x.value),[20,40]);
+ assert.equal(history.peak.value,20);
+ assert.equal(history.peak.start,'2025-01');
+ assert.equal(history.firstActive,'2024-01');
+ assert.equal(history.lastActive,'2025-02');
+ assert.equal(history.total.value,60);
+ assert.equal(history.total.complete,false,'intervening unreported months remain unknown');
+ assert.equal(D.installerAccountHistory(s,'unknown'),null);
+});
+test('F4: comparison CSV numerically matches selected rows and chart points',()=>{
+ const s=seed(),analysis=D.installerComparison(s,f,['Gamma','Alpha'],{now});
+ const out=D.installerComparisonCsv(analysis);
+ assert.deepEqual(out[0].slice(-2),['2025-01','2025-02']);
+ assert.equal(out[1][0],'Gamma');
+ assert.equal(out[1][1],analysis.rows[0].current.value);
+ assert.equal(out[1][5],analysis.rows[0].change.delta);
+ assert.deepEqual(out[2].slice(-2),analysis.rows[1].trend.map(p=>p.value));
+});

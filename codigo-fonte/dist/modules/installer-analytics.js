@@ -134,6 +134,45 @@ export function installerComparison(state,f,ids,{now=new Date()}={}){
     trend:installerSeries(selected,f.start,f.end,{aggregation:f.aggregation??'month',now}),now};
 }
 
+/** A common first displayed, complete, positive bucket is required for all series.
+ * A zero or unknown baseline never becomes an invented growth index.
+ */
+export function installerIndexedComparison(comparison){
+  const baseline=comparison.rows.map(r=>r.trend[0]);
+  const eligible=baseline.length>0&&baseline.every(p=>p?.complete&&p.value>0);
+  return {eligible,baseline:eligible?baseline.map(p=>p.value):null,
+    rows:comparison.rows.map((r,i)=>({
+      ...r,indexed:r.trend.map(p=>({
+        ...p,rawValue:p.value,
+        value:eligible&&p.complete?100*p.value/baseline[i].value:null,
+        status:eligible?(p.complete?p.status:'Unavailable — incomplete reporting'):'Index unavailable — first bucket must be complete and positive for every installer'
+      }))
+    }))};
+}
+/** Historical trend and facts for a single consolidated installer account. */
+export function installerAccountHistory(state,id,{aggregation='month',now=new Date(),end=null}={}){
+  const account=installerIndex(state).find(a=>a.id===id);
+  if(!account)return null;
+  const months=Object.keys(account.cells).sort();
+  if(!months.length)return {account,points:[],peak:null,firstActive:null,lastActive:null,total:null};
+  const start=months[0],last=end??months.at(-1);
+  const points=start<=last?installerSeries([account],start,last,{aggregation,now}):[];
+  const monthly=start<=last?installerSeries([account],start,last,{aggregation:'month',now}):[];
+  const positives=monthly.filter(p=>p.value>0);
+  const verified=monthly.filter(p=>p.complete);
+  const peak=verified.length?[...verified].sort((a,b)=>b.value-a.value||a.start.localeCompare(b.start))[0]:null;
+  const total=installerMeasure([account],start,last,now);
+  return {account,start,end:last,points,monthly,peak,total,
+    firstActive:positives[0]?.start??null,lastActive:positives.at(-1)?.start??null,
+    lastConfirmed:verified.at(-1)?.start??null};
+}
+/** Comparison CSV shares all values with the comparison UI. */
+export function installerComparisonCsv(comparison){
+  const labels=comparison.trend.map(x=>x.label);
+  return [['Installer','Current','Current status','Previous','Previous status','Difference','Growth %','Share of selected %',...labels],
+    ...comparison.rows.map(r=>[r.name,r.current.value,r.current.status,r.previous.value,r.previous.status,
+      r.change.delta,r.change.pct,r.share,...r.trend.map(p=>p.value)])];
+}
 /** Consistent monthly CSV source for the installer table, profiles and future comparisons. */
 export function installerMonthlyCsv(analysis,f){
   const months=monthsBetween(f.start,f.end);
