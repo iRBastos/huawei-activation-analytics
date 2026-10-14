@@ -55,3 +55,10 @@
 .insight-priority.insight-high{background:#fcf0f2;color:#9b1830;font-weight:600}
 .insight-pagination{align-items:center;justify-content:flex-end;margin-top:15px}
 .installer-insight-header+ .installer-kpis{margin-top:15px}
+
+/* Four installer workspaces stay visible without horizontal tab hunting on phones. */
+@media(max-width:560px){
+ .installer-section-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;overflow:visible;border:0}
+ .installer-section-tabs button{white-space:normal;min-width:0;min-height:45px;padding:9px 7px;text-align:center;border:1px solid #e0e5eb;border-radius:5px;font-size:11px}
+ .installer-section-tabs button.active{border:1px solid #c71932;border-bottom:2px solid #c71932;background:#fff4f6}
+}

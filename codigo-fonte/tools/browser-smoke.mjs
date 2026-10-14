@@ -190,6 +190,10 @@ try{
  await evaluate("document.querySelector('[data-installer-tab=insights]').click()");
  await until("!!document.querySelector('#installer-insight-search')",'mobile insights');
  await inspectMobile('installer-insights');
+ // Transient notifications should not hide controls in archived visual evidence.
+ await evaluate("document.querySelector('#toast')?.classList.remove('visible')");
+ assert.equal(await evaluate("document.querySelectorAll('.installer-section-tabs button').length"),4);
+ assert.equal(await evaluate("(()=>{const r=[...document.querySelectorAll('.installer-section-tabs button')].map(x=>x.getBoundingClientRect());return Math.abs(r[0].top-r[1].top)<3&&r[2].top>r[0].top+30&&Math.abs(r[2].top-r[3].top)<3;})()"),true,'mobile installer tabs must be a readable 2x2 grid');
  const mobileShot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
  await writeFile(path.join(root,'browser-smoke-mobile.png'),Buffer.from(mobileShot.data,'base64'));
  await evaluate("document.querySelector('[data-nav=data]').click()");
@@ -198,6 +202,7 @@ try{
  await inspectMobile('data-installer-import');
  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
  await evaluate("document.querySelector('[data-nav=installers]').click()");
+ await evaluate("document.querySelector('#toast')?.classList.remove('visible')");
  const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
  await writeFile(path.join(root,'browser-smoke.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(exceptions,[],'uncaught browser errors');
