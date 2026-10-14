@@ -26,8 +26,8 @@ Working branch: `ux/redesign-v2.1`
 | F2 — navigation/filters | APPROVED BY OWNER | 178/178 tests; 25 viewport screenshots; Actions 38594347939 PASS | F3 performed |
 | F3 — Installer Intelligence | IMPLEMENTED — CI VERIFIED; DIRECTION CARRIED FORWARD | 182/182 tests; Actions 38598060565 passed; visual checkpoint F3; full 1000×48 bulk import performance remediated during F4 | Independent broad UX acceptance pending F6 |
 | F4 — Market Intelligence + Scale | IMPLEMENTED — CI VERIFIED; DIRECTION ACCEPTED FOR CONTINUATION | 187/187 tests; Actions 38601026894 pass; 91×48 KPI parity and large importer remediation | F5 completed; F6 full visual audit pending |
-| F5 — Data & Targets | IMPLEMENTED — CI VERIFIED | 193/193 tests; Actions 38603929592 PASS; equipment preview 200 rows with full CSV, grouped data tabs, targets and coverage disclosures, backup guidance; 25 visual screenshots; 1000×48 importer PASS | Owner F5 visual review; F6 accessibility/responsiveness next |
-| F6 — responsive/a11y | NOT STARTED | — | After F5 |
+| F5 — Data & Targets | IMPLEMENTED — CI VERIFIED; CONTINUED UNDER OWNER APPROVAL | 193/193 tests; Actions 38603929592 PASS; full synthetic importer + 25 viewports | F6 performed; Windows manual UAT still open |
+| F6 — responsive/a11y | IMPLEMENTED — CI VERIFIED; MANUAL UAT OPEN | 196/196 tests; GitHub Actions 38608114416 SUCCESS; 80/80 five-size screenshots, 0 overflow and JS exceptions; checked secondary contrast, keyboard tabs and 1000×48 importer; `docs/ux/F6_VERIFICATION.md` | F7 final QA/Draft PR after review; Windows UAT and full screen-reader audit not claimed |
 | F7 — final QA/Draft PR | NOT STARTED | — | After F6 |
 
 ## Observed CI caveat
@@ -95,3 +95,12 @@ Historical note: this ledger was created before the F1/F2/F3 implementation mile
 - Full import benchmark 1,000 installers × 48 months × 48,000 synthetic cells: validation 322 ms, initial commit 1,356 ms, index 66 ms, repeated import 3,121 ms, total 4,865 ms, 0 validation errors.
 - F5 evidence in `docs/ux/F5_VERIFICATION.md`; screenshots and JSON report stored in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign/UX Evidence`.
 - **F6 open gate**: full app visual and keyboard/a11y checks, manual Windows acceptance with safe test-profile backup, verify complete CSV download in real browser. No PR, merge, release; `main` stays at V2.0.0.
+
+## F6 milestone — 2026-10-14
+- Owner approved F6 quality pass and prohibited new features. F6 patch changed only CSS typography/layout, installer tab accessibility, and regression/browser tests on branch `ux/redesign-v2.1`.
+- Source commit `6f7ee697602773b1083404b796ea3b0685f318e0`; test-only selector fix `eaaf7637719c663efe0b1c4a95128cef4afc372d`; CI regenerated HTML/ZIP commit `271223cc5e6f3995d9f28be635b7e66f591809a5`.
+- First CI run 38607905074 failed because a new browser-test selector `[tabindex=0]` was invalid. Test harness fixed, retry run https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38608114416 **SUCCESS** for 196 Node tests, real `file://` Chromium smoke, offline verifier, migration and source ZIP.
+- 80 screenshots across 16 views × 5 resolutions using fictional equipment/demo and installer CSV, no document overflow/JS exceptions; mobile Data tabs 271→210px, Overview first KPI 817→788px. Secondary label/axis contrast checks and installer arrow/Home/End roving tab focus added.
+- Large importer repeated 1000×48 synthetic snapshot benchmark completed 3.741s locally; runtime device-specific, not an SLA. No analytics, import, backup or persistence calculation changes.
+- Report in `docs/ux/F6_VERIFICATION.md`; visual evidence + JSON in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign`.
+- **Next F7:** final acceptance review, Windows isolated-backup UAT, manually inspect exports/print, independent WCAG assistive-tech audit if certification sought, verify generated distributions; create **Draft PR only**, never merge/release without explicit approval. Main unchanged at `a962fe159bd5dd8b7d20f978910b27424d02e4db`.
