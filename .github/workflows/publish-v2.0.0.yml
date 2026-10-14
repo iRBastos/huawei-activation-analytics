@@ -1,0 +1,132 @@
+name: Publish Huawei Activation Analytics V2.0.0
+
+on:
+  push:
+    branches:
+      - release/v2.0.0-publish
+    paths:
+      - '.github/workflows/publish-v2.0.0.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-huawei-activation-analytics-v2.0.0
+  cancel-in-progress: false
+
+jobs:
+  validate-and-publish:
+    if: github.repository == 'iRBastos/huawei-activation-analytics'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout the exact approved main commit
+        uses: actions/checkout@v4
+        with:
+          ref: 'a962fe159bd5dd8b7d20f978910b27424d02e4db'
+          persist-credentials: false
+      - name: Assert immutable release target
+        run: test "$(git rev-parse HEAD)" = 'a962fe159bd5dd8b7d20f978910b27424d02e4db'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run all automated tests
+        shell: bash
+        working-directory: codigo-fonte
+        run: |
+          set -euo pipefail
+          npm test | tee "$RUNNER_TEMP/huawei-release-tests.tap"
+      - name: Rebuild standalone offline dashboard
+        run: python3 codigo-fonte/tools/build-offline.py
+      - name: Verify offline application
+        run: node codigo-fonte/tools/verify-offline.mjs
+      - name: Test real file-open browser and mobile viewport
+        run: node codigo-fonte/tools/browser-smoke.mjs
+      - name: Rebuild deterministic source package
+        run: python3 codigo-fonte/tools/build-release.py --test-log "$RUNNER_TEMP/huawei-release-tests.tap"
+      - name: Require exact tested files and valid ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- index.html codigo-fonte/dist/app.offline.js codigo-fonte.zip codigo-fonte/dist/test-results.txt documentacao/test-results.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          with ZipFile('codigo-fonte.zip') as z:
+              assert z.testzip() is None, "Invalid ZIP CRC"
+              for path in ("index.html","codigo-fonte/dist/app.offline.js",
+                           "codigo-fonte/dist/modules/installers.js",
+                           "codigo-fonte/tests/installers.test.mjs"):
+                  assert z.read(path)==Path(path).read_bytes(), "Stale release asset: "+path
+          print("Release files exactly match the approved source")
+          PY
+      - name: Publish official V2.0.0 release, tag and assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: 'a962fe159bd5dd8b7d20f978910b27424d02e4db'
+        run: |
+          set -euo pipefail
+          TAG=v2.0.0
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release v2.0.0 already exists; refusing duplicate publication."
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag v2.0.0 already exists; refusing to move it."
+            exit 1
+          fi
+          sha256sum index.html codigo-fonte.zip > SHA256SUMS.txt
+          cat > "$RUNNER_TEMP/RELEASE_NOTES.md" <<'EOF'
+          # Huawei Activation Analytics V2.0.0
+
+          **Stable V2.0.0 — offline installer and equipment activation analytics.**
+
+          ## What's new
+          - Installer import centre in **Data**, accepting supported XLSX/CSV monthly exports with manually confirmed Full/Partial coverage and safe re-import/undo.
+          - Separate installer overview, searchable **full account profile**, and side-by-side comparison of **2–6 installers**.
+          - Monthly, quarterly and annual charts; ranking, cohort evidence, historical trends and CSV export.
+          - Rule-based installer insights: significant growth or decline, verified inactivity/reactivation, evidence, reporting-confidence checks and suggested account-management follow-up.
+          - Correct treatment of repeated installer names, missing months, Chinese summary **=== 总计 ===**, and spreadsheet formula/error name cells.
+          - Separate installer/equipment filters, full local backups, browser-local/offline operation and responsive layout.
+
+          ## Downloads
+          - **index.html** — complete offline dashboard; open directly in Chrome or Edge (no server or installation required).
+          - **codigo-fonte.zip** — complete editable project, documents, templates and offline HTML.
+          - **SHA256SUMS.txt** — checksums of both official release assets.
+
+          ## Verification and privacy
+          - Approved application sources and distribution are pinned to commit `a962fe159bd5dd8b7d20f978910b27424d02e4db`.
+          - Automated suite: **174/174 passing**. Independent fictional-data cross-checks: **7/7 passing**.
+          - Real headless Chromium desktop/mobile, offline smoke and byte-for-byte deterministic asset comparison passed before publication.
+          - No customer installer or equipment activation files are included.
+          - Saved workspaces live in your browser and can depend on the local file path; **export a full backup before moving to a different folder or upgrading**.
+
+          **Nota (PT):** esta versão funciona totalmente offline. Faça backup do workspace anterior e restaure uma cópia na nova instalação antes de substituir seu arquivo atual. A validação com dados operacionais privados no Windows continua sob controle do usuário.
+
+          Source repository: https://github.com/iRBastos/huawei-activation-analytics
+          EOF
+          gh release create "$TAG" index.html codigo-fonte.zip SHA256SUMS.txt \
+            --target "$TARGET_SHA" \
+            --title "Huawei Activation Analytics V2.0.0" \
+            --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md" \
+            --latest
+          RESOLVED_SHA="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$RESOLVED_SHA" = "$TARGET_SHA"
+          gh release view "$TAG" --json url,tagName,isDraft,isPrerelease,assets \
+            --jq '{url:.url, tag:.tagName, draft:.isDraft, prerelease:.isPrerelease, assets:[.assets[].name]}'
+      - name: Upload evidence to the workflow run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2.0.0-publish-validation
+          path: |
+            browser-smoke.png
+            browser-smoke-mobile.png
+            SHA256SUMS.txt
+          if-no-files-found: warn
