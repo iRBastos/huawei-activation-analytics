@@ -60,7 +60,7 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - Configurable minimum volume (1/5/10/25, default 5) and change percentage (10/20/30/50, default 20) save in installer-only reporting preferences, with backward-compatible schema-1/2 backup defaults and validation.
 - Account-level signal appears on the **Installer profile**, reusing its existing domain report; the full insight list supports search, filters, pagination, evidence, suggested outreach, and export of the **same derived rows** to CSV.
 - Added synthetic edge-case tests for incomplete/open months, inactivity vs reactivation, zero baselines, thresholds and score bands, CSV consistency, backup compatibility, six-account legacy features and non-mutating profiles.
-- GitHub release sync validated **167/167** automated tests, offline DOM and headless Chromium smoke (including the insights tab and saving a threshold) and regenerated the standalone HTML/JS and ZIP. The independent current-head check must be green before release consideration.
+- GitHub release sync validated **171/171** automated tests, offline DOM and headless Chromium smoke (including the insights tab and saving a threshold) and regenerated the standalone HTML/JS and ZIP. The independent current-head check must be green before release consideration.
 - Reference method: `codigo-fonte/docs/INSTALLER-INSIGHTS.md`. Final representative actual XLSX, manual Windows file-open acceptance and explicit merge authorisation remain open in F6.
 
 ## F6 — independent technical acceptance (14 Oct 2026)
@@ -82,6 +82,18 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - [ ] Explicit user merge authorization. `main` must remain untouched until then.
 
 **Decision: TECHNICAL CANDIDATE / OPERATIONAL NO-GO (awaiting user data and Windows acceptance).**
+
+
+## F6 follow-up: full installer selectors and history access (14 October 2026)
+
+- **Reported regression reproduced:** Installer Profile silently kept only the first 100 account options; Compare 2–6 silently kept only the first 80 matching account buttons, even though searching queried the full list.
+- **Root cause removed:** both selectors now expose **all** matching, alphabetically ordered accounts. Search still considers manually confirmed source aliases; the selected profile account remains in the native dropdown while searching, even if it does not match the current term. The six-selected-account cap remains enforced, but no cap applies to the number of accounts visible in the scrollable choice list.
+- **Scroll experience:** selecting/removing an account in Compare 2–6 preserves the picker's scroll offset through DOM re-render, avoiding a jump to the first company when clicking far down the list.
+- **Other areas audited:** Installer overview rankings and Insights & priorities use explicit 50-row pages; importer review shows the first 200 changes **with full-preview CSV export**; commercial-change bars show a named Top 10; name-match suggestions announce a Top 20; inverter chart Top 8 is an initial *selection* not a catalogue limit. These intentional, communicated scopes remain unchanged.
+- **Previously hidden history fixed:** the latest ten import/union events remain visible, while **all older events and their undo controls** are available under an expandable “Show older” section. Historical data and undo rules are unchanged.
+- **Regression cases:** 1,105 source accounts in both selectors, final alphabetic account without search, search preserving selected account, last-name search, all accounts disabled except the six selected when max reached, 13 import-history entries, 12 account unions, and browser flow with 140+ accounts plus scroll-position preservation.
+- **Automated suite: 171 / 171 passing**, and standalone Chrome smoke passed on the development synchronisation job. No data contract, analytics, backup schema, account mappings or persistent storage were changed.
+- The final **post-synchronisation, current-head independent validation** must be green before reporting this correction as certified. Operational real-XLSX and Windows acceptance remain separate release blockers; do not merge `main` without approval.
 
 ## Remaining gates — not certified yet
 
