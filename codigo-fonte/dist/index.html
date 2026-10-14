@@ -2,9 +2,9 @@
 <html lang="en-IE">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Private Huawei equipment activation analysis for Ireland. Import, validate, compare and present monthly activation data.">
+  <meta name="description" content="Private equipment activation analysis for Ireland. Import, validate, compare and present monthly activation data.">
   <meta name="color-scheme" content="light">
-  <title>Huawei Activation Analytics</title>
+  <title>Activation Analytics</title>
   <link rel="stylesheet" href="styles.css">
   <script src="vendor/jszip.min.js" defer></script>
   <script type="module" src="modules/app.js"></script>
@@ -12,7 +12,19 @@
 <body>
   <a class="skip" href="#main">Skip to analysis</a>
   <aside class="sidebar" aria-label="Main navigation">
-    <a class="brand" href="#overview"><span class="brand-word">HUAWEI</span><span>Activation Analytics</span></a>
+    <a class="brand" href="#overview"><span class="brand-logo"><svg class="brand-mark" viewBox="0 0 180 120" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#CF0A2C">
+    <ellipse cx="90" cy="30" rx="12" ry="34"/>
+    <ellipse cx="61" cy="37" rx="11" ry="30" transform="rotate(-28 61 37)"/>
+    <ellipse cx="119" cy="37" rx="11" ry="30" transform="rotate(28 119 37)"/>
+    <ellipse cx="42" cy="56" rx="10" ry="25" transform="rotate(-54 42 56)"/>
+    <ellipse cx="138" cy="56" rx="10" ry="25" transform="rotate(54 138 56)"/>
+    <ellipse cx="30" cy="84" rx="9" ry="21" transform="rotate(-74 30 84)"/>
+    <ellipse cx="150" cy="84" rx="9" ry="21" transform="rotate(74 150 84)"/>
+    <ellipse cx="90" cy="58" rx="8" ry="18"/>
+  </g>
+  <text x="90" y="114" text-anchor="middle" font-size="20" font-family="Arial, Helvetica, sans-serif" font-weight="700" letter-spacing="3" fill="#CF0A2C">HUAWEI</text>
+</svg><span class="sr-only">Huawei</span></span><span>Activation Analytics</span></a>
     <div class="workspace-label"><span class="country">IE</span><span>Ireland<br><small>Digital Power</small></span></div>
     <nav id="navigation"></nav>
     <div class="sidebar-bottom"><span class="privacy-dot"></span>Private workspace<p>Equipment activations<br>Browser-local data</p><button class="text-button" data-action="help">Methodology & guide <span>↗</span></button></div>
@@ -21,7 +33,19 @@
     <header class="topbar"><span id="breadcrumb">Ireland / Overview</span><div class="top-actions"><button class="quiet" data-action="presentation">Presentation mode</button><button class="quiet" data-action="print">Print / PDF</button><button class="primary" data-action="import">Import data <span>＋</span></button></div></header>
     <div id="global-filters"></div>
     <main id="main" tabindex="-1"><div class="loading-state">Opening your workspace…</div></main>
-    <footer><span>Huawei Activation Analytics</span><span id="footer-status">Loading local storage…</span></footer>
+    <footer><span class="footer-brand"><span class="footer-logo"><svg class="brand-mark" viewBox="0 0 180 120" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#CF0A2C">
+    <ellipse cx="90" cy="30" rx="12" ry="34"/>
+    <ellipse cx="61" cy="37" rx="11" ry="30" transform="rotate(-28 61 37)"/>
+    <ellipse cx="119" cy="37" rx="11" ry="30" transform="rotate(28 119 37)"/>
+    <ellipse cx="42" cy="56" rx="10" ry="25" transform="rotate(-54 42 56)"/>
+    <ellipse cx="138" cy="56" rx="10" ry="25" transform="rotate(54 138 56)"/>
+    <ellipse cx="30" cy="84" rx="9" ry="21" transform="rotate(-74 30 84)"/>
+    <ellipse cx="150" cy="84" rx="9" ry="21" transform="rotate(74 150 84)"/>
+    <ellipse cx="90" cy="58" rx="8" ry="18"/>
+  </g>
+  <text x="90" y="114" text-anchor="middle" font-size="20" font-family="Arial, Helvetica, sans-serif" font-weight="700" letter-spacing="3" fill="#CF0A2C">HUAWEI</text>
+</svg></span><span>Activation Analytics</span></span><span id="footer-status">Loading local storage…</span></footer>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
   <dialog id="modal" aria-labelledby="modal-title"></dialog>

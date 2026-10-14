@@ -34,6 +34,10 @@ test('F4: profile includes three historic charts, recorded monthly table, filter
   const html=V.installerView(state,ui);
   assert.match(html,/id="installer-profile-picker"/);
   assert.match(html,/id="installer-profile-search"/);
+  assert.match(html,/class="installer-profile-pickerbar editing"/);
+  assert.match(html,/All [0-9]+ accounts available/);
+  assert.match(html,/data-action="installer-open-import"/);
+  assert.doesNotMatch(html,/Choose one installer/);
   assert.match(html,/Monthly history/);
   assert.match(html,/Quarterly history/);
   assert.match(html,/Annual history/);
@@ -46,19 +50,24 @@ test('F4: profile includes three historic charts, recorded monthly table, filter
   assert.match(html,/Evidence-based account insight/);
   assert.match(html,/Suggested next action/);
 });
-test('F4: 2–6 comparison shows full numeric table, two chart types and CSV export',()=>{
+test('F3: 2–6 comparison places numeric table before selectable absolute/indexed trend and retains CSV',()=>{
   const state=seed(),accounts=ids(state);
   const ui={installerTab:'compare',hiddenSeries:new Set(),installerCompareIds:accounts.slice(0,2)};
   const html=V.installerView(state,ui);
   assert.match(html,/data-installer-compare-pick=/);
   assert.match(html,/aria-pressed="true"/);
   assert.match(html,/Absolute activation trends/);
-  assert.match(html,/Indexed trend · baseline 100/);
+  assert.match(html,/data-installer-compare-mode="indexed"/);
   assert.match(html,/Account-by-account comparison/);
+  assert.ok(html.indexOf('Account-by-account comparison')<html.indexOf('Absolute activation trends'),'numeric table appears first');
   assert.match(html,/Underlying period values/);
   assert.match(html,/data-action="installer-compare-export"/);
   assert.match(html,/data-installer-fullprofile=/);
-  assert.ok((html.match(/<svg class="line-chart"/g)??[]).length>=2);
+  assert.equal((html.match(/<svg class="line-chart"/g)??[]).length,1,'one active chart limits noise');
+  const indexed=V.installerView(state,{...ui,installerCompareMode:'indexed'});
+  assert.match(indexed,/Indexed trend · baseline 100/);
+  assert.match(indexed,/data-installer-compare-mode="absolute"/);
+  assert.equal((indexed.match(/<svg class="line-chart"/g)??[]).length,1);
   assert.deepEqual(D.installerComparisonCsv(D.installerComparison(state,filters,accounts.slice(0,2),{now:clock}))[0].slice(-2),['2025-01','2025-02']);
 });
 test('F4: comparison fails safe when selection has only one or zero-baseline accounts',()=>{
@@ -130,7 +139,8 @@ test('F6 regression: native Installer Profile selector exposes all 1105 accounts
  const html=X.installerProfilePage(s,{installerProfileId:last.id});
  assert.equal((html.match(/<option value="/g)??[]).length,1105,'no hidden top-100 cap');
  assert.ok(html.includes('value="'+last.id+'" selected'));
- assert.ok(html.includes('1105 available of 1105 tracked accounts'));
+ assert.ok(html.includes('All 1105 accounts available'));
+ assert.ok(html.includes('class="installer-profile-pickerbar editing"'));
  const filtered=X.installerProfilePage(s,{installerProfileId:first.id,installerProfileSearch:'Installer 1104'});
  assert.equal((filtered.match(/<option value="/g)??[]).length,2,'search retains selected account plus match');
  assert.ok(filtered.includes('value="'+first.id+'" selected'));

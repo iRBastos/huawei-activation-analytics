@@ -4,7 +4,7 @@ import {spawn} from 'node:child_process';
 import {mkdtemp,readFile,writeFile,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const root=path.resolve(fileURLToPath(new URL('../../',import.meta.url)));
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const binaries=[process.env.CHROME_BIN,'/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].filter(Boolean);
@@ -67,7 +67,7 @@ try{
  await command('Runtime.enable');
  await command('Network.enable');
  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
- const url='file://'+path.join(root,'index.html');
+ const url=pathToFileURL(path.join(root,'index.html')).href;
  await command('Page.navigate',{url});
  await until("document.querySelector('#main')?.textContent?.includes('Ready for your activation data')",'empty dashboard');
  assert.equal(await evaluate("document.querySelectorAll('script[src]').length"),0,'all runtime scripts must be inlined');
@@ -91,6 +91,19 @@ try{
  const evidence=await evaluate("(()=>{const p=[...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence');return {chart:!!p.querySelector('svg.line-chart'),table:!!p.querySelector('table'),order:p.querySelector('svg.line-chart')?.compareDocumentPosition(p.querySelector('table'))};})()");
  assert.ok(evidence.chart&&evidence.table,'comparison must show chart AND table');
  assert.ok((evidence.order&4)!==0,'chart must appear before table');
+ // F5: Data Workspace keeps all seven destinations and keyboard-accessible grouped tabs.
+ await evaluate("document.querySelector('[data-nav=data]').click()");
+ await until("document.querySelectorAll('.data-workspace-tabs [role=tab]').length===7",'seven grouped Data tabs');
+ assert.equal(await evaluate("document.querySelectorAll('.data-tab-group').length"),4,'Import / Inspect / Configure / Protect grouping');
+ await evaluate("document.querySelector('[data-data-tab=records]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-data-tab=records]').getAttribute('aria-selected')"),'true');
+ await evaluate("document.querySelector('[data-data-tab=records]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");
+ assert.equal(await evaluate("document.querySelector('[data-data-tab=coverage]').getAttribute('aria-selected')"),'true','Data tabs are keyboard-operable');
+ assert.ok(await evaluate("!!document.querySelector('details.coverage-editor [data-form=coverage]')"),'coverage edit remains available');
+ await evaluate("document.querySelector('[data-data-tab=backup]').click()");
+ assert.ok(await evaluate("!!document.querySelector('#restore-file')&&!!document.querySelector('[data-action=backup]')"),'backup and restore remain discoverable');
+ await evaluate("document.querySelector('[data-nav=targets]').click()");
+ assert.ok(await evaluate("!!document.querySelector('details.target-editor [data-form=target]')"),'target review remains discoverable');
  // Installer UI acceptance runs on fictional CSV data in this temporary browser profile.
  await evaluate("document.querySelector('[data-action=exit-demo]').click()");
  await evaluate("document.querySelector('[data-nav=installers]').click()");
@@ -113,6 +126,15 @@ try{
  await evaluate("document.querySelector('[data-nav=overview]').click()");
  assert.equal(await evaluate("document.querySelector('[data-filter=start]').value"),originalInstallerStart,'installer imports cannot change equipment dates');
  await evaluate("document.querySelector('[data-nav=installers]').click()");
+ // F6: installer tabs form one roving keyboard tab stop and support arrow/Home/End.
+ assert.equal(await evaluate("[...document.querySelectorAll('.installer-section-tabs [role=tab]')].filter(el=>el.tabIndex===0).length"),1);
+ await evaluate("document.querySelector('[data-installer-tab=overview]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");
+ assert.equal(await evaluate("document.querySelector('.installer-section-tabs [aria-selected=true]').dataset.installerTab"),'profile');
+ assert.equal(await evaluate("document.activeElement?.dataset.installerTab"),'profile');
+ await evaluate("document.querySelector('[data-installer-tab=profile]').dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}))");
+ assert.equal(await evaluate("document.querySelector('.installer-section-tabs [aria-selected=true]').dataset.installerTab"),'insights');
+ await evaluate("document.querySelector('[data-installer-tab=insights]').dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}))");
+ assert.equal(await evaluate("document.querySelector('.installer-section-tabs [aria-selected=true]').dataset.installerTab"),'overview');
  assert.equal(await evaluate("document.querySelectorAll('[data-installer-select]').length"),3);
  await evaluate("document.querySelector('[data-installer-fullprofile]').click()");
  await until("!!document.querySelector('#installer-profile-picker')",'full installer profile');
@@ -125,14 +147,24 @@ try{
  await until("document.querySelector('#main').textContent.includes('Account-by-account comparison')",'2 installer comparison');
  assert.ok(await evaluate("document.querySelectorAll('svg.line-chart').length>=1"));
  assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Underlying period values')"));
+ // F3: comparison summary precedes the chart, and both chart modes are reachable.
+ assert.ok(await evaluate("(()=>{const h=document.querySelector('#main').innerHTML;return h.indexOf('Account-by-account comparison')<h.indexOf('Absolute activation trends')})()"));
+ await evaluate("document.querySelector('[data-installer-compare-mode=indexed]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-installer-compare-mode=indexed]').getAttribute('aria-pressed')"),'true');
+ await evaluate("document.querySelector('[data-installer-compare-mode=absolute]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-installer-compare-mode=absolute]').getAttribute('aria-pressed')"),'true');
  await evaluate("document.querySelector('[data-installer-tab=insights]').click()");
  await until("!!document.querySelector('#installer-insight-volume')",'installer insights');
  assert.ok(await evaluate("document.querySelector('#main').textContent.includes('Suggested next action')"));
+ assert.ok(await evaluate("(()=>{const h=document.querySelector('#main').innerHTML;return h.indexOf('Account priorities')<h.indexOf('Evidence thresholds')})()"));
+ assert.ok(await evaluate("!!document.querySelector('details.installer-insight-rules')"));
  await evaluate("(()=>{const select=document.querySelector('#installer-insight-volume');select.value='10';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
  await until("document.querySelector('#installer-insight-volume')?.value==='10'",'persisted installer insight threshold');
  await evaluate("document.querySelector('[data-installer-tab=overview]').click()");
 
  await until("document.querySelectorAll('[data-installer-select]').length===3",'portfolio after comparison');
+ assert.ok(await evaluate("!!document.querySelector('details.installer-account-management')"));
+ assert.ok(await evaluate("document.querySelector('.installer-account-management').open===false"));
  await evaluate("(()=>{const ids=[...document.querySelectorAll('[data-installer-select]')].map(x=>x.dataset.installerSelect);for(const id of ids){const el=document.querySelector('[data-installer-select=\"'+id+'\"]');el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}document.querySelector('[data-action=installer-merge]').click();})()");
  await until("!!document.querySelector('[data-form=installer-merge]')",'merge preview');
  await evaluate("(()=>{const f=document.querySelector('[data-form=installer-merge]');f.querySelector('[name=name]').value='Bord Gáis Energy';f.requestSubmit();})()");

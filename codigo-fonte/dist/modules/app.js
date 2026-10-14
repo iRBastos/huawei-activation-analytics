@@ -9,20 +9,20 @@ import {makeDemo} from './demo.js';
 
 let state=D.freshState();
 let realState=null;
-const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,gridPhase:'All',inverterSelectedModels:null,inverterPickerOpen:false,inverterModelSearch:'',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
+const ui={page:V.ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):'overview',dataTab:'import',moreFilters:false,moreAnalysis:false,moreInstallerOptions:false,gridPhase:'All',inverterSelectedModels:null,inverterPickerOpen:false,inverterModelSearch:'',phaseChartMode:'indexed',quarter:3,quarterMetric:'inverters',dataset:'unified',pending:null,hiddenSeries:new Set(),trendMetric:'volume',mixBasis:'modules',compareMetric:'Inverter',coverageCategory:'Inverter',recordPage:0,loading:false,saving:false,storageError:null};
 const $=s=>document.querySelector(s);
 let toastTimer;
 function toast(text,error=false){const el=$('#toast');el.textContent=text;el.style.background=error?'#8b352c':'#26343c';el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),error?10000:5500);}
 function render(){
   $('#navigation').innerHTML=V.navigation(ui.page);
-  $('#breadcrumb').textContent=`Ireland / ${V.NAV[V.ROUTES.indexOf(ui.page)]}`;
-  $('#global-filters').innerHTML=ui.page==='installers'?IA.installerAnalyticsFilters(state,ui):V.filters(state,ui);
+  $('#breadcrumb').textContent=V.breadcrumb(ui.page,ui.dataTab);
+  $('#global-filters').innerHTML=ui.page==='installers'?IA.installerAnalyticsFilters(state,ui):ui.page==='data'?!['records','coverage'].includes(ui.dataTab)?'':V.filters(state,ui,{periodOnly:ui.dataTab==='coverage'}):V.filters(state,ui);
   const pages={overview:V.overviewView,inverters:V.inverterView,batteries:V.batteriesView,comparisons:V.comparisonsView,targets:V.targetsView,data:V.dataView,installers:IV.installerView};
   const storage=storageInfo();
   const sessionNotice=!ui.demo&&storage.mode==='memory'?'<div class="notice"><p><strong>Session-only workspace.</strong> This browser does not allow this file to save automatically. Import and analyse normally, then download a full backup before closing.</p><button class="small" data-action="backup">Download full backup</button></div>':'';
   $('#main').innerHTML=sessionNotice+(ui.demo?'<div class="notice demo-notice"><p><strong>Fictional demo.</strong> These quantities and findings are illustrative. Your real workspace is unchanged. Imports and exports are disabled in demo mode.</p><button class="small" data-action="exit-demo">Return to real workspace</button></div>':'')+(ui.storageError?`<div class="notice error"><p>${e(ui.storageError)}. Saving is unavailable until local browser storage works.</p></div>`:'')+pages[ui.page](state,ui);
   $('#footer-status').textContent=`${Object.keys(state.records).length.toLocaleString('en-IE')} ${ui.demo?'fictional demo':storage.mode==='memory'?'session':'saved'} equipment records · ${Object.keys(state.installers.accounts).length} installer accounts · Europe/Dublin calendar · ${ui.demo?'Demo changes are not saved':storage.mode==='memory'?'Download a full backup before closing':'Data stays in this browser'}`;
-  document.title=`${V.NAV[V.ROUTES.indexOf(ui.page)]} · Huawei Activation Analytics`;
+  document.title=`${V.NAV[V.ROUTES.indexOf(ui.page)]} · Activation Analytics`;
 }
 async function commit(next,message){
   if(ui.saving)throw new Error('A save is already in progress. Please wait.');ui.saving=true;
@@ -55,6 +55,12 @@ async function chooseInstallerSheet(name){const p=ui.installerPending;if(!p)retu
 async function importInstallerFile(file){if(!file)return;if(ui.demo)throw new Error('Exit demo before importing.');ui.installerLoading=true;ui.installerPending=null;ui.installerError=null;render();try{const workbook=await readWorkbook(await file.arrayBuffer(),file.name);ui.installerPending={workbook,filename:file.name};await chooseInstallerSheet(workbook.names[0]);}catch(error){ui.installerPending=null;ui.installerError=error.message;}finally{ui.installerLoading=false;render();}}
 function reviewInstallerMerge(ids){if(ui.demo)throw new Error('Exit demo before merging installers.');ui.installerMergeIds=ids;openModal('Unify installers',IV.installerMergePreview(state,ids));}
 
+document.addEventListener('toggle',event=>{
+  if(event.target.matches?.('details.installer-compare-edit')&&event.target.isConnected){
+    ui.installerCompareEditorOpen=event.target.open;
+  }
+},true);
+
 document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
@@ -64,6 +70,10 @@ document.addEventListener('click',async event=>{
     }
     if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
     if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerCompareMode){
+      if(!['absolute','indexed'].includes(el.dataset.installerCompareMode))return;
+      ui.installerCompareMode=el.dataset.installerCompareMode;render();return;
+    }
     if(el.dataset.installerComparePick){
       const previousScroll=document.querySelector('.installer-compare-picker')?.scrollTop??0;
       const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
@@ -71,6 +81,7 @@ document.addEventListener('click',async event=>{
       if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
       else if(ids.length<6)ui.installerCompareIds=[...ids,id];
       else throw new Error('Compare a maximum of six installers.');
+      ui.installerCompareEditorOpen=true;
       ui.hiddenSeries.clear();render();
       const picker=document.querySelector('.installer-compare-picker');if(picker)picker.scrollTop=previousScroll;
       return;
@@ -143,6 +154,7 @@ document.addEventListener('click',async event=>{
       }
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
+      case 'equipment-preview-export':{const p=ui.pending;if(p?.validation)download(toCsv([['Month','Model','Category','Previous','Incoming','Difference','Action','Source cell'],...D.importPreview(state,p.validation).map(r=>[r.month,r.model,({...state.catalog,...p.classifications})[r.model]?.category??'Unclassified',r.previous,r.quantity,r.difference,r.action,r.source.cell])]),'equipment-import-preview.csv','text/csv;charset=utf-8');break;}
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
       case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),D.installerFilters(state))),'installer-kpis.csv','text/csv;charset=utf-8');break;}
       case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
@@ -155,6 +167,8 @@ document.addEventListener('click',async event=>{
       case 'inverter-chart-top':ui.inverterSelectedModels=null;ui.hiddenSeries.clear();render();break;
       case 'inverter-chart-clear':ui.inverterSelectedModels=[];render();break;
       case 'toggle-filters':ui.moreFilters=!ui.moreFilters;render();break;
+      case 'toggle-analysis':ui.moreAnalysis=!ui.moreAnalysis;render();break;
+      case 'toggle-installer-options':ui.moreInstallerOptions=!ui.moreInstallerOptions;render();break;
       case 'reset-filters':{ui.gridPhase='All';const next=D.clone(state);Object.assign(next.preferences,{category:'All',model:'All',family:'All'});await commit(next);break;}
       case 'presentation':document.body.classList.toggle('presentation');break;
       case 'print':{const previous=ui.page;ui.page='overview';render();$('#main').querySelectorAll('details').forEach(x=>x.open=true);window.print();ui.page=previous;render();break;}
@@ -172,7 +186,26 @@ document.addEventListener('click',async event=>{
     }
   }catch(err){toast(err.message,true);}
 });
-document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('g[role="button"]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+document.addEventListener('keydown',event=>{
+ if(event.target.matches?.('[data-installer-tab]')&&['ArrowRight','ArrowLeft','Home','End'].includes(event.key)){
+  const tabs=[...document.querySelectorAll('.installer-section-tabs [data-installer-tab]')];
+  const at=tabs.indexOf(event.target);if(at<0)return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  const id=tabs[next].dataset.installerTab;
+  ui.installerTab=id;ui.hiddenSeries.clear();render();
+  document.querySelector(`[data-installer-tab="${id}"]`)?.focus();return;
+ }
+ if(event.target.matches?.('[data-data-tab]')&&['ArrowRight','ArrowLeft','Home','End'].includes(event.key)){
+  const tabs=[...document.querySelectorAll('.data-workspace-tabs [data-data-tab]')];
+  const at=tabs.indexOf(event.target);if(at<0)return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  const id=tabs[next].dataset.dataTab;navigate('data',id);
+  document.querySelector(`[data-data-tab="${id}"]`)?.focus();return;
+ }
+ if((event.key==='Enter'||event.key===' ')&&event.target.matches?.('g[role="button"]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}
+});
 
 document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
