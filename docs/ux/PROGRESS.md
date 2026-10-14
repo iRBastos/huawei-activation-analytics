@@ -22,8 +22,8 @@ Working branch: `ux/redesign-v2.1`
 |---|---|---|---|
 | Preparation | DONE | Dedicated branch created at official V2.0.0 SHA; approved plan and UX audit committed | F0 baseline |
 | F0 — baseline | PILOT BASELINE VERIFIED | 174/174 original tests; measured same-fixture screenshots for profile on 5 viewports; full app matrix remains for F6; original file:// smoke passes on GitHub Actions | Reference evidence `docs/ux/F0_F1_VERIFICATION.md` |
-| F1 — pilot Installer Profile | IMPLEMENTED — AWAITING UX APPROVAL | 174/174 local tests; 12/12 targeted; Actions run 38589444121 PASS; KPI begins 80–126 px higher; 0 overflow in 5 sizes | User reviews before/after and approves F2 |
-| F2 — navigation/filters | NOT STARTED | — | After F1 acceptance |
+| F1 — pilot Installer Profile | APPROVED BY OWNER | 174/174 local tests; 12/12 targeted; Actions run 38589444121 PASS; KPI begins 80–126 px higher | Direction approved; F2 performed |
+| F2 — navigation/filters | IMPLEMENTED — VERIFIED | 178/178 local Node tests; 4 F2 regressions; 25 browser viewport screenshots; Actions run 38594347939 PASS; generated HTML/ZIP synced. See `docs/ux/F2_VERIFICATION.md` | Owner reviews checkpoint before F3 |
 | F3 — Installer Intelligence | NOT STARTED | — | After F2 |
 | F4 — Market Intelligence | NOT STARTED | — | After F3 |
 | F5 — Data & Targets | NOT STARTED | — | After F4 |
@@ -56,3 +56,12 @@ No visual redesign implemented yet.
 - Exact visual metrics and local browser harness limitations documented at `docs/ux/F0_F1_VERIFICATION.md`.
 - Screenshot comparisons persisted in Library path `/Huawei Activation Analytics/V2.1 UX Redesign/UX Evidence`.
 - **STOP GATE:** Do not expand to F2 before owner reviews the pilot. Do not merge/release without explicit permission.
+
+## F2 milestone — 2026-10-14
+- F1 pilot direction explicitly approved by owner; F2 redesign executed in a single atomic GitHub source commit `6dc127cc3d2b51dbdcd7d53308b1acf6e8e3a81f`, **on isolated branch only**.
+- F2 adds grouped sidebar nav, contextual breadcrumbs, compact advanced/product filter expanders, coherent independent installer filtering, appropriate Data tab filter suppression, 4 new tests.
+- Local controlled-concurrency Node tests: **178/178 PASS**. Offline verification PASS. Chromium visual fixture: 25 screenshots across 5 viewports, no horizontal overflow or runtime exception.
+- GitHub Actions run https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38594347939 **SUCCESS**; generated HTML and deterministic ZIP automatically committed only to `ux/redesign-v2.1`.
+- Evidence saved in `docs/ux/F2_VERIFICATION.md`; desktop/mobile comparisons saved in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign/UX Evidence`.
+- `main` remained at V2.0.0 SHA `a962fe159bd5dd8b7d20f978910b27424d02e4db` at checkpoint.
+- **STOP GATE:** Request owner approval of F2 navigation/filter direction before F3. No main merge, PR or release.
