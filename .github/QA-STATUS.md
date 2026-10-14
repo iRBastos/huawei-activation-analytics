@@ -1,5 +1,19 @@
 # V2 quality gates — installer reporting coverage
 
+## V2 release approval and main integration — 14 Oct 2026
+
+**RELEASE INTEGRATED INTO `main` WITH THE USER'S EXPLICIT APPROVAL.** Historical "do not merge" sections below document the pre-release gates and are superseded by this decision for the approved V2 feature set.
+
+- The user reported that the application apparently worked with the local operational data and subsequently explicitly authorised the GitHub push/merge after the independent synthetic audit. No production file was transferred to this repository or to the test environment.
+- **PR #2** (installer import foundation) merged into `main`: merge commit `60efaf05da492dfa7685eec0fb1557cbca47bccd`.
+- **PR #3** (complete V2) retargeted from the foundation branch to `main`, confirmed clean and merged: merge commit `aa87539ab1584a404828d01310a5b99dd46faddc`, with approved head `d121cdbb0a42760d70ebe303d084ff06eeae47a1`.
+- Both PRs were merged with exact expected head SHA checks and have no pending review threads. No unexpected source changes were included.
+- `main` merge commit tree **exactly matches** the validated V2 source tree (`b58a3918c69703a8519343712ead64743b4922c8`), including offline `index.html`, `app.offline.js` and ZIP.
+- GitHub Actions validation succeeded after each merge: foundation `38571568622`, complete V2 `38571755552`. V2 had **174/174 Node tests**, seven private independent cross-language synthetic oracles, Chromium `file://` and mobile smoke, artifact consistency checks.
+- The user's local data and precise Windows environment were not accessible to independent QA; synthetic assurance and the user's explicit functional approval are separate evidence. No guarantee of zero defects or unknown exporter compatibility is implied.
+- This is a **documentation-only decision record** and does not modify application code, importer logic, persistence or generated distributions.
+
+
 Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
 ## Completed: foundation and F1 coverage snapshot semantics
