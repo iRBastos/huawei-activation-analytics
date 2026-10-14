@@ -1,6 +1,6 @@
 # Huawei Activation Analytics V2 — Release Acceptance
 
-**State: CONDITIONAL / DO NOT MERGE.** Automated CI is not a substitute for representative real data or manual Windows acceptance. The V2 PR is based on the open installer-import foundation PR, not directly on \`main\`.
+**State: CONDITIONAL / DO NOT MERGE.** Automated CI is not a substitute for representative real data or manual Windows acceptance. The V2 PR is based on the open installer-import foundation PR, not directly on `main`.
 
 ## Decision rule
 
@@ -9,15 +9,15 @@ A release is **GO** only if all of these are true:
 - [ ] Latest V2 **HEAD** has passing Node tests, simulated offline app, real Chromium file-open browser test, 390px viewport check, and reproducible HTML/JavaScript/ZIP freshness checks.
 - [ ] An **actual SO installer export** (or a sanitised faithful copy, never committed publicly) is successfully imported with independently reconciled monthly totals, aliases and reporting scope.
 - [ ] Existing private workspace backup has been saved, restored into the release candidate and checked for **equipment + installer** data and preferences.
-- [ ] User has opened the shipped offline \`index.html\` on **Windows** in Chrome/Edge, completed the acceptance workflow below, and confirmed readability at normal and narrow screen widths.
+- [ ] User has opened the shipped offline `index.html` on **Windows** in Chrome/Edge, completed the acceptance workflow below, and confirmed readability at normal and narrow screen widths.
 - [ ] All critical defects are closed and current release evidence is linked from the PR.
-- [ ] User explicitly approves the intended PR merges in order. Never merge into \`main\` from an untested artefact.
+- [ ] User explicitly approves the intended PR merges in order. Never merge into `main` from an untested artefact.
 
 ## Evidence already automated
 
-The GitHub Actions pipeline validates the current source branch with the test suite, offline simulated DOM, and a real standalone \`file://\` session in headless Chromium. It guards the generated HTML, bundled JavaScript and source ZIP against stale distributions; the ZIP contents are checked against source file bytes and ZIP integrity.
+The GitHub Actions pipeline validates the current source branch with the test suite, offline simulated DOM, and a real standalone `file://` session in headless Chromium. It guards the generated HTML, bundled JavaScript and source ZIP against stale distributions; the ZIP contents are checked against source file bytes and ZIP integrity.
 
-Synthetic fixtures cover duplicate installer row aggregation, \`=== 总计 ===\` exclusion in CSV/XLSX, blank=0 versus absent=unknown, full versus partial snapshots, superseded historical values, corrections, undo/unmerge, migration of old backups, equipment isolation, 2–6 account comparisons, invalid indexed baselines, insight evidence, CSV safety and 1,000 installers × 48 months. Browser smoke tests import, export-eligible state, merge, reload persistence, undo, profile, comparison, insights, mobile viewport and absence of external network requests.
+Synthetic fixtures cover duplicate installer row aggregation, `=== 总计 ===` exclusion in CSV/XLSX, blank=0 versus absent=unknown, full versus partial snapshots, superseded historical values, corrections, undo/unmerge, migration of old backups, equipment isolation, 2–6 account comparisons, invalid indexed baselines, insight evidence, CSV safety and 1,000 installers × 48 months. Browser smoke tests import, export-eligible state, merge, reload persistence, undo, profile, comparison, insights, mobile viewport and absence of external network requests.
 
 The headless mobile viewport takes a screenshot at **390×844** and verifies that the overall page does not overflow horizontally on the Overview, Profile, Compare, Insights and Data installer-import areas. Each of the four installer tabs must be visibly accessible in a **two-column grid** at this width. Tables may still scroll **within** their own containers. Screenshots are attached to the GitHub Actions run; they are not user data.
 
@@ -27,8 +27,8 @@ The headless mobile viewport takes a screenshot at **390×844** and verifies tha
 
 Two prior workbook artefacts were available only inside the private ChatGPT working environment:
 
-- \`Installer_Activation_Tracker_2023_2026.xlsx\`: an eight-sheet tracker whose Company Setup and Monthly Input data rows contain formulas but **no populated raw input values**. Its Monthly Input layout also includes Company ID, Region, Tier, Status, Account Owner and named month columns; this is a management tracker, **not the raw SO monthly export matrix**. Do not present it as proof of import compatibility with the operational export.
-- \`Activation_Analysis_2023_2026_CORRIGIDA.xlsx\`: a multi-sheet equipment analysis template with **unfilled activation input cells**. It is not a populated equipment/model export.
+- `Installer_Activation_Tracker_2023_2026.xlsx`: an eight-sheet tracker whose Company Setup and Monthly Input data rows contain formulas but **no populated raw input values**. Its Monthly Input layout also includes Company ID, Region, Tier, Status, Account Owner and named month columns; this is a management tracker, **not the raw SO monthly export matrix**. Do not present it as proof of import compatibility with the operational export.
+- `Activation_Analysis_2023_2026_CORRIGIDA.xlsx`: a multi-sheet equipment analysis template with **unfilled activation input cells**. It is not a populated equipment/model export.
 
 This inspection is structural and read-only. These files must not be copied into source control, attached to PRs or published.
 
@@ -37,10 +37,10 @@ This inspection is structural and read-only. These files must not be copied into
 ## Windows acceptance script (user-run, no development skills needed)
 
 1. **Back up first.** From the existing running workspace, use the application's full **Backup** function and keep the JSON file in a safe location. Record the number of equipment records, installer accounts and a few verified month totals independently. Do not delete or overwrite your current HTML or backup.
-2. **Unpack the candidate into a new folder.** Open its \`index.html\` directly in Windows Chrome or Edge. It should work without running a server, installing Node/Python, or connecting to the internet.
-3. **Important storage limitation:** the offline workspace uses browser-local storage identified partly by the \`file://\` path. Moving/renaming the HTML or opening it from a new folder may show an **empty workspace**. That is not evidence that the data was deleted. Always **export/import a full backup** when moving to a new installation or folder.
+2. **Unpack the candidate into a new folder.** Open its `index.html` directly in Windows Chrome or Edge. It should work without running a server, installing Node/Python, or connecting to the internet.
+3. **Important storage limitation:** the offline workspace uses browser-local storage identified partly by the `file://` path. Moving/renaming the HTML or opening it from a new folder may show an **empty workspace**. That is not evidence that the data was deleted. Always **export/import a full backup** when moving to a new installation or folder.
 4. **Restore a copy of the backup** into the test workspace. Compare equipment totals, installer accounts, name unions, reporting scope/history and date filters to the source. Equipment charts must remain independent of installer filters.
-5. Open **Data → Installer imports**. Import a **sanitised representative, populated raw SO file**. Review selected sheet, header row and installer-name column; inspect preview and every validation warning. Confirm that \`=== 总计 ===\` does not create an installer or inflate counts, that repeated names sum, and that the trailing Total column is ignored.
+5. Open **Data → Installer imports**. Import a **sanitised representative, populated raw SO file**. Review selected sheet, header row and installer-name column; inspect preview and every validation warning. Confirm that `=== 总计 ===` does not create an installer or inflate counts, that repeated names sum, and that the trailing Total column is ignored.
 6. Choose **Partial** unless you can attest that the chosen file covers the **entire tracked installer population** in every selected month. Mark **Full** only after checking the exporter definition; otherwise missing installers must remain unknown rather than zero.
 7. Cross-check five installer/month pairs **against Excel manually**, including a duplicate source name, a zero/blank, an absent month and one merged account. Cross-check at least one total against the raw report, **excluding** its total row.
 8. Reimport one unchanged file and confirm no activation count increases. Import a revised file, verify snapshot replacement, then undo the revision and confirm the initial totals return without disturbing equipment data.
