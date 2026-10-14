@@ -4,7 +4,7 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 
 ## Completed: foundation and F1 coverage snapshot semantics
 
-- Node regression suite: **137 / 137 passing** on synthetic data during latest source-branch sync, including 27 additional V2 tests against the 110-test PR #2 foundation.
+- Node regression suite: **144 / 144 passing** on synthetic data during latest source-branch sync, including 34 additional V2 tests against the 110-test PR #2 foundation.
 - Full-snapshot import **requires explicit user confirmation**. Partial imports never assume omitted companies have zero activations.
 - Full months have auditable reporting-scope metadata (filename, worksheet, timestamp, import ID). Absent accounts contribute confirmed zero only where the entire population is declared complete.
 - Later complete snapshots **supersede stale earlier records** of omitted source names without deleting their audit evidence. Partial corrections can reintroduce individual aliases. Undo restores previous values and scope; conflicts are rejected.
@@ -30,11 +30,20 @@ Branch: `feat/installer-analytics-v2`. Base PR: #2. Draft integration PR: #3.
 - **137/137** synthetic-data tests passed, plus sync-workflow offline simulated browser, real headless Chromium, generated HTML and ZIP.
 - UI work for a dedicated profile page and interactive 2–6 installer comparison remains F4. No installer/model joins have been invented.
 
+## F3 — Data workspace and independent filters (14 Oct 2026)
+
+- Equipment and installer reporting preferences are independent and restored with backward-compatible schema-1/schema-2 migration.
+- Data → Installer imports now hosts the existing file input, worksheet/header preview, Full/Partial scope confirmation and import history/undo. The Installers workspace retains account merges, ranking, heatmap and KPIs.
+- The installer navigation button leads to the Data import tab rather than duplicating its form.
+- Standalone HTML Chromium smoke uploads files in Data, returns to installer analytics and checks that the equipment reporting period does not shift.
+- Tests cover Data-only importer placement, preview/approvals, audit evidence, backup validity and isolation of reporting windows.
+- **144 / 144 automated tests passing** and sync-workflow offline/Chromium generation successful. Acceptance on representative actual XLSX and Windows remains pending.
+
 ## Remaining gates — not certified yet
 
 - [ ] Manual user acceptance on a representative **sanitized actual installer XLSX** (not included in GitHub).
 - [ ] Confirm field-level scope descriptions and whether all real monthly reports represent full installer population.
-- [ ] Separate equipment and installer filter preferences and centralize imports (F3); build full profile/comparison UX (F4) and commercial rules (F5).
+- [ ] Build dedicated account profile and interactive 2–6 comparison UX (F4) and deterministic commercial insights (F5).
 - [ ] Windows file-open browser, multi-month import/reload, export, responsive layout, and full backed-up workspace acceptance (F6).
 - [ ] Merge only with explicit user approval after all V2 gates.
 

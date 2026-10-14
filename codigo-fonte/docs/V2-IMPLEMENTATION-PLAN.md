@@ -75,3 +75,11 @@ No CRM integration, cloud database, browser sync, live source refresh, generativ
 - `installerComparison` supports exactly 2–6 distinct tracked accounts in requested order, with unit totals, per-account trends, equal-period checks and completeness-aware shares; UI selection will be part of F4.
 - `installerMonthlyCsv` uses the same per-account measures as profile and heatmap, includes reported-total status, and leaves missing periods blank rather than inventing zero.
 - No new storage schema, framework, or separate calculation module introduced.
+
+## F3 Data & filters (implemented on the V2 branch)
+
+- Kept the existing import/preview components and moved them from the Installers analytics page to Data → Installer imports, including import audit/undo. Account union history remains in Installers.
+- Added a navigation action from Installers back to the Data installer importer.
+- Equipment and installer date, comparison and aggregation filters now persist separately (`preferences` and `installerPreferences`). Importing an installer matrix changes only the installer reporting window.
+- Old schema-1 and schema-2 backups without installer preferences inherit the saved reporting period on restore, without modifying existing equipment filters; no schema version bump or new data storage technology.
+- Added tests for Data-only import controls, preview/approval, audit history, backup migration and independent filter behavior; Chromium file-open smoke covers upload through Data and checks that equipment dates remain unchanged.

@@ -1,13 +1,14 @@
 # Installer import foundation
 
-This release adds the Installers workspace to the existing equipment dashboard.
-Installer values mean inverter activations during each month, without model detail.
-It does not implement installer growth KPIs, rankings by growth, completeness declarations,
-commercial actions, forecasts or device-to-installer joins yet.
+Installer values mean inverter activations by company and month, without model detail.
+The **Data → Installer imports** tab owns workbook import, previews and the import audit.
+The **Installers** workspace owns rankings, trends, account unions, and source evidence.
+The individual profile and interactive 2–6 installer comparison screen are future V2 work.
+No device-to-installer association, revenue or Irish market share can be inferred.
 
 ## Import
 
-1. Open Installers and choose an XLSX or comma-separated CSV file.
+1. Open **Data → Installer imports** (or use **Installers → Import installer data**) and choose an XLSX or comma-separated CSV file.
 2. Choose the worksheet, header row and installer-name column. The other populated
    columns must be months, apart from an optional trailing Total column.
 3. Supported month headers: YYYYMM, YYYY-MM, ISO dates, English month + four-digit year,
@@ -25,6 +26,13 @@ Rows marked `Total`, `Grand Total`, `=== 总计 ===`, or `合计` are summary ro
 Repeated source names in one file are summed month by month. Each file is a snapshot
 of the named sources and months it supplies, not an incremental batch.
 Reimporting replaces those source/month snapshots. Omitted sources and months remain.
+
+## Independent reporting filters
+
+Equipment and installer analysis retain separate date ranges, aggregation and comparison settings.
+Importing an installer workbook updates only the installer reporting period; equipment charts do not
+move to the imported date range. Existing schema-1 and schema-2 backups without installer preferences
+are migrated using their previous saved equipment date settings once; thereafter both stay independent.
 
 ## Unify accounts
 
