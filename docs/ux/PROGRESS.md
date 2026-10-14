@@ -28,7 +28,7 @@ Working branch: `ux/redesign-v2.1`
 | F4 — Market Intelligence + Scale | IMPLEMENTED — CI VERIFIED; DIRECTION ACCEPTED FOR CONTINUATION | 187/187 tests; Actions 38601026894 pass; 91×48 KPI parity and large importer remediation | F5 completed; F6 full visual audit pending |
 | F5 — Data & Targets | IMPLEMENTED — CI VERIFIED; CONTINUED UNDER OWNER APPROVAL | 193/193 tests; Actions 38603929592 PASS; full synthetic importer + 25 viewports | F6 performed; Windows manual UAT still open |
 | F6 — responsive/a11y | IMPLEMENTED — CI VERIFIED; MANUAL UAT OPEN | 196/196 tests; GitHub Actions 38608114416 SUCCESS; 80/80 five-size screenshots, 0 overflow and JS exceptions; checked secondary contrast, keyboard tabs and 1000×48 importer; `docs/ux/F6_VERIFICATION.md` | F7 final QA/Draft PR after review; Windows UAT and full screen-reader audit not claimed |
-| F7 — final QA/Draft PR | NOT STARTED | — | After F6 |
+| F7 — final QA/Draft PR | AUTOMATED ACCEPTANCE PASS — DRAFT PR REVIEW | 196/196 Windows Node tests; real Windows Chrome file:// smoke and Linux CI PASS; standalone HTML & ZIP byte hashes match branch; basic secrets/user-data scan PASS. See `docs/ux/F7_VERIFICATION.md` | Owner manual isolated Windows UAT, accessibility review as necessary, approve merge explicitly |
 
 ## Observed CI caveat
 `.github/workflows/sync-release.yml` only writes to legacy development branches, not `ux/redesign-v2.1`. The working branch must explicitly rebuild generated HTML, JavaScript and deterministic ZIP, and CI must validate byte freshness before accepting changes.
@@ -104,3 +104,12 @@ Historical note: this ledger was created before the F1/F2/F3 implementation mile
 - Large importer repeated 1000×48 synthetic snapshot benchmark completed 3.741s locally; runtime device-specific, not an SLA. No analytics, import, backup or persistence calculation changes.
 - Report in `docs/ux/F6_VERIFICATION.md`; visual evidence + JSON in ChatGPT Library `/Huawei Activation Analytics/V2.1 UX Redesign`.
 - **Next F7:** final acceptance review, Windows isolated-backup UAT, manually inspect exports/print, independent WCAG assistive-tech audit if certification sought, verify generated distributions; create **Draft PR only**, never merge/release without explicit approval. Main unchanged at `a962fe159bd5dd8b7d20f978910b27424d02e4db`.
+
+## F7 candidate verification — 2026-10-14
+- Explicit owner request to perform F7 security/quality final review, test on Windows, and open a Draft PR; merge/release not authorized.
+- Branch-only Windows workflow and cross-platform test harness commit `6027d921410a87aaf75e8062fe8159d26002046f`.
+- Windows GitHub Actions https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38610164521 SUCCESS: Windows Google Chrome, 196/196 tests and `file://` offline smoke, backups/import/union/undo/reload, 390px mobile.
+- Linux build/sync https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38610163817 SUCCESS; official HTML and source ZIP hashes cross-checked with source branch blobs.
+- F7 scope security scan: no unexpected data files, key/credential paths or external scripts/stylesheet dependencies in distributed HTML/ZIP. This does not replace a formal security review.
+- Exact full report in `docs/ux/F7_VERIFICATION.md`. Final manual UAT using isolated Windows profile and synthetic data remains pending.
+- Confirm no tag, main update or release. Draft PR will remain unmerged until owner explicitly authorizes.
