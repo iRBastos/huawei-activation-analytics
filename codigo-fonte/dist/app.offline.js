@@ -1741,7 +1741,7 @@ function render(){
   const sessionNotice=!ui.demo&&storage.mode==='memory'?'<div class="notice"><p><strong>Session-only workspace.</strong> This browser does not allow this file to save automatically. Import and analyse normally, then download a full backup before closing.</p><button class="small" data-action="backup">Download full backup</button></div>':'';
   $('#main').innerHTML=sessionNotice+(ui.demo?'<div class="notice demo-notice"><p><strong>Fictional demo.</strong> These quantities and findings are illustrative. Your real workspace is unchanged. Imports and exports are disabled in demo mode.</p><button class="small" data-action="exit-demo">Return to real workspace</button></div>':'')+(ui.storageError?`<div class="notice error"><p>${e(ui.storageError)}. Saving is unavailable until local browser storage works.</p></div>`:'')+pages[ui.page](state,ui);
   $('#footer-status').textContent=`${Object.keys(state.records).length.toLocaleString('en-IE')} ${ui.demo?'fictional demo':storage.mode==='memory'?'session':'saved'} equipment records · ${Object.keys(state.installers.accounts).length} installer accounts · Europe/Dublin calendar · ${ui.demo?'Demo changes are not saved':storage.mode==='memory'?'Download a full backup before closing':'Data stays in this browser'}`;
-  document.title=`${V.NAV[V.ROUTES.indexOf(ui.page)]} · Huawei Activation Analytics`;
+  document.title=`${V.NAV[V.ROUTES.indexOf(ui.page)]} · Activation Analytics`;
 }
 async function commit(next,message){
   if(ui.saving)throw new Error('A save is already in progress. Please wait.');ui.saving=true;
