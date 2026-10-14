@@ -187,6 +187,15 @@ document.addEventListener('click',async event=>{
   }catch(err){toast(err.message,true);}
 });
 document.addEventListener('keydown',event=>{
+ if(event.target.matches?.('[data-installer-tab]')&&['ArrowRight','ArrowLeft','Home','End'].includes(event.key)){
+  const tabs=[...document.querySelectorAll('.installer-section-tabs [data-installer-tab]')];
+  const at=tabs.indexOf(event.target);if(at<0)return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  const id=tabs[next].dataset.installerTab;
+  ui.installerTab=id;ui.hiddenSeries.clear();render();
+  document.querySelector(`[data-installer-tab="${id}"]`)?.focus();return;
+ }
  if(event.target.matches?.('[data-data-tab]')&&['ArrowRight','ArrowLeft','Home','End'].includes(event.key)){
   const tabs=[...document.querySelectorAll('.data-workspace-tabs [data-data-tab]')];
   const at=tabs.indexOf(event.target);if(at<0)return;

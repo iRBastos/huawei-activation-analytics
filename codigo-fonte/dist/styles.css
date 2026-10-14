@@ -173,3 +173,23 @@
 @media(max-width:850px){.data-workspace-summary{gap:7px 14px}.data-workspace-private{flex-basis:100%;margin-left:0}.data-workspace-tabs{gap:6px}.data-tab-label{min-width:66px}.data-tab-group{width:100%}}
 @media(max-width:560px){.data-workspace-tabs{display:grid;grid-template-columns:1fr}.data-tab-group{width:100%;display:flex;flex-wrap:wrap;gap:4px}.data-tab-label{flex-basis:100%;min-width:0;padding:7px 2px 2px}.data-workspace-tabs button{flex:1 1 auto}.data-editor>summary{flex-direction:column;align-items:flex-start}}
 @media print{.data-workspace-tabs,.data-editor:not([open]),.data-workspace-summary{display:none!important}}
+
+
+/* F6 — accessibility and narrow-screen polish. No data or analytical behaviour changed. */
+.axis{fill:#626d79}
+.sidebar .nav-group-label{color:#616e7c}
+.data-tab-label{color:#5f6c7c;font-size:11px}
+@media(max-width:560px){
+  .topbar{padding:11px 16px}
+  #global-filters{padding-top:9px;padding-bottom:9px}
+  .filter-context{margin-bottom:7px}
+  .filter-caption{margin-top:7px}
+  .page-title{margin-bottom:16px}
+  .page-meta{line-height:1.55}
+  .data-workspace-tabs{gap:7px;margin-bottom:14px}
+  .data-tab-group{display:flex;align-items:stretch;flex-wrap:nowrap;width:100%;gap:4px}
+  .data-tab-label{flex:0 0 75px;display:flex;align-items:center;min-width:0;padding:6px 2px;font-size:11px}
+  .data-workspace-tabs button{flex:1 1 0;min-width:0;min-height:44px;padding:8px 4px;font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+  .data-workspace-summary{margin-bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:0.01ms!important;animation-duration:0.01ms!important;animation-iteration-count:1!important}}

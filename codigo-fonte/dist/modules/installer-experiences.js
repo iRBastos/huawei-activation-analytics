@@ -10,7 +10,7 @@ const chart=(name,points,id,accountId)=>lineChart([{name,accountId,points}],{ins
 const order=(a,b)=>a.name.localeCompare(b.name,'en-IE');
 export function installerTabNav(active='overview'){
  const options=[['overview','Installer overview'],['profile','Installer profile'],['compare','Compare 2–6'],['insights','Insights & priorities']];
- return `<div class="tabs installer-section-tabs editing" role="tablist" aria-label="Installer analytics views">${options.map(([id,title])=>`<button role="tab" aria-selected="${active===id}" class="${active===id?'active':''}" data-installer-tab="${id}">${title}</button>`).join('')}</div>`;
+ return `<div class="tabs installer-section-tabs editing" role="tablist" aria-label="Installer analytics views">${options.map(([id,title])=>`<button role="tab" aria-selected="${active===id}" tabindex="${active===id?0:-1}" class="${active===id?'active':''}" data-installer-tab="${id}">${title}</button>`).join('')}</div>`;
 }
 export function installerProfilePage(state,ui){
  const f=D.installerFilters(state),accounts=D.installerIndex(state).sort(order),term=(ui.installerProfileSearch??'').trim().toLocaleLowerCase('en-IE');
