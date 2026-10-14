@@ -42,7 +42,7 @@ export const cellValue=c=>c && typeof c==='object' && ('v' in c || 'type' in c |
 export function columnName(i) {let s=''; for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;}
 export function freshState() {
   const end=closedMonth();
-  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[]},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences:{start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)},updatedAt:null};
+  return {schemaVersion:2,installers:{accounts:{},sources:{},imports:[],merges:[],coverage:{}},records:{},catalog:clone(INITIAL_CATALOG),coverage:{},targets:{},events:[],history:[],catalogLog:[],coverageLog:[],preferences:{start:shiftMonth(end,-5),end,aggregation:'month',category:'All',model:'All',family:'All',comparison:'year',compareStart:shiftMonth(end,-17),compareEnd:shiftMonth(end,-12)},updatedAt:null};
 }
 export function suggestHeader(rows) {
   let index=0,score=0,ties=0;

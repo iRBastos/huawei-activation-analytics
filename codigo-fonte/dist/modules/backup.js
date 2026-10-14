@@ -11,5 +11,8 @@ export function validateBackup(input) {
   for(const [k,t]of Object.entries(input.targets)){if(k!==targetKey(t.month,t.scope)||!monthValue(t.month)||!Number.isSafeInteger(t.value)||t.value<0||!(CATEGORIES.includes(t.scope)||input.catalog[t.scope]))throw new Error('Invalid target.');}
   for(const h of input.history){if(!h.id||!Array.isArray(h.changes)||!Array.isArray(h.coverageChanges??[])||!Array.isArray(h.catalogChanges??[]))throw new Error('Invalid import history.');}
   for(const e of input.events)if(!e.id||!/^\d{4}-\d{2}-\d{2}$/.test(e.date)||typeof e.title!=='string')throw new Error('Invalid timeline event.');
-  const next=clone(input);if(input.schemaVersion===1){next.installers=emptyInstallers();}validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');return next;
+  const next=clone(input);if(input.schemaVersion===1){next.installers=emptyInstallers();}
+  // Schema-2 backups created before the V2 scope ledger had no coverage field.
+  if(next.installers&&next.installers.coverage===undefined)next.installers.coverage={};
+  validateInstallerState(next.installers);next.schemaVersion=2;next.preferences={...freshState().preferences,...input.preferences};if(!monthValue(next.preferences.start)||!monthValue(next.preferences.end)||next.preferences.start>next.preferences.end)throw new Error('Invalid saved reporting period.');return next;
 }

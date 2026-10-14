@@ -3,7 +3,8 @@ import {comparisonPeriod,aggregationKey,difference} from './calculations.js';
 
 // Build once per render. Source aliases retain independent coverage after a union.
 export function installerIndex(state){
-  const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,sourceCount:0,aliases:[],cells:{}}]));
+  const coverage=state.installers.coverage??{};
+  const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,coverage,sourceCount:0,aliases:[],cells:{}}]));
   for(const source of Object.values(state.installers.sources)){
     if(!Object.keys(source.months).length)continue; // An undone import is not a zero-volume account.
     const account=grouped.get(source.accountId);if(!account)continue;
@@ -17,16 +18,28 @@ export function installerIndex(state){
   return [...grouped.values()].filter(a=>a.sourceCount>0);
 }
 export function installerMeasure(accounts,start,end,now=new Date()){
-  const months=monthsBetween(start,end);let value=0,observed=0;
-  const expected=accounts.reduce((n,a)=>n+a.sourceCount,0)*months.length;
-  for(const a of accounts)for(const month of months){const cell=a.cells[month];if(cell){value+=cell.value;observed+=cell.observed;}}
+  const months=monthsBetween(start,end);let value=0,observed=0,expected=0,fullScopeMonths=0;
+  for(const a of accounts)for(const month of months){
+    const cell=a.cells[month],full=a.coverage?.[month]?.mode==='full';
+    if(full){
+      // One verified account-month, even when a company changes source labels
+      // or was absent in an explicitly confirmed full-population snapshot.
+      expected++;observed++;fullScopeMonths++;
+      value+=cell?.value??0;
+    }else{
+      // Older / partial imports remain conservative: each source alias needs
+      // its own observation; unknown must never become an inferred zero.
+      expected+=a.sourceCount;
+      if(cell){observed+=cell.observed;value+=cell.value;}
+    }
+  }
   if(!Number.isSafeInteger(value))throw new Error('Installer period total exceeds the safe numeric limit.');
   const complete=expected>0&&observed===expected&&end<=closedMonth(now);
   const status=!months.length?'Invalid period':!expected?'No tracked data':end>closedMonth(now)?'Provisional — open/future month':observed!==expected?'Partial — missing source months':'Complete';
-  return {value:observed?value:null,complete,status,observed,expected,months:months.length};
+  return {value:observed?value:null,complete,status,observed,expected,months:months.length,fullScopeMonths};
 }
 export function latestInstallerMonth(state,now=new Date()){
-  const index=installerIndex(state),months=[...new Set(index.flatMap(a=>Object.keys(a.cells)))].sort().reverse();
+  const index=installerIndex(state),months=[...new Set([...Object.keys(state.installers.coverage??{}),...index.flatMap(a=>Object.keys(a.cells))])].sort().reverse();
   return months.find(m=>installerMeasure(index,m,m,now).complete)??null;
 }
 export function installerAnalysis(state,f,{cohort='all',now=new Date()}={}){

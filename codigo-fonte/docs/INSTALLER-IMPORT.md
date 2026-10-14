@@ -15,7 +15,8 @@ commercial actions, forecasts or device-to-installer joins yet.
    with YYYYMM headers. The exact production workbook has not yet been supplied.
 4. Review the changes. Download the full preview CSV when the on-screen 200-row preview
    is insufficient. The final Total column is ignored even if it contains an error.
-5. Confirm the import. Blank monthly input cells are confirmed zero, including when
+5. Before confirmation select the reporting scope: **Partial update** (default, no assumption for omitted installers) or **Full installer population** (explicit checkbox confirmation required). A Full declaration applies to each imported month, and missing installers are treated as confirmed zero for those months. An old partial month stays unknown.
+6. Confirm the import. Blank monthly input cells are confirmed zero, including when
    replacing an earlier nonzero value. A missing monthly column is not zero.
    Error/formula-without-cache cells are rejected, not converted to zero.
 
@@ -42,9 +43,18 @@ Undo union restores account identities while retaining any subsequently correcte
 Overlapping later unions must be undone first. Undo import restores source values only;
 identities and unions remain, protecting later history. Later overlapping imports block undo.
 
+## V2 full-coverage declarations
+
+- Full is an explicit human-confirmed declaration about the complete tracked installer population **per imported month**. All account activations remain additive across distinct source labels. If a company is absent from a confirmed full month it contributes **zero**, not unknown; missing aliases inside the same account no longer falsely mark that month incomplete.
+- Partial is the default and preserves conservative source/month coverage. Old files and old schema-2 backups do not gain artificial completeness. A partial correction of a previously full month preserves its full-scope declaration.
+- Declared months retain source filename, worksheet, import ID and timestamp. Undo a full-scope import restores the preceding scope, or deletes it if no earlier declaration existed. Overlapping later scope changes block unsafe undo.
+- In analytics a confirmed full month counts one reporting unit per account, not one per label; partial months retain the prior per-source observation check. Charts, profiles, rankings and exports use the common measure function.
+- Full scope should **only** be confirmed where the user has evidence of a complete population for all covered months. Do not mark a filtered report or partial extract as Full.
+- Schema-2 backups predating the ledger migrate by adding an empty `installers.coverage` map, while keeping the schema version and all original records.
+
 ## Storage and migration
 
-Schema 2 adds `installers.accounts`, `sources`, `imports` and `merges`. Equipment
+Schema 2 adds `installers.accounts`, `sources`, `imports`, `merges`, and an optional backward-compatible `coverage` map. Equipment
 records, product coverage, targets and history remain separate. Schema-1 backups migrate
 in memory to empty installer collections. The existing IndexedDB name and object store
 are unchanged. New backups contain both datasets and their histories. Older releases
