@@ -1,8 +1,8 @@
 Huawei Activation Analytics — verified automated test summary
 Source of truth: npm test output captured during release verification.
 Feature: equipment analytics and installer import foundation.
-Tests: 167
-Passed: 167
+Tests: 171
+Passed: 171
 Failed: 0
 Additional offline smoke test: node tools/verify-offline.mjs.
 A passing node test suite and simulated browser do NOT constitute manual Windows acceptance.
