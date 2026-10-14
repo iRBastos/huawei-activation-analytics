@@ -556,10 +556,24 @@ function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameColumn=0})
   if(!ignoredTotal)warnings.push('No trailing Total column detected. Only monthly columns will be imported.');
   return {filename,sheet,months:[...new Set(months)].sort(),sources:Object.values(sources),errors:[...new Set(errors)],warnings,duplicates,blankZeros,ignoredTotal};
 }
+// Full imports establish a source-month boundary, not a destructive deletion.
+// Older omitted source snapshots stay available for audit and undo.
+function installerImportOrder(state){
+  return new Map((state.installers?.imports??[]).map((h,i)=>[h.id,i]));
+}
+function installerEffectiveRecord(state,source,month,order=installerImportOrder(state)){
+  const record=source?.months?.[month]??null;
+  if(!record)return null;
+  const full=state.installers?.coverage?.[month];
+  if(full?.mode!=='full')return record;
+  const boundary=order.get(full.importId);
+  return boundary!==undefined&&(order.get(record.importId)??-1)>=boundary?record:null;
+}
 function installerImportPreview(state,validation){
   const data=state.installers??emptyInstallers();
   return validation.sources.flatMap(s=>Object.entries(s.months).map(([month,r])=>{
-    const old=data.sources[s.key],previous=old?.months[month]?.quantity??null;
+    const old=data.sources[s.key],active=installerEffectiveRecord(state,old,month);
+    const previous=active?.quantity??(data.coverage?.[month]?.mode==='full'?0:null);
     return {key:s.key,label:s.label,account:old?data.accounts[old.accountId].name:s.label,month,previous,quantity:r.quantity,action:previous===null?'New':previous===r.quantity?'Unchanged':'Replace'};
   }));
 }
@@ -577,7 +591,10 @@ function commitInstallerImport(state,validation,{scope='partial',fullScopeConfir
       const before=source.months[month]??null;
       // Preserve provenance on an exact repeated value/source-cell snapshot.
       const evidence={filename:validation.filename,sheet:validation.sheet,cells:clone(r.cells)};
-      if(before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence))continue;
+      // Re-affirmed full reports and previously omitted source rows need a new
+      // import position even when their quantities/evidence match older data.
+      if(scope!=='full'&&before?.quantity===r.quantity&&JSON.stringify(before.source)===JSON.stringify(evidence)&&
+         installerEffectiveRecord(next,source,month)!==null)continue;
       const after={quantity:r.quantity,source:evidence,importId:id};changes.push({key:incoming.key,month,before,after});source.months[month]=after;
     }
   }
@@ -588,16 +605,25 @@ function commitInstallerImport(state,validation,{scope='partial',fullScopeConfir
     const after={mode:'full',month,filename:validation.filename,sheet:validation.sheet,importId:id,timestamp};
     coverageChanges.push({month,before,after});d.coverage[month]=after;
   }
-  // Check aggregate overflow too (different aliases may have been merged).
-  for(const account of Object.values(d.accounts))installerMonthly(next,account.id);
   d.imports.push({id,timestamp,filename:validation.filename,sheet:validation.sheet,months:validation.months,scope,created,changes,coverageChanges,undone:false});
+  // The new import must be in history before precedence / totals are resolved.
+  for(const account of Object.values(d.accounts))installerMonthly(next,account.id);
   next.updatedAt=timestamp;return next;
 }
 function installerMonthly(state,accountId){
-  const result={};
-  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId)for(const [month,r]of Object.entries(source.months)){
-    const sum=(result[month]??0)+r.quantity;if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');result[month]=sum;
+  const result={},order=installerImportOrder(state);
+  let hasSources=false;
+  for(const source of Object.values(state.installers?.sources??{}))if(source.accountId===accountId){
+    hasSources=true;
+    for(const month of Object.keys(source.months)){
+      const record=installerEffectiveRecord(state,source,month,order);
+      if(!record)continue;
+      const sum=(result[month]??0)+record.quantity;
+      if(!Number.isSafeInteger(sum))throw new Error('Consolidated activation total exceeds the safe numeric limit.');
+      result[month]=sum;
+    }
   }
+  if(hasSources)for(const month of Object.keys(state.installers?.coverage??{}))result[month]??=0;
   return result;
 }
 function installerRows(state,start,end){
@@ -675,7 +701,7 @@ function validateInstallerState(d){
   return d;
 }
 
-return Object.assign({},{emptyInstallers,installerSourceKey,installerMonth,suggestInstallerHeader,validateInstallerMatrix,installerImportPreview,commitInstallerImport,installerMonthly,installerRows,installerSuggestions,mergeInstallers,undoInstallerMerge,undoInstallerImport,validateInstallerState});
+return Object.assign({},{emptyInstallers,installerSourceKey,installerMonth,suggestInstallerHeader,validateInstallerMatrix,installerImportOrder,installerEffectiveRecord,installerImportPreview,commitInstallerImport,installerMonthly,installerRows,installerSuggestions,mergeInstallers,undoInstallerMerge,undoInstallerImport,validateInstallerState});
 })();
 
 // MODULE: backup.js
@@ -704,16 +730,20 @@ return Object.assign({},{validateBackup});
 // MODULE: installer-analytics.js
 __modules["installer-analytics.js"]=(()=>{
 const {monthsBetween,shiftMonth,closedMonth}=__modules["model.js"];
+const {installerEffectiveRecord,installerImportOrder}=__modules["installers.js"];
 const {comparisonPeriod,aggregationKey,difference}=__modules["calculations.js"];
 // Build once per render. Source aliases retain independent coverage after a union.
 function installerIndex(state){
   const coverage=state.installers.coverage??{};
   const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,coverage,sourceCount:0,aliases:[],cells:{}}]));
+  const order=installerImportOrder(state);
   for(const source of Object.values(state.installers.sources)){
     if(!Object.keys(source.months).length)continue; // An undone import is not a zero-volume account.
     const account=grouped.get(source.accountId);if(!account)continue;
     account.sourceCount++;account.aliases.push(source.label);
-    for(const [month,r]of Object.entries(source.months)){
+    for(const month of Object.keys(source.months)){
+      const r=installerEffectiveRecord(state,source,month,order);
+      if(!r)continue;
       const cell=account.cells[month]??{value:0,observed:0};cell.value+=r.quantity;cell.observed++;
       if(!Number.isSafeInteger(cell.value))throw new Error('Installer monthly total exceeds the safe numeric limit.');
       account.cells[month]=cell;
