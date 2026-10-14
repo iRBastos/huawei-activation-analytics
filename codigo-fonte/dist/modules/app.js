@@ -154,6 +154,7 @@ document.addEventListener('click',async event=>{
       }
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
+      case 'equipment-preview-export':{const p=ui.pending;if(p?.validation)download(toCsv([['Month','Model','Category','Previous','Incoming','Difference','Action','Source cell'],...D.importPreview(state,p.validation).map(r=>[r.month,r.model,({...state.catalog,...p.classifications})[r.model]?.category??'Unclassified',r.previous,r.quantity,r.difference,r.action,r.source.cell])]),'equipment-import-preview.csv','text/csv;charset=utf-8');break;}
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
       case 'installer-analytics-export':{if(ui.demo)throw new Error('Exit demo before exporting.');download(toCsv(D.installerAnalyticsCsv(D.installerAnalysis(state,D.installerFilters(state),{cohort:ui.installerCohort??'all'}),D.installerFilters(state))),'installer-kpis.csv','text/csv;charset=utf-8');break;}
       case 'installer-export':{if(ui.demo)throw new Error('Exit demo before exporting.');const f=D.installerFilters(state),report=D.installerAnalysis(state,f,{cohort:ui.installerCohort??'all'});download(toCsv(D.installerMonthlyCsv(report,f)),`installers_${f.start}_${f.end}.csv`,'text/csv;charset=utf-8');break;}
@@ -185,7 +186,17 @@ document.addEventListener('click',async event=>{
     }
   }catch(err){toast(err.message,true);}
 });
-document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('g[role="button"]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+document.addEventListener('keydown',event=>{
+ if(event.target.matches?.('[data-data-tab]')&&['ArrowRight','ArrowLeft','Home','End'].includes(event.key)){
+  const tabs=[...document.querySelectorAll('.data-workspace-tabs [data-data-tab]')];
+  const at=tabs.indexOf(event.target);if(at<0)return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  const id=tabs[next].dataset.dataTab;navigate('data',id);
+  document.querySelector(`[data-data-tab="${id}"]`)?.focus();return;
+ }
+ if((event.key==='Enter'||event.key===' ')&&event.target.matches?.('g[role="button"]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}
+});
 
 document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}

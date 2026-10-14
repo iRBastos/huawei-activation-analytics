@@ -91,6 +91,19 @@ try{
  const evidence=await evaluate("(()=>{const p=[...document.querySelectorAll('.panel')].find(el=>el.querySelector('h2')?.textContent==='Comparison evidence');return {chart:!!p.querySelector('svg.line-chart'),table:!!p.querySelector('table'),order:p.querySelector('svg.line-chart')?.compareDocumentPosition(p.querySelector('table'))};})()");
  assert.ok(evidence.chart&&evidence.table,'comparison must show chart AND table');
  assert.ok((evidence.order&4)!==0,'chart must appear before table');
+ // F5: Data Workspace keeps all seven destinations and keyboard-accessible grouped tabs.
+ await evaluate("document.querySelector('[data-nav=data]').click()");
+ await until("document.querySelectorAll('.data-workspace-tabs [role=tab]').length===7",'seven grouped Data tabs');
+ assert.equal(await evaluate("document.querySelectorAll('.data-tab-group').length"),4,'Import / Inspect / Configure / Protect grouping');
+ await evaluate("document.querySelector('[data-data-tab=records]').click()");
+ assert.equal(await evaluate("document.querySelector('[data-data-tab=records]').getAttribute('aria-selected')"),'true');
+ await evaluate("document.querySelector('[data-data-tab=records]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");
+ assert.equal(await evaluate("document.querySelector('[data-data-tab=coverage]').getAttribute('aria-selected')"),'true','Data tabs are keyboard-operable');
+ assert.ok(await evaluate("!!document.querySelector('details.coverage-editor [data-form=coverage]')"),'coverage edit remains available');
+ await evaluate("document.querySelector('[data-data-tab=backup]').click()");
+ assert.ok(await evaluate("!!document.querySelector('#restore-file')&&!!document.querySelector('[data-action=backup]')"),'backup and restore remain discoverable');
+ await evaluate("document.querySelector('[data-nav=targets]').click()");
+ assert.ok(await evaluate("!!document.querySelector('details.target-editor [data-form=target]')"),'target review remains discoverable');
  // Installer UI acceptance runs on fictional CSV data in this temporary browser profile.
  await evaluate("document.querySelector('[data-action=exit-demo]').click()");
  await evaluate("document.querySelector('[data-nav=installers]').click()");

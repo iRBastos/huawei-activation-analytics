@@ -150,3 +150,26 @@
 @media(max-width:700px){.market-mix-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.kpi-grid-primary,.kpi-grid-secondary{grid-template-columns:1fr}.secondary-metrics-heading{flex-wrap:wrap}}
 @media print{.kpi-grid-primary{grid-template-columns:repeat(4,minmax(0,1fr))}.kpi-grid-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* F5 · Data administration and target editing. Group labels are informational, never new routes. */
+.data-workspace-summary{display:flex;gap:8px 22px;flex-wrap:wrap;align-items:center;margin:2px 0 16px;border:1px solid #e2e6eb;background:#fff;border-radius:8px;padding:12px 16px;font-size:12px;color:#5a6574}
+.data-workspace-summary strong{font-size:16px;color:#202b38;font-variant-numeric:tabular-nums;margin-right:4px}
+.data-workspace-private{margin-left:auto;color:#687483;font-size:11px}
+.data-workspace-tabs{display:flex;flex-wrap:wrap;gap:7px 15px;margin:0 0 18px;border-bottom:1px solid #dbe0e6;padding-bottom:12px;overflow:visible}
+.data-tab-group{display:flex;gap:4px;align-items:center;flex-wrap:wrap;min-width:0}
+.data-tab-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#7b8694;font-weight:700;padding:8px 6px}
+.data-workspace-tabs button{font-size:11px;padding:9px 10px;white-space:normal;border:1px solid transparent;border-radius:5px;min-height:36px}
+.data-workspace-tabs button.active{background:#fff0f2;border:1px solid #efd1d6;color:#ab1931;font-weight:650}
+.data-workspace-tabs button:focus-visible{outline-offset:1px}
+.data-editor{margin:15px 0 18px;border:1px solid #d9dfe6;border-radius:9px;background:#fff;overflow:hidden}
+.data-editor>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 19px;color:#24303d;cursor:pointer;list-style-position:inside}
+.data-editor>summary span{font-size:11px;color:#647184;font-weight:400}
+.data-editor[open]>summary{background:#f8f9fa;border-bottom:1px solid #e1e5e9}
+.data-editor>.panel{margin:0;border:0;border-radius:0}
+.target-methodology{padding:12px 16px;margin:15px 0;border-left:3px solid #d5dae1;background:#f7f8f9;font-size:12px}
+.target-methodology p{margin:7px 0 0;color:#5a6470}
+.import-evidence .panel-actions{margin-top:12px}
+.data-backup-advice p,.installer-scope-notice p{margin:6px 0 0;font-size:12px}
+@media(max-width:850px){.data-workspace-summary{gap:7px 14px}.data-workspace-private{flex-basis:100%;margin-left:0}.data-workspace-tabs{gap:6px}.data-tab-label{min-width:66px}.data-tab-group{width:100%}}
+@media(max-width:560px){.data-workspace-tabs{display:grid;grid-template-columns:1fr}.data-tab-group{width:100%;display:flex;flex-wrap:wrap;gap:4px}.data-tab-label{flex-basis:100%;min-width:0;padding:7px 2px 2px}.data-workspace-tabs button{flex:1 1 auto}.data-editor>summary{flex-direction:column;align-items:flex-start}}
+@media print{.data-workspace-tabs,.data-editor:not([open]),.data-workspace-summary{display:none!important}}
