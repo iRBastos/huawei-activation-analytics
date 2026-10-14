@@ -4,6 +4,7 @@ import * as D from '../dist/modules/domain.js';
 
 function legacyBackup(){
  const state=D.freshState();
+ state.schemaVersion=1;delete state.installers;
  state.catalog=Object.fromEntries(Object.entries(state.catalog).filter(([,p])=>p.category!=='Inverter'));
  assert.equal(Object.keys(state.catalog).length,5);
  return state;

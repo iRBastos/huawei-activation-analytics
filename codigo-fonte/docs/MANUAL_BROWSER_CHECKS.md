@@ -11,3 +11,14 @@ These checks are not reported as passed by the automated test suite.
 7. Export filtered CSV, download a full backup, change a target, and restore the backup. Verify restored values.
 8. Use Print / PDF. Check exact dates, filters, metrics, charts, coverage, last update and interpretation notes.
 9. Operate navigation, forms, chart points and dialogs using the keyboard. Check focus visibility and dialog close behaviour.
+
+## Installer production-file acceptance
+
+10. Import the actual installer XLSX on Windows. Confirm worksheet/header mapping and that
+    blank cells become zero while the trailing Total is ignored.
+11. Compare all source monthly quantities with the original file, including repeated rows.
+12. Confirm suggested and manual unions, reimport corrections and restore a full backup.
+13. Verify readable preview, source detail and union dialogs at narrow and desktop widths.
+
+The automated Chromium smoke covers the installer flow with fictional CSV data. It does
+not replace this production-XLSX and manual visual acceptance.

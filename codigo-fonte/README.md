@@ -89,7 +89,7 @@ Excel template images were rendered and visually reviewed. Browser automation wa
 2. This is browser-local single-user storage. There is no cross-device sync, shared database, live source refresh or multi-tab concurrency coordination. Use one editing tab and backups.
 3. XLSX only supports the rectangular monthly matrix described in the brief. Encrypted workbooks, legacy .xls, macros, external-link recalculation, pivot refresh and arbitrary Excel formula evaluation are not implemented. Saved numeric formula results are required.
 4. Import bounds: 30 MB compressed workbook, 120 MB declared expanded ZIP size, 10,000 ZIP entries, 100,000 worksheet rows and 2,001 columns. Report windows are limited to 100 years for responsiveness.
-5. No installer field, installation IDs or linked equipment IDs are available in this input format. Installer-level performance, market share, product pairings, counts of PV-only sites, new-system attachment rates, sales and revenue cannot be established.
+5. Equipment matrices have no installer field or linked equipment IDs. The separate Installers import supports monthly inverter totals by company and name consolidation. It does not identify equipment models per installer, market share, product pairings, PV-only sites, attachment rates, sales or revenue. Installer growth KPIs and commercial actions are planned next.
 6. Findings are deterministic, explicitly rule-based summaries. No AI integration, forecasts, confidence intervals or causal attribution are simulated.
 7. Export is CSV and browser Print / Save as PDF. Editable slide export and server-generated PDF files are not included. The optional base-100 growth index is not implemented.
 8. Category changes for already recorded models are deliberately blocked. Undo affected imports before reclassifying their category. Other catalogue changes have impact previews and audit history.
@@ -104,3 +104,11 @@ The parent `index.html` is the file-open release. This source directory contains
 ## Release and consistency
 
 Run `python3 tools/build-offline.py` before `python3 tools/build-release.py --test-log /path/to/passing-test-output.tap`. The release script deterministically packages the ready-to-open `index.html`, the editable `codigo-fonte/` directory, guides and Excel templates as `codigo-fonte.zip`. The development branch GitHub Actions synchronizes generated outputs; the validation workflow fails if the committed ZIP, `dist/app.offline.js`, HTML or test-count summaries are stale. It also runs the offline DOM simulator and a headless browser smoke test on fictional data. These checks do not substitute for opening the resulting app on Windows and testing a real, backed-up user workspace.
+
+## Installer import foundation
+
+Open **Installers** for the separate installer matrix import and account consolidation.
+Blank monthly cells mean zero in this importer; repeated names are summed; the trailing
+Total column is ignored. This does not change equipment blank-cell handling.
+See [Installer import guide](docs/INSTALLER-IMPORT.md) for snapshot replacement, aliases,
+undo, schema-2 backup compatibility and current limitations.

@@ -20,10 +20,10 @@ export function indexedSeries(series) {
       value:Number.isFinite(p.value)?p.value/baseline*100:null}))};
   })};
 }
-export function lineChart(series,{unit='activations',title='Activation trend',hidden=new Set(),id='main',scale='auto'}={}){
+export function lineChart(series,{unit='activations',title='Activation trend',hidden=new Set(),id='main',scale='auto',installer=false,showLegend=true}={}){
   const visible=series.filter(s=>!hidden.has(s.name)),points=series[0]?.points??[],n=points.length;
   const vals=visible.flatMap(s=>s.points.map(p=>p.value)).filter(v=>v!==null&&Number.isFinite(v));
-  const legend=()=>'<div class="legend">'+series.map(s=>`<button class="legend-item ${hidden.has(s.name)?'muted':''}" data-toggle-series="${e(s.name)}" data-chart="${e(id)}" aria-pressed="${!hidden.has(s.name)}"><i style="background:${s.color??color(s.name)}"></i>${e(s.name)}</button>`).join('')+'</div>';
+  const legend=()=>!showLegend?'':'<div class="legend">'+series.map(s=>`<button class="legend-item ${hidden.has(s.name)?'muted':''}" data-toggle-series="${e(s.name)}" data-chart="${e(id)}" aria-pressed="${!hidden.has(s.name)}"><i style="background:${s.color??color(s.name)}"></i>${e(s.name)}</button>`).join('')+'</div>';
   if(!n||!vals.length)return '<div class="chart-empty">No visible values for this selection. Adjust the legend or confirm reporting coverage.</div>'+legend();
   const W=1000,H=300,L=64,R=24,T=22,B=48,pw=W-L-R,ph=H-T-B;
   const min=Math.min(...vals),max=Math.max(...vals),spread=max-min;
@@ -55,7 +55,7 @@ export function lineChart(series,{unit='activations',title='Activation trend',hi
       if(!Number.isFinite(p.value))return;
       const raw=Number.isFinite(p.rawValue)?` · actual ${fmt(p.rawValue)} activations`:'';
       const description=`${s.name} ${p.label}: ${showValue(p.value)}${unit==='%'?'':' '+unit}${raw} · ${p.status??'Complete'}`;
-      svg+=`<g tabindex="0" role="button" aria-label="${e(description)}" data-month="${e(p.start??p.label)}" data-end="${e(p.end??p.start??p.label)}" data-model="${e(s.model??'All')}"><title>${e(description)}</title><circle cx="${x(i)}" cy="${y(p.value)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="${p.complete?c:'white'}" stroke="${c}" stroke-width="2"/></g>`;
+      svg+=`<g tabindex="0" role="button" aria-label="${e(description)}" data-month="${e(p.start??p.label)}" data-end="${e(p.end??p.start??p.label)}" data-model="${e(s.model??'All')}"${installer?` data-installer-point="${e(s.accountId??'portfolio')}"`:""}><title>${e(description)}</title><circle cx="${x(i)}" cy="${y(p.value)}" r="12" fill="transparent"/><circle cx="${x(i)}" cy="${y(p.value)}" r="4" fill="${p.complete?c:'white'}" stroke="${c}" stroke-width="2"/></g>`;
     });
   }
   svg+='</svg>'+legend();

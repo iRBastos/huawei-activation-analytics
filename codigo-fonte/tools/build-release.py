@@ -28,8 +28,8 @@ def report_from_log(filename: Path):
         raise SystemExit("Refusing to publish unverified tests: inspect "+str(filename))
     return (
         "Huawei Activation Analytics — verified automated test summary\n"
-        "Source of truth: npm test output captured by GitHub Actions.\n"
-        "Branch: feature/inverter-power-catalog (or its eventual merged release).\n"
+        "Source of truth: npm test output captured during release verification.\n"
+        "Feature: equipment analytics and installer import foundation.\n"
         f"Tests: {counts['tests']}\n"
         f"Passed: {counts['pass']}\n"
         f"Failed: {counts['fail']}\n"

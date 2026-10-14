@@ -43,3 +43,15 @@ GitHub Actions performs a headless Chromium smoke test on synthetic/demo data. A
 ## Dependencies
 
 JSZip is bundled locally and its licence is included in `documentacao/JSZip-LICENSE.txt`. Runtime code does not use CDNs, telemetry, external fonts, API keys or AI services. The optional Excel-template regeneration utility requires the OpenAI Artifact Tool runtime; the ready-made templates are already included.
+
+## Installer activations
+
+The Installers tab imports monthly inverter totals by company, sums repeated names,
+ignores the trailing Total column, and supports confirmed name consolidation and undo.
+See [the installer guide](codigo-fonte/docs/INSTALLER-IMPORT.md). Advanced installer KPIs
+and the commercial Action Centre are separate planned deliveries.
+
+### Installer analytics preview
+The installer branch adds monthly trends, comparison KPIs, ranking, concentration, retention,
+three-month momentum, account profiles and a clickable activity heatmap. Import and confirmed
+unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules.
