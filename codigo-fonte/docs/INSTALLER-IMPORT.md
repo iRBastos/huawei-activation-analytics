@@ -45,7 +45,7 @@ identities and unions remain, protecting later history. Later overlapping import
 
 ## V2 full-coverage declarations
 
-- Full is an explicit human-confirmed declaration about the complete tracked installer population **per imported month**. All account activations remain additive across distinct source labels. If a company is absent from a confirmed full month it contributes **zero**, not unknown; missing aliases inside the same account no longer falsely mark that month incomplete.
+- Full is an explicit human-confirmed declaration about the complete tracked installer population **per imported month**. A newer full file supersedes earlier source/month records for omitted names; older values remain for audit and undo but no longer contribute to active totals until reintroduced by a later partial correction. Effective source observations remain additive across distinct labels. If a company is absent from a confirmed full month it contributes **zero**, not unknown; missing aliases inside the same account no longer falsely mark that month incomplete.
 - Partial is the default and preserves conservative source/month coverage. Old files and old schema-2 backups do not gain artificial completeness. A partial correction of a previously full month preserves its full-scope declaration.
 - Declared months retain source filename, worksheet, import ID and timestamp. Undo a full-scope import restores the preceding scope, or deletes it if no earlier declaration existed. Overlapping later scope changes block unsafe undo.
 - In analytics a confirmed full month counts one reporting unit per account, not one per label; partial months retain the prior per-source observation check. Charts, profiles, rankings and exports use the common measure function.
