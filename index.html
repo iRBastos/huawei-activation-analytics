@@ -1122,6 +1122,15 @@ function classify(account,row,report,f,now,minVolume,thresholdPct){
   lastActive:row.lastActive,currentMonth:latest,recent,previous3,minVolume,thresholdPct,
   completeComparison:usable,periodStart:f.start,periodEnd:f.end};
 }
+/** Compute an account's signal from a precomputed profile; no second portfolio scan. */
+function installerAccountSignal(profile,f,{now=profile?.report.now,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
+ if(!profile)return null;
+ if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
+   throw new Error('Unsupported installer insight thresholds.');
+ const row=profile.row??{id:profile.id,name:profile.account.name,current:profile.current,
+  previous:profile.previous,delta:profile.change.delta,pct:profile.change.pct,lastActive:null};
+ return classify(profile.account,row,profile.report,f,now,minVolume,thresholdPct);
+}
 /** Always score all tracked accounts, even if UI uses a comparable subset. */
 function installerInsights(state,f,{now=new Date(),report=null,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
  if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
@@ -1150,7 +1159,7 @@ function installerInsightsCsv(result){
    result.minVolume,result.thresholdPct])];
 }
 
-return Object.assign({},{INSIGHT_MIN_VOLUMES,INSIGHT_CHANGE_THRESHOLDS,installerInsights,installerInsightsCsv});
+return Object.assign({},{INSIGHT_MIN_VOLUMES,INSIGHT_CHANGE_THRESHOLDS,installerAccountSignal,installerInsights,installerInsightsCsv});
 })();
 
 // MODULE: domain.js
@@ -1339,10 +1348,17 @@ function installerProfilePage(state,ui){
  const quarterly=D.installerSeries([history.account],history.start,history.end,{aggregation:'quarter',now:profile.report.now});
  const yearly=D.installerSeries([history.account],history.start,history.end,{aggregation:'year',now:profile.report.now});
  const rank=profile.row?.rank,note=profile.current.complete?'Complete selected period':'Incomplete reporting; figures are observed subtotals only';
+ const signal=D.installerAccountSignal(profile,f);
+ const signalPanel=panel('Evidence-based account insight',
+  '<p><strong>'+e(signal.label)+'</strong> · '+e(signal.priority)+
+  (signal.score===null?'':' · Rule score '+n(signal.score))+'</p>'+
+  '<p class="table-note"><strong>Evidence:</strong> '+e(signal.evidence)+'</p>'+
+  '<p class="table-note"><strong>Suggested next action:</strong> '+e(signal.action)+'</p>'+
+  '<div class="panel-actions"><button data-installer-tab="insights">See all account priorities</button></div>');
  const kpis=`<div class="installer-kpis">${kpi('Selected activations',n(profile.current.value),profile.current.status)}${kpi('Compared with previous',pct(profile.change.pct),profile.change.delta==null?'Complete equal-length periods required':signed(profile.change.delta)+' activations')}${kpi('Peak confirmed month',history.peak?n(history.peak.value):'—',history.peak?.start??'No confirmed month')}${kpi('Last recorded activity',history.lastActive??'—','Latest observed month with activations > 0')}</div>`;
  const lines=`<div class="grid-equal">${panel('Monthly history',`<div class="chart-scroll">${chart(profile.account.name,history.monthly,'installer-history-month',id)}</div>`)}${panel('Quarterly history',`<div class="chart-scroll">${chart(profile.account.name,quarterly,'installer-history-quarter',id)}</div>`)}</div>${panel('Annual history',`<div class="chart-scroll">${chart(profile.account.name,yearly,'installer-history-year',id)}</div>`)}`;
  const rows=history.monthly.map(p=>`<tr><td><button class="quiet" data-installer-point="${e(id)}" data-month="${e(p.start)}" data-end="${e(p.end)}">${e(p.label)}</button></td><td class="num">${n(p.value)}</td><td>${e(p.status)}</td><td>${p.observed} / ${p.expected}</td></tr>`).join('');
- return select+`<section class="installer-profile-heading"><h2>${e(profile.account.name)}</h2><p class="table-note">${profile.account.aliases.map(e).join(' · ')} · Rank in selected account base: ${n(rank)} · ${e(note)}</p><div class="panel-actions"><button data-action="installer-profile-export">Export monthly history CSV</button><button data-action="installer-profile-compare">Compare this installer</button></div></section>`+kpis+
+ return select+`<section class="installer-profile-heading"><h2>${e(profile.account.name)}</h2><p class="table-note">${profile.account.aliases.map(e).join(' · ')} · Rank in selected account base: ${n(rank)} · ${e(note)}</p><div class="panel-actions"><button data-action="installer-profile-export">Export monthly history CSV</button><button data-action="installer-profile-compare">Compare this installer</button></div></section>`+kpis+signalPanel+
  `<div class="grid-equal">${panel('Account history',`<dl class="installer-measures"><dt>First recorded activity</dt><dd>${history.firstActive??'—'}</dd><dt>Last recorded activity</dt><dd>${history.lastActive??'—'}</dd><dt>Historical reported volume</dt><dd>${n(history.total.value)}${history.total.complete?'':' *'}</dd><dt>Historical period</dt><dd>${e(history.start)}–${e(history.end)}</dd><dt>3-month momentum</dt><dd>${pct(profile.momentum.pct)}</dd><dt>Share of selected tracked base</dt><dd>${pct(profile.share)}</dd></dl><p class="table-note">* Historical volume may be a partial subtotal. Missing months are never assumed to be zero.</p>`)}${panel('Coverage & identity',`<p class="table-note">This account includes ${profile.account.sourceCount} original source name(s). Chart points show reported observations. A complete snapshot can confirm zeros; missing partial snapshots remain unknown.</p><p class="table-note">Latest confirmed month: ${history.lastConfirmed??'None'}</p><p class="table-note">Product models, site count and revenue cannot be attributed from this installer dataset.</p>`)}</div>`+
  lines+panel('Historical monthly evidence',`<div class="table-wrap"><table><thead><tr><th>Month</th><th>Activations</th><th>Reporting status</th><th>Coverage units</th></tr></thead><tbody>${rows}</tbody></table></div>`);
 }
