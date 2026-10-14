@@ -86,3 +86,32 @@ test('malformed coverage ledgers and tampered history cannot restore',()=>{
     const s=structuredClone(clean);mutate(s);assert.throws(()=>D.validateBackup(s));
   }
 });
+
+
+test('new full snapshots exclude stale omitted source-month values without deleting evidence',()=>{
+  let state=file(D.freshState(),'Installer,202501\nAlpha Solar,5\nBeta Solar,7');
+  state=file(state,'Installer,202501\nAlpha Solar,10',full);
+  assert.equal(state.installers.sources['name:beta solar'].months['2025-01'].quantity,7);
+  assert.equal(D.installerEffectiveRecord(state,state.installers.sources['name:beta solar'],'2025-01'),null);
+  assert.equal(D.installerMeasure(D.installerIndex(state),'2025-01','2025-01',now).value,10);
+  const beta=Object.values(state.installers.accounts).find(a=>a.name==='Beta Solar');
+  assert.equal(D.installerMonthly(state,beta.id)['2025-01'],0);
+  state=file(state,'Installer,202501\nBeta Solar,2');
+  assert.equal(D.installerMeasure(D.installerIndex(state),'2025-01','2025-01',now).value,12);
+  state=D.undoInstallerImport(state,state.installers.imports.at(-1).id);
+  assert.equal(D.installerMeasure(D.installerIndex(state),'2025-01','2025-01',now).value,10);
+  state=D.undoInstallerImport(state,state.installers.imports[1].id);
+  assert.equal(D.installerMeasure(D.installerIndex(state),'2025-01','2025-01',now).value,12);
+});
+test('identical full reimport must refresh source snapshot precedence',()=>{
+  const state=file(D.freshState(),'Installer,202501\nAlpha Solar,5',full);
+  const again=file(state,'Installer,202501\nAlpha Solar,5',full);
+  assert.equal(again.installers.imports.at(-1).changes.length,1);
+  assert.equal(D.installerMeasure(D.installerIndex(again),'2025-01','2025-01',now).value,5);
+});
+test('same-value partial correction can reinstate omitted source after a full snapshot',()=>{
+  let s=file(D.freshState(),'Installer,202501\nAlpha Solar,5\nBeta Solar,7');
+  s=file(s,'Installer,202501\nAlpha Solar,5',full);
+  s=file(s,'Installer,202501\nBeta Solar,7');
+  assert.equal(D.installerMeasure(D.installerIndex(s),'2025-01','2025-01',now).value,12);
+});

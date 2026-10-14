@@ -1,15 +1,19 @@
 import {monthsBetween,shiftMonth,closedMonth} from './model.js';
+import {installerEffectiveRecord,installerImportOrder} from './installers.js';
 import {comparisonPeriod,aggregationKey,difference} from './calculations.js';
 
 // Build once per render. Source aliases retain independent coverage after a union.
 export function installerIndex(state){
   const coverage=state.installers.coverage??{};
   const grouped=new Map(Object.values(state.installers.accounts).map(a=>[a.id,{...a,coverage,sourceCount:0,aliases:[],cells:{}}]));
+  const order=installerImportOrder(state);
   for(const source of Object.values(state.installers.sources)){
     if(!Object.keys(source.months).length)continue; // An undone import is not a zero-volume account.
     const account=grouped.get(source.accountId);if(!account)continue;
     account.sourceCount++;account.aliases.push(source.label);
-    for(const [month,r]of Object.entries(source.months)){
+    for(const month of Object.keys(source.months)){
+      const r=installerEffectiveRecord(state,source,month,order);
+      if(!r)continue;
       const cell=account.cells[month]??{value:0,observed:0};cell.value+=r.quantity;cell.observed++;
       if(!Number.isSafeInteger(cell.value))throw new Error('Installer monthly total exceeds the safe numeric limit.');
       account.cells[month]=cell;
