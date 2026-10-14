@@ -57,3 +57,7 @@ When a period or numerator is partial, display **reported subtotal** with comple
 Synthetic fixtures include: duplicated name row, two spelling variants merged and summed, reimport replacement, blank versus omitted month, ancient vs current backup, no previous denominator, partial/reporting-complete mixed months, inactive installer and reactivated installer, full scope after new alias, chart/CSV reconciliation and at least 1,000 accounts × 48 months.
 
 Fixture names must be fictional. No uploaded Huawei/client data or account secrets in repository, pull requests or CI artifacts.
+
+## F2 reusable selectors
+
+`installerSeries(accounts,start,end,{aggregation,now})` is the common monthly/quarterly/yearly trend; `installerAccountAnalysis` resolves profile KPIs; `installerComparison(state,filters,ids,{now})` prepares 2–6 comparisons; `installerMonthlyCsv` exports periods from the same measure. All use `installerMeasure` for coverage-aware quantities and `difference` for valid growth. Reporting all-history profiles and full visual comparisons remain downstream UI work; no assumptions about equipment per installer are added.

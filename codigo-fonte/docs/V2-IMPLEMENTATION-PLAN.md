@@ -66,3 +66,12 @@ Evolve the existing offline analytics app into an Ireland-focused installer inte
 ## Explicit exclusions
 
 No CRM integration, cloud database, browser sync, live source refresh, generative AI, revenue/market-share estimates or inverter-to-installer inference in V2.
+
+## F2 shared selector boundary
+
+- Reuse `installerMeasure` for all figures; `installerSeries` groups months with one coverage policy.
+- `installerAnalysis` now returns comparison-period series and full account index, preventing the view from recalculating chart numbers independently.
+- `installerAccountAnalysis` provides profile KPIs and monthly points from that same index.
+- `installerComparison` supports exactly 2–6 distinct tracked accounts in requested order, with unit totals, per-account trends, equal-period checks and completeness-aware shares; UI selection will be part of F4.
+- `installerMonthlyCsv` uses the same per-account measures as profile and heatmap, includes reported-total status, and leaves missing periods blank rather than inventing zero.
+- No new storage schema, framework, or separate calculation module introduced.

@@ -15,3 +15,90 @@ test('3M momentum uses totals across consecutive windows and ranks handle ties',
 test('ranking puts unavailable growth last and CSV records comparison context',()=>{const r=analyze();assert.equal(D.sortInstallerRanking(r.rows,'growth').at(-1).id,'Gamma');const csv=D.installerAnalyticsCsv(r,f);assert.equal(csv[1][3],'2024-01');assert.equal(csv[1][5],'all');assert.equal(csv[0].length,csv[1].length);});
 test('visuals route installer evidence separately and mark zero',()=>{const s=seed(),r=analyze(),ui={hiddenSeries:new Set()};assert.match(V.installerDashboard(s,ui,r),/data-installer-point="portfolio"/);assert.match(V.installerHeatmap(r.rows,f,r),/heat-zero/);const profile=V.installerProfile(s,'Alpha',ui);assert.match(profile,/data-installer-point="Alpha"/);assert.doesNotMatch(profile,/data-toggle-series/);assert.match(V.installerPointEvidence(s,'Alpha','2025-01','2025-01',ui),/test.csv/);});
 test('undone empty sources do not create tracked zero-volume accounts',()=>{const s=seed();s.installers.sources.Gamma.months={};assert.equal(analyze(s).allCount,2);});
+
+test('F2: shared series matches each monthly account and portfolio measure',()=>{
+ const s=seed(),r=analyze(s),accounts=D.installerIndex(s);
+ const portfolio=D.installerSeries(accounts,'2025-01','2025-02',{now});
+ assert.deepEqual(portfolio.map(p=>p.value),[30,30]);
+ assert.deepEqual(portfolio.map(p=>p.value),r.trend.map(p=>p.value));
+ assert.deepEqual(r.comparisonTrend.map(p=>p.value),[20,20]);
+ assert.equal(r.comparisonTrend[0].start,'2024-01');
+ assert.equal(r.comparisonTrend[1].end,'2024-02');
+ assert.equal(r.comparisonTrend.reduce((n,p)=>n+p.value,0),r.previous.value);
+ const quarter=D.installerSeries(accounts,'2025-01','2025-02',{aggregation:'quarter',now});
+ assert.equal(quarter.length,1);
+ assert.equal(quarter[0].value,r.current.value);
+});
+test('F2: individual selector reconciles to ranking, evidence and monthly export',()=>{
+ const s=seed(),r=analyze(s);
+ const detail=D.installerAccountAnalysis(s,f,'Alpha',{analysis:r});
+ const ranking=r.rows.find(x=>x.id==='Alpha');
+ assert.equal(detail.current.value,ranking.current.value);
+ assert.equal(detail.previous.value,ranking.previous.value);
+ assert.equal(detail.change.delta,ranking.delta);
+ assert.equal(detail.share,ranking.share);
+ assert.equal(detail.points.reduce((sum,p)=>sum+p.value,0),detail.current.value);
+ assert.deepEqual(detail.points.map(p=>p.value),[20,20]);
+ assert.equal(detail.row.rank,ranking.rank);
+ const sheet=D.installerMonthlyCsv(r,f),line=sheet.find(x=>x[0]==='Alpha');
+ assert.deepEqual(line.slice(1,3),detail.points.map(p=>p.value));
+ assert.equal(line.at(-2),detail.current.value);
+ assert.equal(line.at(-1),'Complete');
+ assert.equal(D.installerAccountAnalysis(s,f,'untracked',{analysis:r}),null);
+});
+test('F2: 2–6 installer selector has stable order and same totals as the portfolio',()=>{
+ const s=seed(),r=analyze(s),ids=r.accounts.map(a=>a.id);
+ const pair=D.installerComparison(s,f,['Alpha','Beta'],{now});
+ assert.deepEqual(pair.ids,['Alpha','Beta']);
+ assert.equal(pair.current.value,40);
+ assert.equal(pair.previous.value,40);
+ assert.equal(pair.change.delta,0);
+ assert.equal(pair.rows.reduce((sum,row)=>sum+row.current.value,0),pair.current.value);
+ assert.equal(pair.rows.reduce((sum,row)=>sum+row.change.delta,0),pair.change.delta);
+ assert.equal(pair.trend.reduce((sum,p)=>sum+p.value,0),pair.current.value);
+ assert.ok(Math.abs(pair.rows.reduce((sum,row)=>sum+row.share,0)-100)<1e-9);
+ const all=D.installerComparison(s,f,ids,{now});
+ assert.equal(all.current.value,r.current.value);
+ assert.equal(all.previous.value,r.previous.value);
+ assert.equal(all.change.delta,r.change.delta);
+ assert.deepEqual(all.trend.map(p=>p.value),r.trend.map(p=>p.value));
+});
+test('F2: no fabricated growth, share or change from unknown coverage / unequal periods',()=>{
+ const state=seed();delete state.installers.sources.Beta.months['2024-02'];
+ const mixed=D.installerComparison(state,f,['Alpha','Beta'],{now});
+ assert.equal(mixed.previous.complete,false);
+ assert.equal(mixed.change.delta,null);
+ assert.equal(mixed.change.pct,null);
+ assert.ok(mixed.rows.every(row=>row.share!==null),'Current fully reported period may still have shares');
+ const unequal=D.installerComparison(state,{...f,comparison:'custom',compareStart:'2024-01',compareEnd:'2024-01'},['Alpha','Beta'],{now});
+ assert.equal(unequal.equalDuration,false);
+ assert.equal(unequal.change.delta,null);
+ assert.equal(unequal.rows.every(x=>x.change.delta===null),true);
+ const missingState=seed();delete missingState.installers.sources.Alpha.months['2025-01'];
+ const partial=D.installerComparison(missingState,f,['Alpha','Beta'],{now});
+ assert.equal(partial.current.complete,false);
+ assert.equal(partial.rows.every(row=>row.share===null),true);
+ const csv=D.installerMonthlyCsv(analyze(missingState),f);
+ assert.equal(csv.find(line=>line[0]==='Alpha')[1],null);
+});
+test('F2: reject malformed 2–6 selections rather than silently removing accounts',()=>{
+ const s=seed();
+ for(const ids of [[],['Alpha'],['Alpha','Alpha'],['Alpha','missing'],['Alpha','Beta','Gamma','D','E','F','G']])
+   assert.throws(()=>D.installerComparison(s,f,ids,{now}),/Select/);
+});
+test('F2: fully declared monthly zero reconciles across account, compare and monthly CSV',()=>{
+ const s=D.freshState();
+ // Import as full population through the real validator using plain cell arrays.
+ const snap=D.validateInstallerMatrix({rows:[['Installer',202501,202502],['One Solar',5,6],['Two Solar',3,4]],filename:'fixture.csv',sheet:'CSV'});
+ const state=D.commitInstallerImport(s,snap,{scope:'full',fullScopeConfirmed:true});
+ const later=D.validateInstallerMatrix({rows:[['Installer',202502],['One Solar',6]],filename:'fixture2.csv',sheet:'CSV'});
+ const corrected=D.commitInstallerImport(state,later,{scope:'full',fullScopeConfirmed:true});
+ const both=D.installerComparison(corrected,{start:'2025-02',end:'2025-02',comparison:'previous',aggregation:'month'},Object.keys(corrected.installers.accounts),{now});
+ assert.equal(both.current.value,6);
+ assert.equal(both.rows.find(x=>x.name==='Two Solar').current.value,0);
+ assert.equal(both.current.complete,true);
+ const overview=D.installerAnalysis(corrected,{start:'2025-02',end:'2025-02',comparison:'previous',aggregation:'month'},{now});
+ const csv=D.installerMonthlyCsv(overview,{start:'2025-02',end:'2025-02'});
+ assert.equal(csv.find(line=>line[0]==='Two Solar')[1],0);
+ assert.equal(overview.current.value,6);
+});
