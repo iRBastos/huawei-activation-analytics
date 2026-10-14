@@ -184,6 +184,7 @@ try{
  assert.ok(scrollBefore>200,'long-list scroll must be substantive');
  await evaluate("([...document.querySelectorAll('.installer-compare-picker button')].find(x=>x.textContent.includes('QA Installer 0141'))).click()");
  assert.ok(await evaluate("document.querySelector('.installer-compare-picker').scrollTop>200"),'selection must preserve scroll position after redraw');
+ await evaluate("document.querySelector('[data-installer-tab=overview]').click()");
 
  // Responsive acceptance in a real mobile-sized Chromium viewport. Tables are
  // allowed to scroll internally; the page itself must not overflow sideways.

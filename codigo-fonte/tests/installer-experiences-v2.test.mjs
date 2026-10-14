@@ -153,7 +153,7 @@ test('F6 regression: Compare 2–6 scroll list exposes all 1105 and keeps search
 test('F6 regression: old imports remain accessible with original undo buttons',()=>{
  let s=seed();
  for(let i=0;i<12;i++){
-  const rows=[['Installer',202503+i],['Audit Company',i+1]];
+  const rows=[['Installer',202501+i],['Audit Company',i+1]];
   const v=D.validateInstallerMatrix({rows,filename:'history-'+String(i)+'.csv',sheet:'CSV'});
   s=D.commitInstallerImport(s,v);
  }
