@@ -86,7 +86,7 @@ test('F4: six-account selection disables further additions but retains removals'
  const options=ids(state),ui={installerTab:'compare',installerCompareIds:options.slice(0,6)};
  const html=V.installerView(state,ui);
  assert.match(html,/6 of 6 selected/);
- assert.equal((html.match(/aria-pressed="true"/g)??[]).length,6);
+ assert.equal((html.match(/aria-pressed="true" data-installer-compare-pick=/g)??[]).length,6);
  assert.match(html,/data-installer-compare-pick="[^"]+" disabled/);
  assert.match(html,/Account-by-account comparison/);
  assert.equal(D.installerComparison(state,filters,options.slice(0,6),{now:clock}).rows.length,6);
