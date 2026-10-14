@@ -122,7 +122,7 @@ try{
  assert.equal(await evaluate("document.querySelector('.installer-kpi strong').textContent"),'32');
  assert.ok(await evaluate("document.querySelectorAll('.installer-heatmap .heat-cell').length===6"));
  await evaluate("document.querySelector('.installer-heatmap [data-installer-point]').click()");
- await until("document.querySelector('#modal')?.textContent.includes('source-month cells reported')",'heatmap source evidence');
+ await until("document.querySelector('#modal')?.textContent.includes('reporting coverage units confirmed')",'heatmap source evidence');
  await evaluate("document.querySelector('#modal [data-close]').click()");
  await evaluate("document.querySelector('g[data-installer-point]').dispatchEvent(new MouseEvent('click',{bubbles:true}))");
  await until("document.querySelector('#modal')?.textContent.includes('Portfolio evidence')",'installer chart routing');

@@ -18,7 +18,7 @@ test('full monthly snapshot fixes alias churn without losing additive account to
   assert.equal(r.current.value,36);
   assert.equal(r.previous.value,30);
   assert.equal(r.change.delta,6);
-  assert.equal(r.change.pct,20);
+  assert.ok(Math.abs(r.change.pct-20)<1e-9);
   assert.equal(r.rows.find(x=>x.name==='Alpha Energy').current.value,30);
   assert.equal(r.rows.find(x=>x.name==='Alpha Energy').previous.value,20);
   assert.equal(r.rows.find(x=>x.name==='Alpha Energy').current.fullScopeMonths,2);
