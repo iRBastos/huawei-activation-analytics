@@ -43,6 +43,8 @@ test('F4: profile includes three historic charts, recorded monthly table, filter
   assert.match(html,/data-action="installer-profile-export"/);
   assert.match(html,/data-action="installer-profile-compare"/);
   assert.match(html,/Peak confirmed month/);
+  assert.match(html,/Evidence-based account insight/);
+  assert.match(html,/Suggested next action/);
 });
 test('F4: 2–6 comparison shows full numeric table, two chart types and CSV export',()=>{
   const state=seed(),accounts=ids(state);

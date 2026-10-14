@@ -137,3 +137,16 @@ test('F5: an account with meaningful historical volume earns a higher inactivity
  assert.equal(row.priority,'High');
  assert.ok(row.score>=60);
 });
+
+test('F5: individual profile signal reuses previous profile analysis',()=>{
+ const state=fullState();
+ state.installerPreferences={...state.installerPreferences,...f};
+ const id=Object.values(state.installers.accounts).find(a=>a.name==='Reactivated').id;
+ const profile=D.installerAccountAnalysis(state,f,id,{now});
+ const insight=D.installerAccountSignal(profile,f);
+ const all=D.installerInsights(state,f,{now}).rows.find(r=>r.id===id);
+ assert.equal(insight.type,'reactivated');
+ assert.equal(insight.priority,all.priority);
+ assert.equal(insight.evidence,all.evidence);
+ assert.equal(D.installerAccountSignal(null,f),null);
+});

@@ -68,6 +68,15 @@ function classify(account,row,report,f,now,minVolume,thresholdPct){
   lastActive:row.lastActive,currentMonth:latest,recent,previous3,minVolume,thresholdPct,
   completeComparison:usable,periodStart:f.start,periodEnd:f.end};
 }
+/** Compute an account's signal from a precomputed profile; no second portfolio scan. */
+export function installerAccountSignal(profile,f,{now=profile?.report.now,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
+ if(!profile)return null;
+ if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
+   throw new Error('Unsupported installer insight thresholds.');
+ const row=profile.row??{id:profile.id,name:profile.account.name,current:profile.current,
+  previous:profile.previous,delta:profile.change.delta,pct:profile.change.pct,lastActive:null};
+ return classify(profile.account,row,profile.report,f,now,minVolume,thresholdPct);
+}
 /** Always score all tracked accounts, even if UI uses a comparable subset. */
 export function installerInsights(state,f,{now=new Date(),report=null,minVolume=f.insightMinVolume??5,thresholdPct=f.insightThresholdPct??20}={}){
  if(!INSIGHT_MIN_VOLUMES.includes(minVolume)||!INSIGHT_CHANGE_THRESHOLDS.includes(thresholdPct))
