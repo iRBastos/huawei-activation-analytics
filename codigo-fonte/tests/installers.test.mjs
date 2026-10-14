@@ -76,3 +76,50 @@ test('1,000 installers x 48 months import, aggregate and repeat without loss',()
  const v=D.validateInstallerMatrix({rows,filename:'scale.xlsx',sheet:'Data'});assert.deepEqual(v.errors,[]);
  const a=D.commitInstallerImport(D.freshState(),v),b=D.commitInstallerImport(a,v);assert.equal(b.installers.imports.at(-1).changes.length,0);assert.equal(D.installerRows(b,months[0],months.at(-1)).reduce((n,r)=>n+r.total,0),48000);assert.doesNotThrow(()=>D.validateBackup(b));
 });
+
+test('Chinese grand total summary is excluded before installer aggregation and repeated import',()=>{
+ const v=validate('Installer,202501,202502\nAlpha Solar,3,4\nBeta Solar,5,6\n=== 总计 ===,8,10');
+ assert.deepEqual(v.errors,[]);
+ assert.equal(v.sources.length,2);
+ assert.equal(v.duplicates,0);
+ assert.match(v.warnings.join(' '),/Ignored summary row 4: === 总计 ===/);
+ const first=D.commitInstallerImport(D.freshState(),v);
+ assert.equal(Object.keys(first.installers.accounts).length,2);
+ assert.equal(sum(first),18,'summary 8+10 must not double count actual 18 activations');
+ const repeated=D.commitInstallerImport(first,v);
+ assert.equal(sum(repeated),18);
+ assert.equal(repeated.installers.imports.at(-1).changes.length,0);
+});
+test('Chinese grand total is ignored even with nonnumeric summary cells, while repeated installers still sum',()=>{
+ const v=validate('Installer,202501,202502,Total\nAlpha Solar,2,1,123\nAlpha Solar,3,4,456\n=== 总计 ===,#REF!,not-a-number,#ERROR');
+ assert.deepEqual(v.errors,[]);
+ assert.equal(v.sources.length,1);
+ assert.equal(v.duplicates,1);
+ assert.deepEqual(v.sources[0].months['2025-01'].quantity,5);
+ assert.deepEqual(v.sources[0].months['2025-02'].quantity,5);
+ assert.equal(sum(D.commitInstallerImport(D.freshState(),v)),10);
+});
+test('XLSX source parser also excludes === 总计 === final row in installer data',async()=>{
+ const z=new globalThis.JSZip();
+ z.file('xl/workbook.xml','<workbook><sheets><sheet name="Installers" r:id="rId1"/></sheets></workbook>');
+ z.file('xl/_rels/workbook.xml.rels','<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>');
+ const r=[
+   ['Installer',202501,202502],
+   ['Alpha Solar',3,4],
+   ['Beta Solar',5,6],
+   ['=== 总计 ===',8,10],
+ ];
+ const cell=(value,col,row)=>typeof value==='number'
+    ? `<c r="${col}${row}"><v>${value}</v></c>`
+    : `<c r="${col}${row}" t="inlineStr"><is><t>${value}</t></is></c>`;
+ const xml='<worksheet><sheetData>'+r.map((values,i)=>
+   `<row r="${i+1}">${values.map((v,c)=>cell(v,String.fromCharCode(65+c),i+1)).join('')}</row>`
+ ).join('')+'</sheetData></worksheet>';
+ z.file('xl/worksheets/sheet1.xml',xml);
+ const bytes=await z.generateAsync({type:'uint8array'});
+ const book=await readWorkbook(bytes,'fixture.xlsx');
+ const v=D.validateInstallerMatrix({rows:await book.sheet('Installers'),filename:'fixture.xlsx',sheet:'Installers'});
+ assert.deepEqual(v.errors,[]);
+ assert.equal(v.sources.length,2);
+ assert.equal(sum(D.commitInstallerImport(D.freshState(),v)),18);
+});

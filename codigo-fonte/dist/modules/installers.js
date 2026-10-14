@@ -1,4 +1,4 @@
-import {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween} from './model.js';
+import {clone,uid,cellValue,isBlank,monthValue,columnName,monthsBetween,totalLabel} from './model.js';
 
 // Source-name snapshots survive account merges. Reimports replace a source/month,
 // never the already consolidated account total. Equipment records stay separate.
@@ -42,7 +42,7 @@ export function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameCol
     const row=rows[r]??[];if(row.every(c=>isBlank(cellValue(c))))continue;
     const raw=cellValue(row[nameColumn]),label=String(raw??'').trim().replace(/\s+/g,' ');
     if(!label){if(columns.some(({c})=>!isBlank(cellValue(row[c]))))errors.push(`Missing installer name on row ${r+1}.`);continue;}
-    if(/^(?:grand\s*)?total$/i.test(label)){warnings.push(`Ignored summary row ${r+1}.`);continue;}
+    if(totalLabel(label)){warnings.push(`Ignored summary row ${r+1}: ${label}.`);continue;}
     if(label.length>200){errors.push(`Installer name on row ${r+1} exceeds 200 characters.`);continue;}
     const key=installerSourceKey(label);
     if(Object.hasOwn(sources,key))duplicates++;else sources[key]={key,label,months:{}};
