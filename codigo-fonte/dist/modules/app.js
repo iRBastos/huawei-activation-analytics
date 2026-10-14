@@ -59,6 +59,16 @@ document.addEventListener('click',async event=>{
   const el=event.target.closest('button,a[data-action],g[role="button"]');if(!el||el.disabled)return;
   try{
     if(ui.demo&&['print','export-records','export-summary','backup'].includes(el.dataset.action)){toast('Exports are disabled for fictional data. Return to your real workspace to report actual values.',true);return;}
+    if(el.dataset.installerTab){ui.installerTab=el.dataset.installerTab;ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerFullprofile){ui.installerProfileId=el.dataset.installerFullprofile;ui.installerTab='profile';ui.hiddenSeries.clear();render();return;}
+    if(el.dataset.installerComparePick){
+      const id=el.dataset.installerComparePick,ids=ui.installerCompareIds??[];
+      if(!D.installerIndex(state).some(a=>a.id===id))throw new Error('Unknown installer account.');
+      if(ids.includes(id))ui.installerCompareIds=ids.filter(v=>v!==id);
+      else if(ids.length<6)ui.installerCompareIds=[...ids,id];
+      else throw new Error('Compare a maximum of six installers.');
+      ui.hiddenSeries.clear();render();return;
+    }
     if(el.dataset.installerDetail){const id=el.dataset.installerDetail;openModal(state.installers.accounts[id].name,IA.installerProfile(state,id,ui)+'<details><summary>All original monthly source values</summary>'+IV.installerDetail(state,id)+'</details>');return;}
     if(el.dataset.installerSuggest){reviewInstallerMerge(el.dataset.installerSuggest.split(','));return;}
     if(el.dataset.installerPage){ui.installerPage=Number(el.dataset.installerPage);render();return;}
@@ -96,6 +106,29 @@ document.addEventListener('click',async event=>{
     if(el.dataset.undo){const id=el.dataset.undo,h=state.history.find(x=>x.id===id),conflicts=D.undoConflicts(state,id);openModal('Review import undo',`<p>${e(h.filename)} · ${e(h.sheet)}</p><p class="table-note">This import changed ${h.changes.length} records and ${h.coverageChanges?.length??0} coverage declarations.</p>${conflicts.length?`<div class="notice"><p><strong>${conflicts.length} overlapping later changes will be retained.</strong> Only non-conflicting changes can be reversed. This undo is marked complete afterward.</p></div><ul class="validation-list">${conflicts.map(x=>`<li>${e(x.type)}: ${e(x.key)}</li>`).join('')}</ul>`:'<p class="table-note">No overlapping later edits. Previous values and coverage will be restored.</p>'}`,async()=>commit(D.undoImport(state,id,conflicts.length>0),'Import undo saved.'),conflicts.length?'Undo non-conflicting changes':'Undo import');return;}
     switch(el.dataset.action){
       case 'installer-open-import':navigate('data','installer-import');break;
+      case 'installer-compare-from-selected':{
+        const ids=[...(ui.installerSelected??[])];
+        if(ids.length<2||ids.length>6)throw new Error('Select 2 to 6 installers first.');
+        ui.installerCompareIds=ids;ui.installerTab='compare';ui.hiddenSeries.clear();render();break;
+      }
+      case 'installer-profile-compare':{
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const ids=ui.installerCompareIds??[];
+        ui.installerCompareIds=ids.includes(id)?ids:ids.length<6?[...ids,id]:ids;
+        ui.installerTab='compare';render();break;
+      }
+      case 'installer-profile-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const id=ui.installerProfileId??D.installerIndex(state).sort((a,b)=>a.name.localeCompare(b.name))[0]?.id;
+        const h=D.installerAccountHistory(state,id,{end:D.installerFilters(state).end});
+        if(!h)throw new Error('Select an installer first.');
+        download(toCsv([['Month','Inverter activations','Status','Observed','Expected'],...h.monthly.map(p=>[p.start,p.value,p.status,p.observed,p.expected])]),'installer-profile-history.csv','text/csv;charset=utf-8');break;
+      }
+      case 'installer-compare-export':{
+        if(ui.demo)throw new Error('Exit demo before exporting.');
+        const c=D.installerComparison(state,D.installerFilters(state),ui.installerCompareIds??[]);
+        download(toCsv(D.installerComparisonCsv(c)),'installer-comparison.csv','text/csv;charset=utf-8');break;
+      }
       case 'installer-merge':reviewInstallerMerge([...(ui.installerSelected??[])]);break;
       case 'installer-cancel':ui.installerPending=null;ui.installerError=null;render();break;
       case 'installer-preview-export':{const p=ui.installerPending;if(p)download(toCsv([['Source name','Account','Month','Previous','Incoming','Action'],...D.installerImportPreview(state,p.validation).map(r=>[r.label,r.account,r.month,r.previous,r.quantity,r.action])]),'installer-import-preview.csv','text/csv;charset=utf-8');break;}
@@ -133,6 +166,10 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   if(el.dataset.installerSelect){ui.installerSelected??=new Set();el.checked?ui.installerSelected.add(el.dataset.installerSelect):ui.installerSelected.delete(el.dataset.installerSelect);render();return;}
   if(el.dataset.filter){const next=D.clone(state),f=ui.page==='installers'?next.installerPreferences:next.preferences;f[el.dataset.filter]=el.value;if(!D.monthValue(f.start)||!D.monthValue(f.end)||f.start>f.end||!D.monthValue(f.compareStart)||!D.monthValue(f.compareEnd)||f.compareStart>f.compareEnd)throw new Error('Choose valid month ranges with start on or before end.');D.monthsBetween(f.start,f.end);D.monthsBetween(f.compareStart,f.compareEnd);if(['category','family'].includes(el.dataset.filter))f.model='All';ui.recordPage=0;await commit(next);return;}
   switch(el.id){
+    case 'installer-profile-picker':{
+      if(!D.installerIndex(state).some(a=>a.id===el.value))throw new Error('Unknown installer account.');
+      ui.installerProfileId=el.value;render();break;
+    }
     case 'installer-cohort':ui.installerCohort=el.value;ui.installerPage=0;ui.installerSelected=new Set();render();break;
     case 'installer-sort':ui.installerSort=el.value;ui.installerPage=0;render();break;
     case 'installer-period':{if(el.value==='custom')break;const end=D.latestInstallerMonth(state);if(!end)throw new Error('No complete closed installer month is available.');const start=el.value==='ytd'?end.slice(0,4)+'-01':el.value==='month'?end:D.shiftMonth(end,1-Number(el.value));const next=D.clone(state);Object.assign(next.installerPreferences,{start,end});await commit(next);break;}
@@ -157,7 +194,13 @@ document.addEventListener('change',async event=>{const el=event.target;try{
   }
 }catch(err){toast(err.message,true);render();}});
 
-document.addEventListener('input',event=>{const el=event.target;if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
+document.addEventListener('input',event=>{const el=event.target;
+  if(el.id==='installer-profile-search'||el.id==='installer-compare-search'){
+    const field=el.id==='installer-profile-search'?'installerProfileSearch':'installerCompareSearch';
+    const cursor=el.selectionStart;ui[field]=el.value;render();
+    const input=$('#'+el.id);input?.focus();input?.setSelectionRange(cursor,cursor);return;
+  }
+  if(el.id==='installer-search'){const cursor=el.selectionStart;ui.installerSearch=el.value;ui.installerPage=0;render();const input=$('#installer-search');input?.focus();input?.setSelectionRange(cursor,cursor);return;}if(el.id==='inverter-model-search'){
     ui.inverterModelSearch=el.value;
     const cursor=el.selectionStart;
     render();

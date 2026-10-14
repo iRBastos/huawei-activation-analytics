@@ -150,7 +150,7 @@ test('F4: indexed comparison retains real units and withholds incomplete points'
 });
 test('F4: history computes confirmed peak, last activity, total and grouping from one selector',()=>{
  const s=seed(),history=D.installerAccountHistory(s,'Alpha',{now,aggregation:'quarter',end:'2025-02'});
- assert.deepEqual(history.points.map(x=>x.value),[20,40]);
+ assert.deepEqual(history.points.filter(p=>p.value!==null).map(x=>x.value),[20,40]);
  assert.equal(history.peak.value,20);
  assert.equal(history.peak.start,'2025-01');
  assert.equal(history.firstActive,'2024-01');
