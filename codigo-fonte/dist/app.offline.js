@@ -547,6 +547,13 @@ function validateInstallerMatrix({rows,filename,sheet,headerRow=0,nameColumn=0})
   let duplicates=0,blankZeros=0;
   for(let r=headerRow+1;r<rows.length;r++){
     const row=rows[r]??[];if(row.every(c=>isBlank(cellValue(c))))continue;
+    const nameCell=row[nameColumn];
+    // An Excel formula error in a name cell must not become an invented account.
+    // Some spreadsheet tools interpret === 总计 === as a formula unless stored as text.
+    if(nameCell?.type==='e'||nameCell?.f){
+      errors.push(`Excel error or formula in installer name at ${nameCell?.ref??`${columnName(nameColumn)}${r+1}`}. Convert the name to text and save the workbook.`);
+      continue;
+    }
     const raw=cellValue(row[nameColumn]),label=String(raw??'').trim().replace(/\s+/g,' ');
     if(!label){if(columns.some(({c})=>!isBlank(cellValue(row[c]))))errors.push(`Missing installer name on row ${r+1}.`);continue;}
     if(totalLabel(label)){warnings.push(`Ignored summary row ${r+1}: ${label}.`);continue;}
