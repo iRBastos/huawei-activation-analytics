@@ -34,6 +34,10 @@ test('F4: profile includes three historic charts, recorded monthly table, filter
   const html=V.installerView(state,ui);
   assert.match(html,/id="installer-profile-picker"/);
   assert.match(html,/id="installer-profile-search"/);
+  assert.match(html,/class="installer-profile-pickerbar editing"/);
+  assert.match(html,/All [0-9]+ accounts available/);
+  assert.match(html,/data-action="installer-open-import"/);
+  assert.doesNotMatch(html,/Choose one installer/);
   assert.match(html,/Monthly history/);
   assert.match(html,/Quarterly history/);
   assert.match(html,/Annual history/);
@@ -130,7 +134,8 @@ test('F6 regression: native Installer Profile selector exposes all 1105 accounts
  const html=X.installerProfilePage(s,{installerProfileId:last.id});
  assert.equal((html.match(/<option value="/g)??[]).length,1105,'no hidden top-100 cap');
  assert.ok(html.includes('value="'+last.id+'" selected'));
- assert.ok(html.includes('1105 available of 1105 tracked accounts'));
+ assert.ok(html.includes('All 1105 accounts available'));
+ assert.ok(html.includes('class="installer-profile-pickerbar editing"'));
  const filtered=X.installerProfilePage(s,{installerProfileId:first.id,installerProfileSearch:'Installer 1104'});
  assert.equal((filtered.match(/<option value="/g)??[]).length,2,'search retains selected account plus match');
  assert.ok(filtered.includes('value="'+first.id+'" selected'));
