@@ -1,6 +1,6 @@
 # Huawei Activation Analytics V2.1 — Executive Product Overview
 
-> **Status:** Approved presentation plan; reproducible synthetic source data created and verified; presentation slides and screenshots not yet produced.  
+> **Status:** Approved presentation plan; synthetic source data created, 10 primary + 3 optional genuine UI screenshots captured and archived; PPTX/PDF not yet produced.  
 > **Date:** 15 October 2026  
 > **Repository:** iRBastos/huawei-activation-analytics  
 > **Working branch:** docs/executive-overview-deck-plan-2026-10-15  
@@ -203,6 +203,8 @@ Use entirely fictional demo data or approved anonymised data and keep the same e
 **Footer/micro-note:** “Offline, rule-based insights based on uploaded activation records. Not live market intelligence or verified sales/market-share data.” Also clarify independent development without falsely implying corporate authorisation.
 
 ## 4. Screenshot capture and cropping register
+
+**Capture completion (15 October 2026):** [SCREENSHOT_CAPTURE_REPORT.md](SCREENSHOT_CAPTURE_REPORT.md) documents the successful image capture, tests, saved Library assets and environment limitations. Binary screenshots are held in the delivered ZIP and in the persistent user Library, not as committed GitHub PNG files.
 
 **Canonical capture protocol:** [SCREENSHOT_CAPTURE_PLAN.md](SCREENSHOT_CAPTURE_PLAN.md) defines the exact filter presets, crop boundaries, filename convention, recommended capture order and screenshot QA. Use that file when capturing S01–S10; this table is the short register.
 
