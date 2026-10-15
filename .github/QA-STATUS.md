@@ -1,5 +1,25 @@
 # V2 quality gates — installer reporting coverage
 
+## Final V2.1 delivery audit — 15 October 2026 (documentation PR #6)
+
+**Status: technically reviewed, pending owner release approval.** This is a final release handoff checkpoint, not an automatic release or merge approval.
+
+- Source examined: current V2.1 runtime plus multilingual documentation branch `docs/commercial-intelligence-en-pt-zh-v2.1`.
+- Re-ran **196/196 Node tests**, plus the offline DOM validator against the exact candidate source ZIP (0 failures).
+- GitHub Actions source-ZIP sync run [38764845743](https://github.com/iRBastos/huawei-activation-analytics/actions/runs/38764845743): **SUCCESS** on automated Node tests, headless Chromium smoke, offline validator and packaging.
+- Independent audit downloaded the synced GitHub Actions artifact and reproduced `codigo-fonte.zip` **byte for byte** using `build-release.py`.
+- Compared original and corrected candidate executable assets: `index.html` and `codigo-fonte/dist/app.offline.js` are **byte-identical**. The application and analytical calculations have not changed.
+- **Corrected a release packaging defect:** the original multilingual documentation was linked from the README but absent from the downloadable source ZIP. The distribution now ships **32 commercial documentation files** (three languages with Markdown/HTML, plus indexes).
+- Added `codigo-fonte/tools/verify-documentation.py` to ensure multilingual files, links and byte parity are valid in the ZIP. The synchronized build passed this check, covering **33 required files including root README and 125 relative links**.
+- Corrected stale installer-capability statements in the developer README, import guide and links from the existing HTML guides; archived V2 release gate wording remains intact with a superseding-status notice.
+- **Remaining handoff items:** confirm the exact production XLSX and backup in the owner's Windows browser, visually inspect print/report output and keyboard/screen-reader accessibility to the desired acceptance level, review translated commercial terminology, and obtain explicit owner authorisation for the PR merge and eventual V2.1 distribution/release.
+- Historical CI nuance: an intermediate PR validation run initially reported a stale ZIP while the auto-synchronization was pending. The later synced release artifact is deterministic and independently verified; final PR checks should be read from the latest commit after this checkpoint.
+
+**No business customer data, competitor market share, actual revenues, real-time alerting, cloud synchronization or unsupported claims were introduced.** The delivered tool remains browser-local and monthly-import-driven.
+
+---
+
+
 ## V2 release approval and main integration — 14 Oct 2026
 
 **RELEASE INTEGRATED INTO `main` WITH THE USER'S EXPLICIT APPROVAL.** Historical "do not merge" sections below document the pre-release gates and are superseded by this decision for the approved V2 feature set.
