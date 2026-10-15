@@ -1,6 +1,26 @@
 # Huawei Activation Analytics
 
-Offline dashboard for analysing monthly Huawei equipment activations: inverters, battery modules and BMS. Includes interactive charts, period and product filters, comparisons, targets, import validation, history, CSV exports and full JSON backups.
+**Commercial intelligence for the Huawei installer channel — V2.1.0**
+
+A browser-based, offline analytics application for tracking Huawei equipment activations and, crucially, identifying meaningful changes in installer activity. It helps Channel Managers **detect declining momentum, inactivity, reactivation and growth**, validate reporting evidence and prioritise retention, support and development conversations.
+
+**Commercial decision loop:** Refresh monthly data → identify material movements → validate coverage → review installer history → contact partners → follow up on subsequent complete reporting periods.
+
+The application uses explainable, rule-based insights. It does **not** provide real-time notifications, competitor switching proof, sales or revenue, market share, or automated CRM actions. Installer-level totals and equipment-model activations are independent datasets and must not be joined without supporting data.
+
+## Commercial documentation — English · Português · 简体中文
+
+| Document | English | Português (Brasil) | 简体中文 |
+| --- | --- | --- | --- |
+| Project overview | [Overview](docs/commercial/en/PROJECT_OVERVIEW.md) | [Visão do projeto](docs/commercial/pt-BR/PROJECT_OVERVIEW.md) | [项目介绍](docs/commercial/zh-CN/PROJECT_OVERVIEW.md) |
+| Channel Manager playbook | [Playbook](docs/commercial/en/CHANNEL_MANAGER_PLAYBOOK.md) | [Playbook comercial](docs/commercial/pt-BR/CHANNEL_MANAGER_PLAYBOOK.md) | [渠道经理行动手册](docs/commercial/zh-CN/CHANNEL_MANAGER_PLAYBOOK.md) |
+| User guide | [User guide](docs/commercial/en/USER_GUIDE.md) | [Manual de utilização](docs/commercial/pt-BR/USER_GUIDE.md) | [使用手册](docs/commercial/zh-CN/USER_GUIDE.md) |
+| Quick start | [Quick start](docs/commercial/en/QUICK_START.md) | [Guia rápido](docs/commercial/pt-BR/QUICK_START.md) | [快速入门](docs/commercial/zh-CN/QUICK_START.md) |
+| Documentation audit | [Audit](docs/commercial/en/DOCUMENTATION_AUDIT.md) | [Auditoria](docs/commercial/pt-BR/DOCUMENTATION_AUDIT.md) | [文档审查](docs/commercial/zh-CN/DOCUMENTATION_AUDIT.md) |
+
+[Browse the multilingual documentation](docs/commercial/README.md) · [Offline documentation index](docs/commercial/index.html)
+
+---
 
 ## Open the dashboard
 
@@ -9,7 +29,7 @@ Offline dashboard for analysing monthly Huawei equipment activations: inverters,
 
 No Python, Node.js, terminal, server, build step or internet connection is needed to use the dashboard. Styles and runtime JavaScript are embedded in the main HTML. Keep the folder together to access the Excel templates, documentation and source download.
 
-Portuguese instructions: [LEIA-ME.txt](LEIA-ME.txt).
+Portuguese instructions: [LEIA-ME.txt](LEIA-ME.txt). A complete multilingual commercial user guide is linked above.
 
 ## Data
 
@@ -53,6 +73,5 @@ reporting date filters. See [the installer guide](codigo-fonte/docs/INSTALLER-IM
 The Installer Profile and 2–6 Installer Comparison are available as dedicated tabs under Installers, with historical monthly/quarterly/annual charts, coverage-aware growth, indexed trends and CSV exports. The Insights & priorities tab offers evidence-backed account signals, configurable significance thresholds and exportable follow-up suggestions.
 
 ### Installer analytics workspaces
-The installer branch adds monthly trends, comparison KPIs, ranking, concentration, retention,
-three-month momentum, a dedicated account profile with all recorded history, a 2–6 company comparative chart/table and a clickable activity heatmap. Import and confirmed
-unions preserve summed source values. See `codigo-fonte/docs/INSTALLER-IMPORT.md` for coverage rules and [the commercial insights guide](codigo-fonte/docs/INSTALLER-INSIGHTS.md) for prioritisation methodology.
+
+The **Installers** section provides historical trends, ranking, concentration, retention, three-month momentum, a searchable account profile, comparisons of 2–6 installers, a heatmap, and **Insights & priorities**. Source values and confirmed account consolidations are auditable. See the [installer import guide](codigo-fonte/docs/INSTALLER-IMPORT.md) for coverage rules and [commercial insights methodology](codigo-fonte/docs/INSTALLER-INSIGHTS.md) for rule definitions.

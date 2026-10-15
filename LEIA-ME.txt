@@ -42,3 +42,6 @@ codigo-fonte.zip: código disponibilizado também pelo botão interno do app.
 
 Abra o index.html da pasta principal. Os arquivos dentro de codigo-fonte
 são os materiais de desenvolvimento, não precisam ser executados para usar.
+
+DOCUMENTAÇÃO DE INTELIGÊNCIA COMERCIAL
+Para conhecer as análises de tendência, prioridades comerciais, manual de uso e playbook em inglês, português e chinês, abra docs/commercial/index.html na pasta extraída.

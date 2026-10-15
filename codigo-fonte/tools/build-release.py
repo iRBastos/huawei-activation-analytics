@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "codigo-fonte"
 ARCHIVE = ROOT / "codigo-fonte.zip"
 TOP_FILES = ("index.html", "README.md", "LEIA-ME.txt")
-TOP_DIRS = ("codigo-fonte", "documentacao", "templates", ".github/workflows")
+TOP_DIRS = ("codigo-fonte", "documentacao", "templates", ".github/workflows", "docs/commercial")
 IGNORED_DIRS = (".git", "__pycache__", "node_modules", ".pytest_cache", ".venv")
 IGNORED_SUFFIXES = (".pyc", ".pyo", ".swp", ".tmp", ".bak")
 
@@ -56,7 +56,7 @@ def selected_paths():
         if p == ARCHIVE:
             raise SystemExit("Recursive packaging forbidden")
         unique[str(relative).replace("\\", "/")] = p
-    for expected in ["index.html","codigo-fonte/dist/app.offline.js",
+    for expected in ["index.html","docs/commercial/index.html","docs/commercial/README.md","codigo-fonte/dist/app.offline.js",
                      "codigo-fonte/dist/modules/inverter-catalog.js",
                      "codigo-fonte/dist/test-results.txt","documentacao/test-results.txt"]:
         if expected not in unique:
