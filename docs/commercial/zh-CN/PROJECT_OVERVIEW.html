@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Huawei Activation Analytics V2.1 | Huawei Activation Analytics</title><style>:root{font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",Arial,sans-serif;color:#202b38;background:#f7f8fa;line-height:1.7}body{margin:0}header{background:white;border-bottom:1px solid #e3e6eb;padding:14px max(24px,calc((100vw - 1000px)/2));font-size:14px}header a{color:#b61430;text-decoration:none}main{max-width:900px;margin:30px auto;padding:38px 46px;background:white;border:1px solid #e8eaed;border-radius:12px}h1{font-size:30px;color:#151f2d;line-height:1.2;margin-top:0}h2{font-size:21px;margin-top:38px}h3{font-size:17px;margin-top:30px}p,li{font-size:15px}a{color:#ad1430}code{background:#f2f4f6;padding:2px 5px;border-radius:4px}pre{overflow-x:auto;padding:16px;background:#f2f4f6}pre code{padding:0}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;padding:11px;border-bottom:1px solid #e9edf1;vertical-align:top}th{background:#f7f8fa}blockquote{border-left:3px solid #ba1935;margin:18px 0;padding:10px 18px;background:#faf7f8}hr{border:0;border-top:1px solid #ddd;margin:30px 0}@media(max-width:650px){main{margin:0;padding:24px 18px;border:0}h1{font-size:25px}}</style></head><body><header><a href="../index.html">← Commercial Documentation / EN · PT · 中文</a></header><main><h1>Huawei Activation Analytics V2.1</h1>
+<h2>面向安装商渠道的商业市场洞察</h2>
+<p><strong>定位：</strong> 将设备激活量的变化转化为及时、可核查的渠道经营决策。 <strong>适用对象：</strong> 渠道经理、分销商客户团队及市场业务管理者。 <strong>文档状态：</strong> 2026 年 10 月 15 日商业定位建议稿。依据代码仓库 <code>iRBastos/huawei-activation-analytics</code> 的 <code>main</code> 分支提交 <code>993fc2a</code> 核对。本项目为独立开发的分析应用，并不表示获得华为官方产品认可。</p>
+<h3>需要解决的商业问题</h3>
+<p>渠道团队有时直到安装商的业务活动明显减弱后，才察觉到变化。月度激活量报表虽包含重要线索，但文件分散、安装商名称重复、上报月份不完整和人工比较，都会拖慢反应速度。渠道经理真正需要回答的是：<strong>哪里发生了变化、哪些客户最值得关注、证据是否可靠、下一步应该采取什么行动。</strong></p>
+<p>本项目不仅是逆变器数量统计工具，更希望建立一套可重复的业务流程：维护华为渠道合作关系、发现活动放缓风险、支持增长中的伙伴，并与活动减少的客户及时恢复沟通。</p>
+<h3>当前应用可以支持的商业问题</h3>
+<div class="table-wrap"><table><thead><tr><th>商业问题</th><th>当前功能位置</th><th>可能采取的渠道行动</th></tr></thead><tbody><tr><td>哪些安装商的华为激活量正在明显下降？</td><td><strong>Installers → Insights &amp; priorities</strong>、<strong>Installer profile</strong></td><td>开展客户回访，调查原因并提供针对性支持</td></tr><tr><td>哪些客户已确认暂停活动，哪些重新开始激活？</td><td>基于规则的信号及数据完整性检查</td><td>核实业务状况，制定恢复合作或重新接触计划</td></tr><tr><td>哪些安装商正在增长？</td><td><strong>Installer overview</strong>、排名、趋势与洞察</td><td>协调培训、供货及联合业务计划，延续增长势头</td></tr><tr><td>变化集中在少数客户，还是遍及已跟踪的安装商群体？</td><td>排名、前五名集中度、变化贡献及账户比较</td><td>保护关键客户，或推动更广泛的渠道计划</td></tr><tr><td>华为逆变器或电池模块的整体激活量是否变化？</td><td><strong>Overview</strong>、<strong>Inverters</strong>、<strong>Batteries &amp; BMS</strong>、<strong>Comparisons</strong></td><td>检查产品定位、培训需求与分销商反馈</td></tr><tr><td>商业跟进后，账户活动是否有所恢复？</td><td>安装商历史档案及时间段比较</td><td>复查后续变化，但不能据此直接认定行动产生了因果效果</td></tr></tbody></table></div>
+<p><strong>业务闭环：</strong> 导入数据 → 核实覆盖范围 → 识别变化 → 了解客户情况 → 采取行动 → 在下一报告期复盘。</p>
+<h3>预期的五项商业价值</h3>
+<ol><li><strong>尽早发现变化：</strong> 在可靠的新一期数据到达时发现迹象，而不是仅依赖事后反馈。</li><li><strong>合理安排优先级：</strong> 区分重大变化、小幅波动和数据不确定性。</li><li><strong>维护合作伙伴：</strong> 及时联系曾经活跃、但近期活动减少或停止的安装商。</li><li><strong>促进增长：</strong> 找出势头增强的伙伴，评估培训、备货和联合市场活动机会。</li><li><strong>形成复盘机制：</strong> 跟踪后续激活量与执行情况，但不把相关变化自动解释为行动效果。</li></ol>
+<h3>如何理解系统信号</h3>
+<p>当前 <strong>Insights &amp; priorities</strong> 使用明确规则，而非预测性人工智能。它识别显著增长或下降、过去活跃账户连续三个完整报告月零激活、恢复活动、三个确认零值月份后首次记录活动、零基线后的活动、相对稳定以及 <strong>Verify reporting coverage</strong>。优先级评分是<strong>确定性的排查工具</strong>，并非客户流失概率。</p>
+<p>默认门槛为上一比较期至少 <strong>5 次激活</strong>，变化幅度至少 <strong>20%</strong>，可在界面中调整。通常只有两个比较区间<strong>长度相同且上报完整</strong>，才能判定正常的 <em>Growing</em> 或 <em>Declining</em> 信号。缺失月份不能当作零值。</p>
+<h3>对“需求”作出负责任的解释</h3>
+<p><strong>按安装商记录的华为逆变器激活量，是华为渠道已观察到的活动的滞后指标。</strong> 它可以提示值得调查的需求变化，但不能单独证明销售、终端需求、市场份额下降、竞争品牌替代、客户忠诚度或收入。产品总激活量与安装商激活量来自相互独立的数据集，无法据此确定某安装商使用了哪种具体型号。</p>
+<p><strong>及时性限制：</strong> 当前离线应用不会连续接收实时数据，也不会自动向外部发送通知。识别速度取决于新的、可靠的报表何时提供及被检查。建议制定固定的数据导入与信号复核流程；自动同步及 CRM 集成属于未来可能的扩展，<strong>不是现有功能</strong>。</p>
+<h3>如何衡量成效</h3>
+<p>应同时衡量<strong>响应执行情况</strong>与<strong>可观察的商业结果</strong>：</p>
+<ul><li>从信号被核实到首次联系客户所用的工作日（在系统外记录）。</li><li>已分配负责人并完成跟进的重点信号占比（在系统外记录）。</li><li>通过客户沟通得到解释或纠正的账户变化比例（在系统外记录）。</li><li>覆盖范围足够完整时，已跟踪安装商群体中的后续激活量、活跃账户、恢复活动账户与集中度。</li></ul>
+<p>这些指标支持经营判断，但不能证明某一次活动导致了数量变化。</p>
+<h3>已有功能与建议的后续能力</h3>
+<p><strong>目前已有：</strong> 本地离线使用、安装商报表导入与人工名称合并、排名、历史档案、2–6 家安装商比较、基于规则的洞察、CSV 导出、设备趋势分析、来源证据及 JSON 备份。 <strong>建议建立的团队流程（系统尚未内置）：</strong> 账户负责人、联系时限、原因代码、行动记录和跟进复盘。 <strong>未来可能的功能（尚未实现）：</strong> 自动数据同步、邮件/推送提醒、CRM 回写、竞争情报和预测。</p>
+<p><strong>相关文档：</strong> <a href="CHANNEL_MANAGER_PLAYBOOK.html">渠道经理行动手册</a> · <a href="USER_GUIDE.html">用户指南</a> · <a href="QUICK_START.html">快速入门</a>。</p><hr><p><a href="../index.html">Documentation index</a></p></main></body></html>
