@@ -4,6 +4,7 @@
 > **Date:** 15 October 2026  
 > **Repository:** iRBastos/huawei-activation-analytics  
 > **Working branch:** docs/executive-overview-deck-plan-2026-10-15  
+> **Production handoff:** [PPT_PRODUCTION_READINESS.md](PPT_PRODUCTION_READINESS.md) — final English slide copy, assets, release hash, design decisions and QA gates.  
 > **Audience:** Huawei Digital Power commercial leadership, channel managers and partner-facing teams.  
 > **Delivery mode:** Asynchronous: the recipients will receive the application and presentation files **without a live presenter**.  
 > **Language:** Professional, concise English for the slides; this document is the production brief.  
