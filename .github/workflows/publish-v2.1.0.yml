@@ -29,7 +29,7 @@ jobs:
           test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte.zip")" = "$EXPECTED_ZIP_BLOB"
           test "$(git rev-parse HEAD:index.html)" = "$(git rev-parse "$RELEASE_SOURCE:index.html")"
           test "$(git rev-parse "$RELEASE_SOURCE:index.html")" = "$(git rev-parse HEAD:index.html)"
-          test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte/dist/app.offline.js")" = "$(git rev-parse HEAD:codigo-fonte/dist/app.offline.js")"
+          test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte/dist/app.offline.js")" = "$(git rev-parse HEAD:codigo-fonte/dist/app.offline.js)"
           test -s codigo-fonte.zip
           git show "$RELEASE_SOURCE:codigo-fonte.zip" > Huawei_Activation_Analytics_V2.1.0.zip
           test -s Huawei_Activation_Analytics_V2.1.0.zip
