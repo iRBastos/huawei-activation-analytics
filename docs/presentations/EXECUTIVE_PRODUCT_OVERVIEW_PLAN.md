@@ -204,6 +204,8 @@ Use entirely fictional demo data or approved anonymised data and keep the same e
 
 ## 4. Screenshot capture and cropping register
 
+**Canonical capture protocol:** [SCREENSHOT_CAPTURE_PLAN.md](SCREENSHOT_CAPTURE_PLAN.md) defines the exact filter presets, crop boundaries, filename convention, recommended capture order and screenshot QA. Use that file when capturing S01–S10; this table is the short register.
+
 | ID | Application location | Slide | Crop instructions | Priority |
 | --- | --- | --- | --- | --- |
 | S01 | Overview | 01 | KPI cards and beginning of chart, recognisable layout | Must |
