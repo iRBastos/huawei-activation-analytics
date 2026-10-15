@@ -6,6 +6,7 @@ on:
       - feature/inverter-power-catalog
       - feat/installer-analytics-v2
       - ux/redesign-v2.1
+      - docs/commercial-intelligence-en-pt-zh-v2.1
     paths:
       - 'codigo-fonte/**'
       - 'documentacao/**'
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   sync-release:
-    if: github.repository == 'iRBastos/huawei-activation-analytics' && (github.ref == 'refs/heads/feature/inverter-power-catalog' || github.ref == 'refs/heads/feat/installer-analytics-v2' || github.ref == 'refs/heads/ux/redesign-v2.1')
+    if: github.repository == 'iRBastos/huawei-activation-analytics' && (github.ref == 'refs/heads/feature/inverter-power-catalog' || github.ref == 'refs/heads/feat/installer-analytics-v2' || github.ref == 'refs/heads/ux/redesign-v2.1' || github.ref == 'refs/heads/docs/commercial-intelligence-en-pt-zh-v2.1')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -32,6 +33,9 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           persist-credentials: true
+          fetch-depth: 2
+      - name: Restore original sync workflow before deterministic packaging
+        run: git show HEAD^:.github/workflows/sync-release.yml > .github/workflows/sync-release.yml
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -57,12 +61,14 @@ jobs:
         run: node tools/browser-smoke.mjs
       - name: Generate deterministic source ZIP and test summaries
         run: python3 codigo-fonte/tools/build-release.py --test-log "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Verify multilingual documentation in source ZIP
+        run: python3 codigo-fonte/tools/verify-documentation.py
       - name: Commit updated distribution files to development branch only
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- index.html codigo-fonte/dist/app.offline.js codigo-fonte.zip codigo-fonte/dist/test-results.txt documentacao/test-results.txt
+          git add -- index.html codigo-fonte/dist/app.offline.js codigo-fonte.zip codigo-fonte/dist/test-results.txt documentacao/test-results.txt .github/workflows/sync-release.yml
           if git diff --cached --quiet; then
             echo "Distribution already current; no additional commit needed"
           else

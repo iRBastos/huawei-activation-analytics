@@ -1,5 +1,7 @@
 # Huawei Activation Analytics V2 — Release Acceptance
 
+> **Historical release-gate record (14 October 2026).** The `CONDITIONAL / DO NOT MERGE` decision below was written **before** the owner approved V2.0.0 integration into `main`; it must not be read as the current release status. See `.github/QA-STATUS.md` for the recorded V2 approval and `docs/ux/F7_VERIFICATION.md` for V2.1 automated review evidence. The original gates and limitations are retained for audit history.
+
 **State: CONDITIONAL / DO NOT MERGE.** Automated CI is not a substitute for representative real data or manual Windows acceptance. The V2 PR is based on the open installer-import foundation PR, not directly on `main`.
 
 ## Decision rule

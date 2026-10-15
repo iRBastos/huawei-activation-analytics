@@ -58,6 +58,8 @@ jobs:
         run: node tools/browser-smoke.mjs
       - name: Regenerate reproducible ZIP and verification summaries
         run: python3 codigo-fonte/tools/build-release.py --test-log "$RUNNER_TEMP/huawei-tests.tap"
+      - name: Validate packaged multilingual documentation and links
+        run: python3 codigo-fonte/tools/verify-documentation.py
       - name: Fail if committed distribution differs from sources
         shell: bash
         run: |

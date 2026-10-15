@@ -43,7 +43,10 @@ The Activation matrix worksheet is the importable sheet. The Instructions worksh
 | `dist/modules/domain.js` | Stable public domain API |
 | `dist/modules/persistence.js` | IndexedDB transaction adapter; future shared storage can replace this boundary |
 | `dist/modules/charts.js` | Accessible SVG line charts, bars and product mix |
-| `dist/modules/views.js` | Six analysis areas and evidence drawers |
+| `dist/modules/views.js` | Equipment analysis views, data workspace, targets and evidence drawers |
+| `dist/modules/installers.js` and `dist/modules/installer-analytics.js` | Installer identities, reporting coverage and shared commercial metrics |
+| `dist/modules/installer-insights.js` and `dist/modules/installer-experiences.js` | Evidence-based priority signals, installer profiles and comparisons |
+| `dist/modules/installer-views.js` and `dist/modules/installer-analytics-views.js` | Installer overview, import presentation and commercial analytics UI |
 | `dist/modules/app.js` | Navigation, forms, local file interaction, mutation confirmation and UI state |
 | `dist/modules/exports.js` | Filter-consistent CSV rows, formula injection protection, backup/download helpers |
 | `dist/modules/demo.js` | Isolated, explicitly fictional demonstration data |
@@ -79,9 +82,9 @@ Run `npm test`. On GitHub Actions this suite is executed together with `node too
 
 The specified independent numerical fixture is verified: 100 inverters, 30 BMS, 60 modules, 100 S0 kWh, 260 S1 kWh, 360 total kWh, 30 BMS per 100 inverters, 2 modules per family BMS, 10 S0 kWh per C0, 13 S1 kWh per C1, and 12 overall kWh per BMS.
 
-Tests also cover actual .xlsx ZIP parsing, worksheet selection, text/numeric/reordered headers, total exclusion/reconciliation, duplicated/invalid/error/formula cells, future years, missing/zero/not-applicable states, independent datasets, repeated and corrected imports, all six rendering functions, escaping, comparisons, zero denominators, ratios above 100, exports, target hierarchy, backup round-trips, and undo conflicts. Storage tests use a deterministic IndexedDB test double to verify adapter transaction behaviour and reloading through a fresh module instance. They do not constitute real-browser persistence verification.
+Tests also cover actual .xlsx ZIP parsing, worksheet selection, text/numeric/reordered headers, total exclusion/reconciliation, duplicated/invalid/error/formula cells, future years, missing/zero/not-applicable states, independent datasets, repeated and corrected imports, the equipment and installer view rendering functions, escaping, comparisons, zero denominators, ratios above 100, exports, target hierarchy, backup round-trips, and undo conflicts. Storage tests use a deterministic IndexedDB test double to verify adapter transaction behaviour and reloading through a fresh module instance. They do not constitute real-browser persistence verification.
 
-Excel template images were rendered and visually reviewed. Browser automation was unavailable in the build environment, so end-to-end interaction, actual browser IndexedDB reload, browser print output and responsive visual appearance were not independently verified in a browser. These limitations are disclosed rather than treated as passed tests.
+Excel template images were rendered and visually reviewed. Current CI executes a Chromium file-open smoke test (including local storage reload, key installer screens and a mobile viewport); Windows Chrome was also exercised on a hosted Windows runner during V2.1 review. Automated browser smoke does not substitute for checking printing, accessibility with assistive technologies or representative private production data on the owner's Windows installation.
 
 ## Remaining limitations
 
@@ -89,12 +92,12 @@ Excel template images were rendered and visually reviewed. Browser automation wa
 2. This is browser-local single-user storage. There is no cross-device sync, shared database, live source refresh or multi-tab concurrency coordination. Use one editing tab and backups.
 3. XLSX only supports the rectangular monthly matrix described in the brief. Encrypted workbooks, legacy .xls, macros, external-link recalculation, pivot refresh and arbitrary Excel formula evaluation are not implemented. Saved numeric formula results are required.
 4. Import bounds: 30 MB compressed workbook, 120 MB declared expanded ZIP size, 10,000 ZIP entries, 100,000 worksheet rows and 2,001 columns. Report windows are limited to 100 years for responsiveness.
-5. Equipment matrices have no installer field or linked equipment IDs. **Data → Installer imports** supports monthly inverter totals by company and name consolidation. The Installers workspace provides tracked-portfolio growth KPIs. None of these data identifies equipment models per installer, market share, product pairings, PV-only sites, attachment rates, sales or revenue. Commercial insights remain future work.
+5. Equipment matrices have no installer field or linked equipment IDs. **Data → Installer imports** supports monthly inverter totals by company and name consolidation. The Installers workspace provides tracked-portfolio growth KPIs, searchable account profiles, comparison of 2–6 installers and rule-based **Insights & priorities**. None of these data identifies equipment models per installer, market share, product pairings, PV-only sites, attachment rates, sales or revenue. Commercial alerts require monthly data import and do not send automatic notifications.
 6. Findings are deterministic, explicitly rule-based summaries. No AI integration, forecasts, confidence intervals or causal attribution are simulated.
-7. Export is CSV and browser Print / Save as PDF. Editable slide export and server-generated PDF files are not included. The optional base-100 growth index is not implemented.
+7. Export is CSV and browser Print / Save as PDF. Editable slide export and server-generated PDF files are not included. The indexed (base-100) growth comparison exists for 2–6 installers when every account has a complete, positive first-period baseline. This is not a forecast.
 8. Category changes for already recorded models are deliberately blocked. Undo affected imports before reclassifying their category. Other catalogue changes have impact previews and audit history.
 9. Undo with conflicts reverses only the non-conflicting portion and marks the operation undone. Later changes are retained; there is no force-overwrite undo or redo button.
-10. Browser-level acceptance checks remain unverified as described above. Current browser support for ES modules, IndexedDB, native dialog elements and Europe/Dublin time-zone formatting is required.
+10. CI browser smoke is verified, but real private-file reconciliation, print layout and final owner acceptance remain separate manual checks as described above. Current browser support for ES modules, IndexedDB, native dialog elements and Europe/Dublin time-zone formatting is required.
 
 ## Offline edition
 

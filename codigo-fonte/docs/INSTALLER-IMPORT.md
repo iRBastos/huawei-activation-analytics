@@ -3,7 +3,7 @@
 Installer values mean inverter activations by company and month, without model detail.
 The **Data → Installer imports** tab owns workbook import, previews and the import audit.
 The **Installers** workspace owns rankings, trends, account unions, and source evidence.
-The individual profile and interactive 2–6 installer comparison screen are future V2 work.
+The individual installer profile and interactive 2–6 installer comparison are delivered under **Installers**; see the dedicated analytics pages below.
 No device-to-installer association, revenue or Irish market share can be inferred.
 
 ## Import
