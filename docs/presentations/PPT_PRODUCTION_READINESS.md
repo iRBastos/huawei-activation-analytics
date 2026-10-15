@@ -205,3 +205,7 @@ Never create synthetic *software screenshots* from generic graphics. Native pres
 **Do not call the deliverable “final” until all QA gates are passed.**
 
 Related: [Storyboard](EXECUTIVE_PRODUCT_OVERVIEW_PLAN.md) · [Capture plan](SCREENSHOT_CAPTURE_PLAN.md) · [Capture report](SCREENSHOT_CAPTURE_REPORT.md) · [Dataset](demo-data/README.md).
+
+## 9. Post-build update — 15 October 2026
+
+The eight-slide English presentation has now been **built, rendered and QA-checked**; an editable PowerPoint and eight-page PDF are available in the user's persistent `/Huawei Activation Analytics/Executive Presentation Assets/` Library folder. An unchanged official v2.1.0 ZIP and README were packaged alongside them in an executive handoff ZIP. See [PPT_BUILD_REPORT.md](PPT_BUILD_REPORT.md) for all output names, checks, limitations and remaining recipient-side Windows acceptance. This post-build note supersedes this document's original status label **“READY TO BUILD”** while preserving the agreed pre-production decisions.
