@@ -1,6 +1,6 @@
 # Huawei Activation Analytics V2.1 — Executive Product Overview
 
-> **Status:** Approved presentation plan; production assets not yet created.  
+> **Status:** Approved presentation plan; reproducible synthetic source data created and verified; presentation slides and screenshots not yet produced.  
 > **Date:** 15 October 2026  
 > **Repository:** iRBastos/huawei-activation-analytics  
 > **Working branch:** docs/executive-overview-deck-plan-2026-10-15  
@@ -325,7 +325,7 @@ A separate, reproducible set of **synthetic** monthly source matrices has been c
 
 **Slide 04:** Equipments and filters use the populated dataset. Set monthly category/model Targets manually from the reference CSV to capture the Targets screen, since the application has no CSV target import.
 
-**Slide 05:** The synthetic BMS / inverter ratio progresses from **31.4 BMS per 100 inverters (2023)** to **73.4 (January–September 2026)**. This contrast mixes full and partial years; when interpreting rate changes, use comparable Jan–Sep windows or full 2023–2025 yearly periods. Always disclose **fictional example** in the slide.
+**Slide 05:** Use a strictly like-for-like **January–September** comparison: synthetic BMS activations per 100 inverters are **29.6 (2023)**, **44.4 (2024)**, **58.9 (2025)** and **73.4 (2026)**. This makes the sustained illustrative rise visible without comparing nine months against a full year. Always disclose **fictional example** and that this is an activation ratio, not a verified battery attachment rate.
 
 **Slide 06:** The fake installer matrix includes two suffix-based name-variant pairs and a repeated exact source label. Automatic suggestions need manual confirmation and consolidation only after reviewing the sums.
 

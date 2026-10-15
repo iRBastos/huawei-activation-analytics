@@ -29,7 +29,14 @@
 | 2025 | 7,336 | 4,466 | 60.9 |
 | 2026 (Jan–Sep) | 6,267 | 4,602 | 73.4 |
 
-**Slide 5:** BMS activations per 100 inverter activations rise in the fabricated data over 2023–2026; use these as **fictional illustrative data**, not a demonstrated finding about Ireland. Compare similar periods when drawing conclusions: full-year 2023–2025, and Jan–Sep year-to-date across years if discussing 2026. This is an aggregate activation ratio, **not a proven battery attachment rate**.
+**Slide 5:** BMS activations per 100 inverter activations rise in the fabricated data over 2023–2026; use these as **fictional illustrative data**, not a demonstrated finding about Ireland. Use the **same January–September months each year** for the like-for-like headline below. This is an aggregate activation ratio, **not a proven battery attachment rate**.
+
+| Jan–Sep each year | Inverter activations | BMS activations | BMS per 100 inverter activations |
+| --- | ---: | ---: | ---: |
+| 2023 | 3,771 | 1,118 | 29.6 |
+| 2024 | 4,603 | 2,043 | 44.4 |
+| 2025 | 5,434 | 3,200 | 58.9 |
+| 2026 | 6,267 | 4,602 | 73.4 |
 
 **Slide 7:** `DEMO Harbourlight Solar Ltd` goes from **40** in Apr–Jun 2026 to **23** in Jul–Sep 2026, an absolute change of **-17** and **-42.5%** (fictional). Select fully reported equal-length periods, check the history and treat the change as an investigation prompt.
 
