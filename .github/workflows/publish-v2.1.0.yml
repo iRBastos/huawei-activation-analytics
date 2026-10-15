@@ -26,11 +26,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD:codigo-fonte.zip)" = "$EXPECTED_ZIP_BLOB"
           test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte.zip")" = "$EXPECTED_ZIP_BLOB"
+          test "$(git rev-parse HEAD:index.html)" = "$(git rev-parse "$RELEASE_SOURCE:index.html")"
           test "$(git rev-parse "$RELEASE_SOURCE:index.html")" = "$(git rev-parse HEAD:index.html)"
           test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte/dist/app.offline.js")" = "$(git rev-parse HEAD:codigo-fonte/dist/app.offline.js")"
           test -s codigo-fonte.zip
+          git show "$RELEASE_SOURCE:codigo-fonte.zip" > Huawei_Activation_Analytics_V2.1.0.zip
+          test -s Huawei_Activation_Analytics_V2.1.0.zip
           test -s docs/releases/V2.1.0.md
           python3 codigo-fonte/tools/verify-documentation.py
           python3 - <<'PY'
@@ -52,7 +54,7 @@ jobs:
             echo "Release already exists; avoiding a duplicate."
             exit 0
           fi
-          gh release create "$RELEASE_TAG" 'codigo-fonte.zip#Huawei_Activation_Analytics_V2.1.0.zip' --target "$RELEASE_SOURCE" --title 'Huawei Activation Analytics V2.1.0' --notes-file docs/releases/V2.1.0.md
+          gh release create "$RELEASE_TAG" 'Huawei_Activation_Analytics_V2.1.0.zip' --target "$RELEASE_SOURCE" --title 'Huawei Activation Analytics V2.1.0' --notes-file docs/releases/V2.1.0.md
       - name: Confirm published asset
         env:
           GH_TOKEN: ${{ github.token }}
