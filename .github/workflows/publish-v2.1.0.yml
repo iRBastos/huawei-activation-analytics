@@ -1,0 +1,63 @@
+name: Publish Huawei Activation Analytics V2.1.0
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v2.1.0.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish-release:
+    if: github.repository == 'iRBastos/huawei-activation-analytics' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RELEASE_TAG: v2.1.0
+      RELEASE_SOURCE: 6b5324c6141dca54773cbdc83393d752719f9f30
+      EXPECTED_ZIP_BLOB: 27c9d2ce506e7c3da2c7ba903545dc4e7ee5dcd7
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable release source and ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:codigo-fonte.zip)" = "$EXPECTED_ZIP_BLOB"
+          test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte.zip")" = "$EXPECTED_ZIP_BLOB"
+          test "$(git rev-parse "$RELEASE_SOURCE:index.html")" = "$(git rev-parse HEAD:index.html)"
+          test "$(git rev-parse "$RELEASE_SOURCE:codigo-fonte/dist/app.offline.js")" = "$(git rev-parse HEAD:codigo-fonte/dist/app.offline.js")"
+          test -s codigo-fonte.zip
+          test -s docs/releases/V2.1.0.md
+          python3 codigo-fonte/tools/verify-documentation.py
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          with ZipFile("codigo-fonte.zip") as archive:
+              assert archive.testzip() is None
+              assert archive.read("index.html") == Path("index.html").read_bytes()
+              assert "docs/commercial/index.html" in archive.namelist()
+          print("Release source and distribution verified.")
+          PY
+      - name: Publish the version once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release already exists; avoiding a duplicate."
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" 'codigo-fonte.zip#Huawei_Activation_Analytics_V2.1.0.zip' --target "$RELEASE_SOURCE" --title 'Huawei Activation Analytics V2.1.0' --notes-file docs/releases/V2.1.0.md
+      - name: Confirm published asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --json url,tagName,isDraft,name,assets --jq '{url,tagName,isDraft,name,assets:[.assets[].name]}'
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -Fx 'Huawei_Activation_Analytics_V2.1.0.zip'
