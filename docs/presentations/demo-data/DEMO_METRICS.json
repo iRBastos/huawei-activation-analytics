@@ -1,0 +1,421 @@
+{
+  "summary": {
+    "synthetic": true,
+    "closedRange": "2023-01..2026-09",
+    "partialMonth": "2026-10",
+    "closedMonths": 45,
+    "inverterModels": 10,
+    "batteryAndBmsModels": 5,
+    "installerSourceNames": 25,
+    "installerRowsIncludingRepeatedName": 26,
+    "octPartialInstallerNames": 8,
+    "years": [
+      {
+        "year": 2023,
+        "closedMonths": 12,
+        "inverters": 5133,
+        "bms": 1613,
+        "bmsPer100": 31.4
+      },
+      {
+        "year": 2024,
+        "closedMonths": 12,
+        "inverters": 6235,
+        "bms": 2880,
+        "bmsPer100": 46.2
+      },
+      {
+        "year": 2025,
+        "closedMonths": 12,
+        "inverters": 7336,
+        "bms": 4466,
+        "bmsPer100": 60.9
+      },
+      {
+        "year": 2026,
+        "closedMonths": 9,
+        "inverters": 6267,
+        "bms": 4602,
+        "bmsPer100": 73.4
+      }
+    ],
+    "caseStudy": {
+      "installer": "DEMO Harbourlight Solar Ltd",
+      "previousQ2": 40,
+      "currentQ3": 23,
+      "delta": -17,
+      "percent": -42.5
+    },
+    "notProofOfRealSalesOrMarketShare": true
+  },
+  "monthly": [
+    {
+      "month": "2023-01",
+      "inverters": 412,
+      "bms": 101,
+      "batteryModules": 172,
+      "bmsPer100": 24.51,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-02",
+      "inverters": 428,
+      "bms": 111,
+      "batteryModules": 189,
+      "bmsPer100": 25.93,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-03",
+      "inverters": 436,
+      "bms": 120,
+      "batteryModules": 205,
+      "bmsPer100": 27.52,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-04",
+      "inverters": 434,
+      "bms": 125,
+      "batteryModules": 214,
+      "bmsPer100": 28.8,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-05",
+      "inverters": 425,
+      "bms": 128,
+      "batteryModules": 220,
+      "bmsPer100": 30.12,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-06",
+      "inverters": 414,
+      "bms": 129,
+      "batteryModules": 223,
+      "bmsPer100": 31.16,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-07",
+      "inverters": 406,
+      "bms": 130,
+      "batteryModules": 225,
+      "bmsPer100": 32.02,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-08",
+      "inverters": 404,
+      "bms": 134,
+      "batteryModules": 232,
+      "bmsPer100": 33.17,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-09",
+      "inverters": 412,
+      "bms": 140,
+      "batteryModules": 244,
+      "bmsPer100": 33.98,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-10",
+      "inverters": 429,
+      "bms": 151,
+      "batteryModules": 263,
+      "bmsPer100": 35.2,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-11",
+      "inverters": 453,
+      "bms": 164,
+      "batteryModules": 287,
+      "bmsPer100": 36.2,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2023-12",
+      "inverters": 480,
+      "bms": 180,
+      "batteryModules": 316,
+      "bmsPer100": 37.5,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-01",
+      "inverters": 504,
+      "bms": 196,
+      "batteryModules": 345,
+      "bmsPer100": 38.89,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-02",
+      "inverters": 521,
+      "bms": 210,
+      "batteryModules": 371,
+      "bmsPer100": 40.31,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-03",
+      "inverters": 529,
+      "bms": 221,
+      "batteryModules": 391,
+      "bmsPer100": 41.78,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-04",
+      "inverters": 527,
+      "bms": 228,
+      "batteryModules": 405,
+      "bmsPer100": 43.26,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-05",
+      "inverters": 519,
+      "bms": 232,
+      "batteryModules": 413,
+      "bmsPer100": 44.7,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-06",
+      "inverters": 507,
+      "bms": 233,
+      "batteryModules": 418,
+      "bmsPer100": 45.96,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-07",
+      "inverters": 498,
+      "bms": 235,
+      "batteryModules": 425,
+      "bmsPer100": 47.19,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-08",
+      "inverters": 496,
+      "bms": 240,
+      "batteryModules": 438,
+      "bmsPer100": 48.39,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-09",
+      "inverters": 502,
+      "bms": 248,
+      "batteryModules": 456,
+      "bmsPer100": 49.4,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-10",
+      "inverters": 519,
+      "bms": 261,
+      "batteryModules": 483,
+      "bmsPer100": 50.29,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-11",
+      "inverters": 543,
+      "bms": 278,
+      "batteryModules": 520,
+      "bmsPer100": 51.2,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2024-12",
+      "inverters": 570,
+      "bms": 298,
+      "batteryModules": 563,
+      "bmsPer100": 52.28,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-01",
+      "inverters": 595,
+      "bms": 318,
+      "batteryModules": 606,
+      "bmsPer100": 53.45,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-02",
+      "inverters": 613,
+      "bms": 335,
+      "batteryModules": 644,
+      "bmsPer100": 54.65,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-03",
+      "inverters": 622,
+      "bms": 348,
+      "batteryModules": 675,
+      "bmsPer100": 55.95,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-04",
+      "inverters": 621,
+      "bms": 357,
+      "batteryModules": 700,
+      "bmsPer100": 57.49,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-05",
+      "inverters": 612,
+      "bms": 361,
+      "batteryModules": 714,
+      "bmsPer100": 58.99,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-06",
+      "inverters": 601,
+      "bms": 363,
+      "batteryModules": 725,
+      "bmsPer100": 60.4,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-07",
+      "inverters": 590,
+      "bms": 365,
+      "batteryModules": 736,
+      "bmsPer100": 61.86,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-08",
+      "inverters": 587,
+      "bms": 371,
+      "batteryModules": 756,
+      "bmsPer100": 63.2,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-09",
+      "inverters": 593,
+      "bms": 382,
+      "batteryModules": 786,
+      "bmsPer100": 64.42,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-10",
+      "inverters": 609,
+      "bms": 399,
+      "batteryModules": 829,
+      "bmsPer100": 65.52,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-11",
+      "inverters": 633,
+      "bms": 421,
+      "batteryModules": 885,
+      "bmsPer100": 66.51,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2025-12",
+      "inverters": 660,
+      "bms": 446,
+      "batteryModules": 947,
+      "bmsPer100": 67.58,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-01",
+      "inverters": 686,
+      "bms": 470,
+      "batteryModules": 1008,
+      "bmsPer100": 68.51,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-02",
+      "inverters": 705,
+      "bms": 490,
+      "batteryModules": 1063,
+      "bmsPer100": 69.5,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-03",
+      "inverters": 715,
+      "bms": 505,
+      "batteryModules": 1107,
+      "bmsPer100": 70.63,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-04",
+      "inverters": 715,
+      "bms": 514,
+      "batteryModules": 1135,
+      "bmsPer100": 71.89,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-05",
+      "inverters": 706,
+      "bms": 517,
+      "batteryModules": 1147,
+      "bmsPer100": 73.23,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-06",
+      "inverters": 694,
+      "bms": 518,
+      "batteryModules": 1154,
+      "bmsPer100": 74.64,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-07",
+      "inverters": 683,
+      "bms": 520,
+      "batteryModules": 1164,
+      "bmsPer100": 76.13,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-08",
+      "inverters": 679,
+      "bms": 527,
+      "batteryModules": 1185,
+      "bmsPer100": 77.61,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-09",
+      "inverters": 684,
+      "bms": 541,
+      "batteryModules": 1222,
+      "bmsPer100": 79.09,
+      "periodStatus": "closed"
+    },
+    {
+      "month": "2026-10",
+      "inverters": 699,
+      "bms": 562,
+      "batteryModules": 1275,
+      "bmsPer100": 80.4,
+      "periodStatus": "open"
+    }
+  ]
+}

@@ -310,3 +310,32 @@ Where the production data/export process is not yet proven, this plan uses an ex
 ---
 
 **Next independent phase:** Approve the data-source wording and screenshot dataset; capture the UI; produce and quality-check PPTX and PDF; pair them with the already approved application ZIP. Do not change app features to improve the presentation.
+
+## 9. Fictional 2023–2026 presentation dataset — production-ready input
+
+A separate, reproducible set of **synthetic** monthly source matrices has been created under **[docs/presentations/demo-data/](demo-data/README.md)**. It exists to generate convincing, safe screenshots without exposing actual installer activations.
+
+- **Closed reporting:** January 2023–September 2026 (45 months) across inverter equipment, battery module/BMS equipment, and monthly inverter activations by installer.
+- **Current open month:** October 2026 in three **optional, separately imported partial** files; do not use it for definitive trend signals or confirm Full coverage.
+- **Equipment files:** [inverters](demo-data/DEMO_EQUIPMENT_INVERTERS_2023-01_to_2026-09.csv), [battery modules and BMS](demo-data/DEMO_EQUIPMENT_BATTERY_BMS_2023-01_to_2026-09.csv).
+- **Installer file:** [installer activations](demo-data/DEMO_INSTALLERS_2023-01_to_2026-09.csv), distinct from equipment files, with fictional names, intentional repeated-source rows and candidate duplicate-account spellings.
+- **Reproduction / QA:** [generator](demo-data/generate-demo-data.mjs), [expected summary](demo-data/DEMO_METRICS.json), [target reference](demo-data/DEMO_TARGETS_REFERENCE.csv) and [import instructions](demo-data/README.md).
+
+### Intended slide evidence
+
+**Slide 04:** Equipments and filters use the populated dataset. Set monthly category/model Targets manually from the reference CSV to capture the Targets screen, since the application has no CSV target import.
+
+**Slide 05:** The synthetic BMS / inverter ratio progresses from **31.4 BMS per 100 inverters (2023)** to **73.4 (January–September 2026)**. This contrast mixes full and partial years; when interpreting rate changes, use comparable Jan–Sep windows or full 2023–2025 yearly periods. Always disclose **fictional example** in the slide.
+
+**Slide 06:** The fake installer matrix includes two suffix-based name-variant pairs and a repeated exact source label. Automatic suggestions need manual confirmation and consolidation only after reviewing the sums.
+
+**Slide 07:** `DEMO Harbourlight Solar Ltd` moves from **40** activations (Apr–Jun 2026) to **23** (Jul–Sep), **−17 / −42.5%**. Use the complete synthetic reporting coverage to show the rule-based decline and inspect the profile. Treat the signalled decline as an investigation prompt, not known customer churn.
+
+**Slide 08:** Explain that the application has its own built-in demo mode, but this extended 2023–2026 dataset is **not automatically loaded by that mode**. To explore it, import the CSVs in a separate clean local workspace, following the guide, and then create a demo JSON backup for repeatable presentations.
+
+### Additional gates
+- [ ] Test imports with the actual V2.1 interface: both equipment categories and the full fictional installer population, then optional October partial updates.
+- [ ] Confirm all importer previews and coverage settings before capturing.
+- [ ] Check the ratio trends and named installer signals against **DEMO_METRICS.json**.
+- [ ] Produce slides only from this fictional/anonymised workspace; mark every synthetic conclusion.
+- [ ] Keep all generated demo data off the runtime application's source/distribution tree and off the main branch until explicitly approved.
