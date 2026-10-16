@@ -1,6 +1,6 @@
 # V3 Screenshot Capture Register — authentic V2.1.0 UI
 
-**Status:** CAPTURE SPECIFICATION, not evidence of a completed screenshot.
+**Status:** Capture specification AND verified execution complete: 18 authentic images (12 primary, 6 optional), no JavaScript errors. See [execution checkpoint](V3_G0_G1_G2_G3_EXECUTION_CHECKPOINT.md) and image ZIP in the user's V3 Product Capabilities Library folder.
 **Date:** 16 October 2026
 **Supports:** [V3 Product Capabilities Implementation Plan](V3_PRODUCT_CAPABILITIES_IMPLEMENTATION_PLAN.md).
 
