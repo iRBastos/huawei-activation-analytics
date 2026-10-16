@@ -1,6 +1,6 @@
 # Huawei Activation Analytics — V3 Product Capabilities Presentation
 
-**Status:** Implementation plan approved for discussion; execution NOT started.
+**Status:** G0–G2 executed and G3 three-slide prototype built; G4–G6 pending. See [execution checkpoint](V3_G0_G1_G2_G3_EXECUTION_CHECKPOINT.md).
 **Date:** 16 October 2026
 **Repository:** iRBastos/huawei-activation-analytics
 **Working branch:** docs/executive-overview-deck-plan-2026-10-15
